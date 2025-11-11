@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disney+ - Sign In</title>
-    <meta name="description" content="Sign in to Disney+ to start streaming your favorite movies and shows">
+    <title>Disney+ - Sign Up</title>
+    <meta name="description" content="Sign up for Disney+ to start streaming your favorite movies and shows">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="signin-body">
@@ -14,49 +14,68 @@
             <img src="assets/disneylogo-new.png" alt="Disney Plus">
         </div>
         
-        <h1 class="signin-title">Sign In</h1>
+        <h1 class="signin-title">Create Account</h1>
         
         <form class="signin-form" action="account-choosing.html" method="get">
             <div class="form-group">
-                <label class="form-label" for="username">Username</label>
+                <label class="form-label" for="signup-username">Username</label>
                 <input 
                     type="text" 
-                    id="username" 
+                    id="signup-username" 
                     name="username" 
                     class="form-input" 
-                    placeholder="Enter your username"
+                    placeholder="Choose a username"
                     required
+                    minlength="3"
                 >
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="password">Password</label>
+                <label class="form-label" for="signup-password">Password</label>
                 <div class="password-input-wrapper">
                     <input 
                         type="password" 
-                        id="password" 
+                        id="signup-password" 
                         name="password" 
                         class="form-input" 
-                        placeholder="Enter your password"
+                        placeholder="Create a password"
                         required
                         minlength="6"
                     >
-                    <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                    <button type="button" class="password-toggle" onclick="togglePassword('signup-password')">
+                        <span class="eye-icon">👁️</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="confirm-password">Confirm Password</label>
+                <div class="password-input-wrapper">
+                    <input 
+                        type="password" 
+                        id="confirm-password" 
+                        name="confirmPassword" 
+                        class="form-input" 
+                        placeholder="Confirm your password"
+                        required
+                        minlength="6"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
                         <span class="eye-icon">👁️</span>
                     </button>
                 </div>
             </div>
             
             <button type="submit" class="signin-button">
-                Sign In
+                Create Account
             </button>
         </form>
         
         <div class="auth-links">
-            <div class="signup-section">
-                <p class="signup-text">New to Disney+?</p>
-                <button type="button" class="signup-button" onclick="location.href='signup-page.html'">
-                    Sign Up
+            <div class="signin-section">
+                <p class="signup-text">Already have an account?</p>
+                <button type="button" class="signup-button" onclick="location.href='signin-page.html'">
+                    Sign In
                 </button>
             </div>
         </div>
