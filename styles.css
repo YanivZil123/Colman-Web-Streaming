@@ -154,6 +154,133 @@ body {
 
 .forgot-password a:hover {
     color: hsl(var(--primary-glow));
+    text-decoration: underline;
+}
+
+.auth-links {
+    margin-top: 24px;
+}
+
+.signup-section {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid hsl(var(--disney-border));
+    background: transparent;
+}
+
+.signup-text {
+    color: hsl(var(--disney-muted));
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.signup-button {
+    background: hsl(var(--disney-card));
+    color: hsl(var(--disney-blue));
+    border: 2px solid hsl(var(--disney-blue));
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    box-shadow: 0 2px 10px hsl(var(--disney-dark) / 0.3);
+}
+
+.signup-button:hover {
+    background: hsl(var(--disney-blue));
+    color: hsl(var(--disney-text));
+    box-shadow: 0 0 20px hsl(var(--disney-blue) / 0.3);
+    transform: translateY(-1px);
+}
+
+.forgot-password a:hover {
+    color: hsl(var(--primary-glow));
+    text-decoration: underline;
+}
+
+/* Signup Page Specific Styles */
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .form-input {
+    padding-right: 50px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-toggle:hover {
+    background: hsl(var(--disney-border));
+}
+
+.eye-icon {
+    font-size: 18px;
+    color: hsl(var(--disney-muted));
+    transition: var(--transition-smooth);
+}
+
+.password-toggle:hover .eye-icon {
+    color: hsl(var(--disney-blue));
+}
+
+.terms-section {
+    margin: 20px 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    font-size: 14px;
+    color: hsl(var(--disney-muted));
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 12px;
+    margin-top: 2px;
+    accent-color: hsl(var(--disney-blue));
+    flex-shrink: 0;
+}
+
+.terms-link {
+    color: hsl(var(--disney-blue));
+    text-decoration: none;
+    transition: var(--transition-smooth);
+}
+
+.terms-link:hover {
+    color: hsl(var(--primary-glow));
+    text-decoration: underline;
+}
+
+.signin-section {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid hsl(var(--disney-border));
+    background: transparent;
 }
 
 /* Profiles Page Styles */
