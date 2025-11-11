@@ -1,0 +1,80 @@
+<!-- yaniv-berniker-213371776-yaniv-zilberson-214269292 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney+ - Stream Movies and Shows</title>
+    <meta name="description" content="Watch exclusive Disney movies and shows on Disney Plus">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="main-body">
+    <div class="main-container">
+        <!-- Navigation - Matching the uploaded image -->
+        <nav class="disney-navbar">
+            <div class="nav-left">
+                <img src="assets/disneylogo-new.png" alt="Disney Plus" class="disney-logo-nav">
+
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active">
+                            <span>HOME</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <span>SEARCH</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <span>WATCHLIST</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <span>MOVIES</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <span>SERIES</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link">
+                            <span>ORIGINALS</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-right">
+                <img id="profile-icon" src="assets/profile1.png" alt="Profile" class="profile-icon">
+            </div>
+        </nav>
+
+        <!-- Main Content - Static Disney+ Interface -->
+        <main class="main-content"></main>
+    </div>
+
+    <script>
+        // Get profile from URL parameter and update profile icon
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedProfile = urlParams.get('profile') || 'mickey';
+        
+        const profileImages = {
+            'mickey': 'assets/profile1.png',
+            'luca': 'assets/profile2.png', 
+            'elsa': 'assets/profile3.png',
+            'grogu': 'assets/profile4.png',
+            'neytiri': 'assets/profile5.png'
+        };
+        
+        const profileIcon = document.getElementById('profile-icon');
+        if (profileImages[selectedProfile]) {
+            profileIcon.src = profileImages[selectedProfile];
+        }
+    </script>
+</body>
+</html>
