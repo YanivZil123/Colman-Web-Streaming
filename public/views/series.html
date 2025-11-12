@@ -1,0 +1,221 @@
+<!-- yaniv-berniker-213371776-yaniv-zilberson-214269292 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney+ - Series</title>
+    <meta name="description" content="Browse all series and shows by genre">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+</head>
+<body class="home-body">
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
+                <a href="/views/home.html" class="nav-link">Home</a>
+                <a href="/views/series.html" class="nav-link active">Series</a>
+                <a href="/views/movies.html" class="nav-link">Movies</a>
+            </div>
+            
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <a href="/views/admin.html" class="nav-link">Admin</a>
+                <div class="profile-menu-container">
+                    <button class="profile-icon-btn" onclick="toggleProfileMenu()">
+                        <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-dropdown-header">Switch Profile</div>
+                        <div id="profileList" class="profile-list">
+                            <!-- Profiles will be loaded here -->
+                        </div>
+                        <div class="profile-dropdown-divider"></div>
+                        <a href="/views/profile-selection.html" class="profile-dropdown-item">Manage Profiles</a>
+                        <a href="/" class="profile-dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="home-main">
+        <!-- Page Header -->
+        <div class="page-header" style="margin-bottom: 40px;">
+            <h1 class="page-title" style="font-size: 32px; font-weight: 600; margin-bottom: 8px;">All Series</h1>
+            <p class="page-subtitle" style="font-size: 16px; color: hsl(var(--disney-muted));">Browse series by genre</p>
+        </div>
+
+        <!-- Action Section -->
+        <section class="content-section">
+            <h2 class="section-title">Action</h2>
+            <div class="content-grid" id="actionGrid">
+                <!-- Action series will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Drama Section -->
+        <section class="content-section">
+            <h2 class="section-title">Drama</h2>
+            <div class="content-grid" id="dramaGrid">
+                <!-- Drama series will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Comedy Section -->
+        <section class="content-section">
+            <h2 class="section-title">Comedy</h2>
+            <div class="content-grid" id="comedyGrid">
+                <!-- Comedy series will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Horror Section -->
+        <section class="content-section">
+            <h2 class="section-title">Horror</h2>
+            <div class="content-grid" id="horrorGrid">
+                <!-- Horror series will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Cartoon Section -->
+        <section class="content-section">
+            <h2 class="section-title">Cartoon</h2>
+            <div class="content-grid" id="cartoonGrid">
+                <!-- Cartoon series will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Kids Section -->
+        <section class="content-section">
+            <h2 class="section-title">Kids</h2>
+            <div class="content-grid" id="kidsGrid">
+                <!-- Kids series will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Sci-Fi Section -->
+        <section class="content-section">
+            <h2 class="section-title">Sci-Fi</h2>
+            <div class="content-grid" id="scifiGrid">
+                <!-- Sci-Fi series will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Thriller Section -->
+        <section class="content-section">
+            <h2 class="section-title">Thriller</h2>
+            <div class="content-grid" id="thrillerGrid">
+                <!-- Thriller series will be loaded here -->
+            </div>
+        </section>
+    </main>
+
+    <script src="/scripts/api.js"></script>
+    <script src="/scripts/series.js"></script>
+    <script>
+        let profiles = [];
+        let currentProfile = null;
+
+        // Load profiles and current profile on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfiles();
+            loadCurrentProfile();
+            setupSearch();
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('profileDropdown');
+                const profileBtn = document.querySelector('.profile-icon-btn');
+                
+                if (!dropdown.contains(event.target) && !profileBtn.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        });
+
+        function loadProfiles() {
+            // Load from localStorage
+            const savedProfiles = localStorage.getItem('profiles');
+            if (savedProfiles) {
+                profiles = JSON.parse(savedProfiles);
+                renderProfileList();
+            }
+        }
+
+        function loadCurrentProfile() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            if (selectedProfileId && profiles.length > 0) {
+                currentProfile = profiles.find(p => p.id == selectedProfileId);
+                if (currentProfile) {
+                    // Update profile avatar in nav
+                    const avatarImg = document.getElementById('currentProfileAvatar');
+                    if (avatarImg && currentProfile.avatarUrl) {
+                        avatarImg.src = currentProfile.avatarUrl;
+                    }
+                }
+            }
+        }
+
+        function renderProfileList() {
+            const profileList = document.getElementById('profileList');
+            if (!profileList) return;
+            
+            profileList.innerHTML = '';
+            
+            profiles.forEach(profile => {
+                const profileItem = document.createElement('div');
+                profileItem.className = 'profile-dropdown-profile';
+                profileItem.onclick = () => switchProfile(profile.id);
+                
+                const initials = (profile.name || 'P').charAt(0).toUpperCase();
+                
+                profileItem.innerHTML = `
+                    <img src="${profile.avatarUrl || '/images/avatar1.png'}" alt="${profile.name}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="avatar-fallback-small">${initials}</div>
+                    <span>${profile.name}</span>
+                `;
+                
+                profileList.appendChild(profileItem);
+            });
+        }
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function switchProfile(profileId) {
+            localStorage.setItem('selectedProfileId', profileId);
+            window.location.reload();
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.querySelector('.search-btn');
+            
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+
+        function performSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput.value.trim();
+            
+            if (query) {
+                window.location.href = `/views/genre.html?q=${encodeURIComponent(query)}`;
+            }
+        }
+    </script>
+</body>
+</html>
