@@ -177,7 +177,7 @@
                 return;
             }
             
-            // Normal selection - store profile and redirect to home screen
+            // Normal selection - store profile and redirect to the standalone home view (keeps navbar and body)
             localStorage.setItem('selectedProfileId', profileId);
             window.location.href = '/views/home.html';
         }

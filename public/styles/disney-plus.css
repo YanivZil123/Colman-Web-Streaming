@@ -336,6 +336,9 @@ body.screen-shake {
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
+    /* Prevent focus outline / tap highlight so the card doesn't show square outlines */
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .profile-card:hover {
@@ -382,7 +385,8 @@ body.screen-shake {
 .profile-avatar {
     width: 120px;
     height: 120px;
-    border-radius: 12px;
+    /* Make avatar fully circular */
+    border-radius: 50%;
     overflow: hidden;
     border: 3px solid hsl(var(--disney-border));
     transition: border-color 0.3s ease;
