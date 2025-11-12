@@ -1,34 +1,382 @@
-<!doctype html><html><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Admin · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
-</head><body>
-<header><div class="nav"><a href="/">← Home</a><strong>Admin</strong></div></header>
-<div class="container">
-  <form id="titleForm" enctype="multipart/form-data">
-    <h2>Add Title</h2>
-    <select id="type"><option>movie</option><option>series</option></select>
-    <input id="name" placeholder="Name" required/>
-    <input id="year" placeholder="Year" type="number" required/>
-    <input id="genres" placeholder="Genres (comma-sep)"/>
-    <textarea id="desc" placeholder="Description"></textarea>
-    <input id="poster" type="file" accept="image/*"/>
-    <input id="video" type="file" accept="video/mp4"/>
-    <button class="btn primary">Create</button>
-  </form>
-</div>
-<script src="/scripts/api.js"></script>
-<script>
-titleForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const fd=new FormData();
-  fd.append('type', type.value);
-  fd.append('name', name.value);
-  fd.append('year', year.value);
-  fd.append('genres', genres.value);
-  fd.append('description', desc.value);
-  if(poster.files[0]) fd.append('poster', poster.files[0]);
-  if(video.files[0]) fd.append('video', video.files[0]);
-  const res=await fetch('/admin/titles',{ method:'POST', body: fd, credentials:'include' });
-  alert(res.ok?'Created':'Failed');
-});
-</script></body></html>
+<!-- yaniv-berniker-213371776-yaniv-zilberson-214269292 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney+ - Admin</title>
+    <meta name="description" content="Admin panel - Add movies and series">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+    <style>
+        /* Modern select dropdown styling */
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 40px;
+        }
+
+        .form-select option {
+            background: hsl(220 25% 16%);
+            color: hsl(var(--disney-text));
+        }
+
+        /* Improved button styling */
+        .signin-button {
+            background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+            color: white;
+            font-weight: 600;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+        }
+
+        .signin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 102, 255, 0.4);
+            background: linear-gradient(135deg, #0052cc 0%, #003d99 100%);
+        }
+
+        .signin-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3);
+        }
+
+        /* File input modern styling */
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            background: hsl(220 25% 16%);
+            border: 2px solid hsl(var(--disney-border));
+            border-radius: 8px;
+            color: hsl(var(--disney-text));
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-input-label:hover {
+            border-color: hsl(206 100% 50%);
+            background: hsl(220 25% 18%);
+        }
+
+        .file-input-label:active {
+            border-color: hsl(206 100% 50%);
+            background: hsl(220 25% 19%);
+        }
+
+        .file-input-label .file-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .file-input-label .file-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: hsl(var(--disney-muted));
+            font-size: 14px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Textarea modern styling */
+        textarea.form-input {
+            font-family: inherit;
+            resize: vertical;
+            min-height: 110px;
+        }
+
+        textarea.form-input:focus {
+            border-color: hsl(206 100% 50%);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        /* Two-column layout for smaller fields */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Form input focus improvements */
+        .form-input:focus {
+            border-color: hsl(206 100% 50%);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        /* Signup button styling */
+        .signup-button {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            color: hsl(var(--disney-text));
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .signup-button:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="signin-body">
+    <main class="signin-container">
+        <div class="disney-logo">
+            <img src="/images/logo.jpeg" alt="Disney Plus">
+        </div>
+        
+        <h1 class="signin-title">Add movie/series</h1>
+        
+        <form class="signin-form" id="titleForm" enctype="multipart/form-data" onsubmit="return handleSubmit(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="type">Type</label>
+                    <select id="type" class="form-input form-select">
+                        <option value="movie">🎬 Movie</option>
+                        <option value="series">📺 Series</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="year">Year</label>
+                    <select id="year" class="form-input form-select" required>
+                        <option value="">Select a year</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="name">Title name *</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-input" 
+                    placeholder="Enter title name"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="genres">Genres</label>
+                <input 
+                    type="text" 
+                    id="genres" 
+                    name="genres" 
+                    class="form-input" 
+                    placeholder="e.g. action, drama, comedy"
+                >
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="desc">Description</label>
+                <textarea 
+                    id="desc" 
+                    name="desc" 
+                    class="form-input" 
+                    placeholder="Write a brief description of your title..."
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="poster">Poster image</label>
+                <div class="file-input-wrapper">
+                    <label for="poster" class="file-input-label">
+                        <span class="file-icon">🖼️</span>
+                        <span class="file-name" id="posterName">Choose image...</span>
+                    </label>
+                    <input 
+                        type="file" 
+                        id="poster" 
+                        name="poster" 
+                        accept="image/*"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="video">Video file (mp4)</label>
+                <div class="file-input-wrapper">
+                    <label for="video" class="file-input-label">
+                        <span class="file-icon">🎥</span>
+                        <span class="file-name" id="videoName">Choose video...</span>
+                    </label>
+                    <input 
+                        type="file" 
+                        id="video" 
+                        name="video" 
+                        accept="video/mp4"
+                    >
+                </div>
+            </div>
+            
+            <button type="submit" class="signin-button">
+                ✨ Create
+            </button>
+        </form>
+        
+        <div class="auth-links">
+            <div class="signin-section">
+                <p class="signup-text">Back to home?</p>
+                <button type="button" class="signup-button" onclick="location.href='/views/home.html'">
+                    Home
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/scripts/api.js"></script>
+    <script>
+        // Populate year dropdown
+        function populateYears() {
+            const yearSelect = document.getElementById('year');
+            const currentYear = new Date().getFullYear();
+            const startYear = 1900;
+
+            for (let year = currentYear; year >= startYear; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+        }
+
+        // File input name display
+        document.getElementById('poster').addEventListener('change', function() {
+            const name = this.files[0] ? this.files[0].name : 'Choose image...';
+            document.getElementById('posterName').textContent = name;
+        });
+
+        document.getElementById('video').addEventListener('change', function() {
+            const name = this.files[0] ? this.files[0].name : 'Choose video...';
+            document.getElementById('videoName').textContent = name;
+        });
+
+        // Clear error styling when user starts typing
+        document.addEventListener('DOMContentLoaded', function() {
+            populateYears();
+            
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('error');
+                });
+                input.addEventListener('change', function() {
+                    this.classList.remove('error');
+                });
+            });
+        });
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const nameInput = document.getElementById('name');
+            const yearSelect = document.getElementById('year');
+            let isValid = true;
+            let firstErrorField = null;
+
+            // Clear previous error styling
+            nameInput.classList.remove('error');
+            yearSelect.classList.remove('error');
+
+            // Validate title name
+            if (!nameInput.value.trim()) {
+                nameInput.classList.add('error');
+                if (!firstErrorField) firstErrorField = nameInput;
+                isValid = false;
+            }
+
+            // Validate year
+            if (!yearSelect.value) {
+                yearSelect.classList.add('error');
+                if (!firstErrorField) firstErrorField = yearSelect;
+                isValid = false;
+            }
+
+            if (!isValid) {
+                // Scroll to first error field
+                if (firstErrorField) {
+                    firstErrorField.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    // Focus the first error field
+                    setTimeout(() => {
+                        firstErrorField.focus();
+                    }, 300);
+                }
+                
+                // Vibrate device if supported
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+                
+                return false;
+            }
+
+            // Submit the form
+            const fd = new FormData();
+            fd.append('type', document.getElementById('type').value);
+            fd.append('name', nameInput.value);
+            fd.append('year', yearSelect.value);
+            fd.append('genres', document.getElementById('genres').value);
+            fd.append('description', document.getElementById('desc').value);
+            
+            const posterInput = document.getElementById('poster');
+            const videoInput = document.getElementById('video');
+            if (posterInput.files[0]) fd.append('poster', posterInput.files[0]);
+            if (videoInput.files[0]) fd.append('video', videoInput.files[0]);
+
+            try {
+                const res = await fetch('/admin/titles', { 
+                    method: 'POST', 
+                    body: fd, 
+                    credentials: 'include' 
+                });
+                
+                if (res.ok) {
+                    alert('✓ Created successfully!');
+                    document.getElementById('titleForm').reset();
+                    document.getElementById('posterName').textContent = 'Choose image...';
+                    document.getElementById('videoName').textContent = 'Choose video...';
+                    yearSelect.value = '';
+                } else {
+                    const json = await res.json().catch(() => ({}));
+                    alert('✗ Failed: ' + (json.error || res.statusText));
+                }
+            } catch (err) {
+                alert('✗ Network error: ' + err.message);
+            }
+            
+            return false;
+        }
+    </script>
+</body>
+</html>
