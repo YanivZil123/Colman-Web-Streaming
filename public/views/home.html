@@ -220,7 +220,7 @@
         // Load profiles from MongoDB API
         async function loadProfiles() {
             try {
-                const response = await api.get('/profiles');
+                const response = await api.get('/api/profiles');
                 
                 if (!response.ok) {
                     throw new Error('Failed to load profiles');
@@ -245,15 +245,32 @@
 
         function loadCurrentProfile() {
             const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
             if (selectedProfileId && profiles.length > 0) {
-                currentProfile = profiles.find(p => p.id == selectedProfileId);
-                if (currentProfile) {
-                    // Update profile avatar in nav
-                    const avatarImg = document.getElementById('currentProfileAvatar');
-                    if (avatarImg && currentProfile.avatarUrl) {
-                        avatarImg.src = currentProfile.avatarUrl;
-                    }
+                // Find profile by ID (handle string/ObjectId comparison)
+                currentProfile = profiles.find(p => {
+                    return p.id == selectedProfileId || 
+                           p.id.toString() === selectedProfileId.toString() ||
+                           String(p.id) === String(selectedProfileId);
+                });
+                
+                if (currentProfile && avatarImg) {
+                    // Update profile avatar in nav - always set it, use fallback if needed
+                    const avatarUrl = currentProfile.avatarUrl || '/images/avatar1.png';
+                    avatarImg.src = avatarUrl;
+                    
+                    // Handle image load errors
+                    avatarImg.onerror = function() {
+                        this.src = '/images/avatar1.png';
+                    };
+                } else if (avatarImg) {
+                    // Profile not found, use default
+                    avatarImg.src = '/images/avatar1.png';
                 }
+            } else if (avatarImg) {
+                // No profile selected, use default
+                avatarImg.src = '/images/avatar1.png';
             }
         }
 
@@ -288,7 +305,10 @@
 
         function switchProfile(profileId) {
             localStorage.setItem('selectedProfileId', profileId);
-            window.location.reload();
+            // Update avatar immediately without reload
+            loadCurrentProfile();
+            // Close dropdown
+            toggleProfileMenu();
         }
 
         function setupSearch() {
