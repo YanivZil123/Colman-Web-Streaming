@@ -67,6 +67,20 @@ userSchema.methods.deleteProfile = function(profileId) {
   return true;
 };
 
+userSchema.methods.updateProfile = function(profileId, profileData) {
+  const profile = this.profiles.find(p => p._id.toString() === profileId);
+  if (!profile) {
+    return null;
+  }
+  if (profileData.name) {
+    profile.name = profileData.name.slice(0, 20);
+  }
+  if (profileData.avatarUrl) {
+    profile.avatarUrl = profileData.avatarUrl;
+  }
+  return profile;
+};
+
 const User = mongoose.model('User', userSchema);
 
 export default User;
