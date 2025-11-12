@@ -59,3 +59,29 @@ export const deleteProfile = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const profile = user.updateProfile(req.params.id, req.body);
+    
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    await user.save();
+    
+    res.json({ 
+      id: profile._id.toString(),
+      name: profile.name,
+      avatarUrl: profile.avatarUrl
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

@@ -375,24 +375,43 @@ body.screen-shake {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.delete-profile-btn {
+.profile-edit-buttons {
     position: absolute;
     top: 8px;
     right: 8px;
+    display: none;
+    gap: 8px;
+    z-index: 10;
+}
+
+.edit-profile-btn,
+.delete-profile-btn {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(255, 68, 68, 0.9);
-    color: white;
     border: none;
-    font-size: 24px;
+    font-size: 18px;
     line-height: 1;
     cursor: pointer;
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    z-index: 10;
+}
+
+.edit-profile-btn {
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+}
+
+.edit-profile-btn:hover {
+    background: #3b82f6;
+    transform: scale(1.1);
+}
+
+.delete-profile-btn {
+    background: rgba(255, 68, 68, 0.9);
+    color: white;
 }
 
 .delete-profile-btn:hover {
