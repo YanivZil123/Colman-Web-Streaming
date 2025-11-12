@@ -1,21 +1,182 @@
-<!doctype html>
-<html><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Login · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
-</head><body class="auth-bg">
-<div class="auth-card">
-  <img class="auth-logo" src="/images/logo.jpeg" alt="Disney+"/>
-  <form id="loginForm">
-    <h2 style="text-align:center;margin-bottom:8px">Login</h2>
-    <input id="email" placeholder="Email" required/>
-    <input id="password" placeholder="Password" type="password" required/>
-    <button class="btn primary" type="submit" style="width:100%">Continue</button>
-    <p style="text-align:center;margin-top:6px">No account? <a href="/signup.html">Sign up</a></p>
-  </form>
-</div>
-<script src="/scripts/api.js"></script>
-<script>
-document.getElementById('loginForm').addEventListener('submit', async (e)=>{e.preventDefault();const res=await api.post('/auth/login',{email:email.value,password:password.value});if(res.ok){location.href='/';} else {alert('Login failed');}});
-if(Math.random()>0.5){ document.body.style.backgroundImage="radial-gradient(1200px 600px at 20% 5%, rgba(255,255,255,0.08), transparent 40%), url('/images/signin1.jpeg')"; }
-</script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney+ - Sign In</title>
+    <meta name="description" content="Sign in to Disney+ to start streaming your favorite movies and shows">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+</head>
+<body class="signin-body">
+    <main class="signin-container">
+        <div class="disney-logo">
+            <img src="/images/logo.jpeg" alt="Disney Plus">
+        </div>
+        
+        <h1 class="signin-title">Sign In</h1>
+        
+        <form class="signin-form" id="signinForm" onsubmit="return validateSigninForm(event)">
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    class="form-input" 
+                    placeholder="Enter your username"
+                >
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <div class="password-input-wrapper">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Enter your password"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                        <span class="eye-icon">👁️</span>
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="signin-button">
+                Sign In
+            </button>
+        </form>
+        
+        <div class="auth-links">
+            <div class="signup-section">
+                <p class="signup-text">New to Disney+?</p>
+                <button type="button" class="signup-button" onclick="location.href='/signup.html'">
+                    Sign Up
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('error');
+                });
+            });
+        });
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+            const eyeIcon = button.querySelector('.eye-icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                eyeIcon.textContent = '👁️';
+            }
+        }
+
+        function validateSigninForm(event) {
+            event.preventDefault();
+            
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            let isValid = true;
+            let firstErrorField = null;
+
+            usernameInput.classList.remove('error');
+            passwordInput.classList.remove('error');
+
+            if (!usernameInput.value.trim()) {
+                usernameInput.classList.add('error');
+                if (!firstErrorField) firstErrorField = usernameInput;
+                isValid = false;
+            }
+
+            if (!passwordInput.value.trim()) {
+                passwordInput.classList.add('error');
+                if (!firstErrorField) firstErrorField = passwordInput;
+                isValid = false;
+            }
+
+            if (!isValid) {
+                if (firstErrorField) {
+                    firstErrorField.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    setTimeout(() => {
+                        firstErrorField.focus();
+                        firstErrorField.select();
+                    }, 300);
+                }
+                
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+                
+                return false;
+            }
+
+            submitSignin();
+            return false;
+        }
+
+        async function submitSignin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const submitButton = document.querySelector('.signin-button');
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Signing In...';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.ok) {
+                    window.location.href = '/profile-selection.html';
+                } else {
+                    alert(data.error || 'Invalid credentials. Please try again.');
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Sign In';
+                }
+            } catch (error) {
+                console.error('Signin error:', error);
+                alert('Connection error. Please try again.');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Sign In';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('error');
+                });
+            });
+
+            document.body.addEventListener('animationend', function(e) {
+                if (e.animationName === 'screenShake') {
+                    document.body.classList.remove('screen-shake');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

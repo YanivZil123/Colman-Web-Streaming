@@ -1,39 +1,58 @@
 import User from '../models/User.js';
 
-export const getProfiles = (req, res) => {
+export const getProfiles = async (req, res) => {
   try {
-    const profiles = User.getProfiles(req.session.user.id);
+    const user = await User.findById(req.session.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
     res.json({
-      items: profiles.map(p => ({
-        id: p.id,
+      items: user.profiles.map(p => ({
+        id: p._id.toString(),
         name: p.name,
         avatarUrl: p.avatarUrl
       }))
     });
   } catch (error) {
+    console.error('Get profiles error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-export const createProfile = (req, res) => {
+export const createProfile = async (req, res) => {
   try {
-    const profile = User.addProfile(req.session.user.id, req.body);
+    const user = await User.findById(req.session.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const profile = user.addProfile(req.body);
     
     if (!profile) {
       return res.status(400).json({ error: 'limit' });
     }
 
-    res.json({ id: profile.id });
+    await user.save();
+    res.json({ id: profile._id.toString() });
   } catch (error) {
+    console.error('Create profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-export const deleteProfile = (req, res) => {
+export const deleteProfile = async (req, res) => {
   try {
-    User.deleteProfile(req.session.user.id, req.params.id);
+    const user = await User.findById(req.session.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    user.deleteProfile(req.params.id);
+    await user.save();
     res.json({ ok: true });
   } catch (error) {
+    console.error('Delete profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

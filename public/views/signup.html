@@ -16,7 +16,7 @@
         
         <h1 class="signin-title">Create Account</h1>
         
-        <form class="signin-form" action="/views/profile-selection.html" method="get" onsubmit="return validateSignupForm(event)">
+        <form class="signin-form" id="signupForm" onsubmit="return validateSignupForm(event)">
             <div class="form-group">
                 <label class="form-label" for="signup-username">Username</label>
                 <input 
@@ -26,6 +26,7 @@
                     class="form-input" 
                     placeholder="Choose a username"
                 >
+                <span class="error-message" id="username-error"></span>
             </div>
             
             <div class="form-group">
@@ -42,6 +43,7 @@
                         <span class="eye-icon">👁️</span>
                     </button>
                 </div>
+                <span class="error-message" id="password-error"></span>
             </div>
             
             <div class="form-group">
@@ -58,6 +60,7 @@
                         <span class="eye-icon">👁️</span>
                     </button>
                 </div>
+                <span class="error-message" id="confirm-password-error"></span>
             </div>
             
             <button type="submit" class="signin-button">
@@ -68,7 +71,7 @@
         <div class="auth-links">
             <div class="signin-section">
                 <p class="signup-text">Already have an account?</p>
-                <button type="button" class="signup-button" onclick="location.href='/'">
+                <button type="button" class="signup-button" onclick="location.href='/signin.html'">
                     Sign In
                 </button>
             </div>
@@ -76,9 +79,19 @@
     </main>
 
     <script>
+        function clearError(inputId, errorId) {
+            document.getElementById(inputId).classList.remove('error');
+            document.getElementById(errorId).textContent = '';
+        }
+
+        function showError(inputId, errorId, message) {
+            document.getElementById(inputId).classList.add('error');
+            document.getElementById(errorId).textContent = message;
+        }
+
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
-            const button = input.nextElementSibling;
+            const button = input.parentElement.querySelector('.password-toggle');
             const eyeIcon = button.querySelector('.eye-icon');
             
             if (input.type === 'password') {
@@ -90,69 +103,99 @@
             }
         }
 
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameInput = document.getElementById('signup-username');
+            const passwordInput = document.getElementById('signup-password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+
+            usernameInput.addEventListener('input', function() {
+                clearError('signup-username', 'username-error');
+            });
+
+            usernameInput.addEventListener('blur', function() {
+                if (this.value.trim().length > 0 && this.value.trim().length < 3) {
+                    showError('signup-username', 'username-error', 'Username must be at least 3 characters');
+                }
+            });
+
+            passwordInput.addEventListener('input', function() {
+                clearError('signup-password', 'password-error');
+                if (confirmPasswordInput.value && this.value !== confirmPasswordInput.value) {
+                    showError('confirm-password', 'confirm-password-error', 'Passwords do not match');
+                } else {
+                    clearError('confirm-password', 'confirm-password-error');
+                }
+            });
+
+            passwordInput.addEventListener('blur', function() {
+                if (this.value.length > 0 && this.value.length < 6) {
+                    showError('signup-password', 'password-error', 'Password must be at least 6 characters');
+                }
+            });
+
+            confirmPasswordInput.addEventListener('input', function() {
+                clearError('confirm-password', 'confirm-password-error');
+            });
+
+            confirmPasswordInput.addEventListener('blur', function() {
+                if (this.value && passwordInput.value !== this.value) {
+                    showError('confirm-password', 'confirm-password-error', 'Passwords do not match');
+                }
+            });
+        });
+
         function validateSignupForm(event) {
+            event.preventDefault();
+            
             const usernameInput = document.getElementById('signup-username');
             const passwordInput = document.getElementById('signup-password');
             const confirmPasswordInput = document.getElementById('confirm-password');
             let isValid = true;
             let firstError = null;
 
-            // Clear previous error styling
-            usernameInput.classList.remove('error');
-            passwordInput.classList.remove('error');
-            confirmPasswordInput.classList.remove('error');
+            clearError('signup-username', 'username-error');
+            clearError('signup-password', 'password-error');
+            clearError('confirm-password', 'confirm-password-error');
 
-            // Validate username
             if (!usernameInput.value.trim()) {
-                usernameInput.classList.add('error');
+                showError('signup-username', 'username-error', 'Username is required');
                 if (!firstError) firstError = usernameInput;
                 isValid = false;
             } else if (usernameInput.value.trim().length < 3) {
-                usernameInput.classList.add('error');
+                showError('signup-username', 'username-error', 'Username must be at least 3 characters');
                 if (!firstError) firstError = usernameInput;
                 isValid = false;
             }
 
-            // Validate password
-            if (!passwordInput.value.trim()) {
-                passwordInput.classList.add('error');
+            if (!passwordInput.value) {
+                showError('signup-password', 'password-error', 'Password is required');
                 if (!firstError) firstError = passwordInput;
                 isValid = false;
             } else if (passwordInput.value.length < 6) {
-                passwordInput.classList.add('error');
+                showError('signup-password', 'password-error', 'Password must be at least 6 characters');
                 if (!firstError) firstError = passwordInput;
                 isValid = false;
             }
 
-            // Validate confirm password
-            if (!confirmPasswordInput.value.trim()) {
-                confirmPasswordInput.classList.add('error');
+            if (!confirmPasswordInput.value) {
+                showError('confirm-password', 'confirm-password-error', 'Please confirm your password');
                 if (!firstError) firstError = confirmPasswordInput;
                 isValid = false;
             } else if (passwordInput.value !== confirmPasswordInput.value) {
-                confirmPasswordInput.classList.add('error');
+                showError('confirm-password', 'confirm-password-error', 'Passwords do not match');
                 if (!firstError) firstError = confirmPasswordInput;
                 isValid = false;
             }
 
             if (!isValid) {
-                event.preventDefault();
-                
-                // Scroll to first error field
                 if (firstError) {
                     firstError.scrollIntoView({ 
                         behavior: 'smooth', 
                         block: 'center' 
                     });
-                    
-                    // Focus and select the first error field
-                    setTimeout(() => {
-                        firstError.focus();
-                        firstError.select();
-                    }, 300);
+                    setTimeout(() => firstError.focus(), 300);
                 }
                 
-                // Vibrate device if supported
                 if (navigator.vibrate) {
                     navigator.vibrate([200, 100, 200]);
                 }
@@ -160,18 +203,57 @@
                 return false;
             }
 
-            return true;
+            submitSignup();
+            return false;
         }
 
-        // Clear error styling when user starts typing
-        document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('.form-input');
-            inputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    this.classList.remove('error');
+        async function submitSignup() {
+            const username = document.getElementById('signup-username').value.trim();
+            const password = document.getElementById('signup-password').value;
+            const submitButton = document.querySelector('.signin-button');
+            
+            clearError('signup-username', 'username-error');
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Creating Account...';
+
+            try {
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
                 });
-            });
-        });
+
+                const data = await response.json();
+
+                if (response.ok && data.ok) {
+                    const meResponse = await fetch('/api/auth/me');
+                    const userData = await meResponse.json();
+                    
+                    if (userData.role === 'admin') {
+                        window.location.href = '/views/admin.html';
+                    } else {
+                        window.location.href = '/profile-selection.html';
+                    }
+                } else {
+                    if (response.status === 409) {
+                        showError('signup-username', 'username-error', 'Username already exists');
+                        document.getElementById('signup-username').focus();
+                    } else {
+                        showError('signup-username', 'username-error', data.error || 'Unable to create account. Please try again.');
+                    }
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Create Account';
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                showError('signup-username', 'username-error', 'Connection error. Please try again.');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Create Account';
+            }
+        }
     </script>
 </body>
 </html>

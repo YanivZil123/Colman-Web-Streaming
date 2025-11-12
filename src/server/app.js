@@ -2,6 +2,7 @@ import express from 'express';
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import config from './config/config.js';
 import seedDatabase from './config/seed.js';
 import registerRoutes from './routes/index.js';
@@ -11,7 +12,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
@@ -21,42 +21,84 @@ app.use(session({
   cookie: {
     secure: config.env === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
-// Static files (Views)
+app.use((req, res, next) => {
+  const publicPaths = ['/signin.html', '/signup.html', '/images/', '/styles/', '/scripts/'];
+  const publicAPIPaths = ['/api/auth/login', '/api/auth/signup'];
+  
+  const isPublicPath = publicPaths.some(path => req.path.startsWith(path));
+  const isPublicAPI = publicAPIPaths.includes(req.path);
+  
+  // Allow public paths and root
+  if (isPublicPath || isPublicAPI || req.path === '/') {
+    return next();
+  }
+  
+  // Check if trying to access HTML pages or views
+  const isHTMLPage = req.path.endsWith('.html') || req.path.startsWith('/views/');
+  
+  if (isHTMLPage) {
+    // Must be authenticated to access any HTML page
+    if (!req.session.user) {
+      return res.redirect('/signin.html');
+    }
+    
+    // Admin users can ONLY access admin.html
+    if (req.session.user.role === 'admin') {
+      if (req.path !== '/views/admin.html' && req.path !== '/admin.html') {
+        return res.status(403).send('Access denied. Admin users can only access the admin panel.');
+      }
+    } else {
+      // Regular users CANNOT access admin.html
+      if (req.path === '/views/admin.html' || req.path === '/admin.html') {
+        return res.status(403).send('Access denied. Admin privileges required.');
+      }
+    }
+  }
+  
+  next();
+});
+
 app.use(express.static(path.join(__dirname, '../../public')));
 
-// API Routes
 registerRoutes(app);
 
-// View routing - catch-all for SPA
 app.get('*', (req, res) => {
   const p = req.path;
   
-  // Redirect old root-level pages to new locations
-  if (p === '/signin-page.html') return res.redirect('/login.html');
+  if (p === '/signin-page.html') return res.redirect('/signin.html');
   if (p === '/signup-page.html') return res.redirect('/signup.html');
-  if (p === '/profile-selection.html') return res.redirect('/profile-selection.html');
   
-  // Serve public pages
-  if (p === '/login.html' || p === '/signup.html' || p === '/profile-selection.html') {
+  if (p === '/signin.html' || p === '/signup.html') {
     return res.sendFile(path.join(__dirname, '../../public/views', p));
   }
   
-  // Require authentication for other pages
   if (!req.session.user) {
-    return res.redirect('/login.html');
+    return res.redirect('/signin.html');
   }
   
-  // Serve main app for authenticated users
+  if (p === '/views/admin.html' || p === '/admin.html') {
+    if (req.session.user.role !== 'admin') {
+      return res.status(403).send('Access denied. Admin privileges required.');
+    }
+    return res.sendFile(path.join(__dirname, '../../public/views/admin.html'));
+  }
+  
+  if (p === '/profile-selection.html') {
+    return res.sendFile(path.join(__dirname, '../../public/views', p));
+  }
+  
   res.sendFile(path.join(__dirname, '../../public/views', 'index.html'));
 });
 
-// Initialize database and start server
-(async function startServer() {
+async function startServer() {
   try {
+    await mongoose.connect(config.mongoUrl);
+    console.log('✅ Connected to MongoDB');
+    
     await seedDatabase();
     
     app.listen(config.port, () => {
@@ -67,4 +109,6 @@ app.get('*', (req, res) => {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
-})();
+}
+
+startServer();
