@@ -106,7 +106,7 @@
         // Load profiles from MongoDB API
         async function loadProfilesFromAPI() {
             try {
-                const response = await api.get('/profiles');
+                const response = await api.get('/api/profiles');
                 
                 if (!response.ok) {
                     throw new Error('Failed to load profiles');
@@ -245,7 +245,7 @@
 
             // Create profile via MongoDB API
             try {
-                const response = await api.post('/profiles', {
+                const response = await api.post('/api/profiles', {
                     name: profileName,
                     avatarUrl: avatarUrl
                 });
@@ -273,7 +273,7 @@
 
         async function deleteProfile(profileId) {
             try {
-                const response = await api.delete('/profiles/' + profileId);
+                const response = await api.delete('/api/profiles/' + profileId);
                 
                 if (!response.ok) {
                     throw new Error('Failed to delete profile');
