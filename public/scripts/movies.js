@@ -2,8 +2,8 @@
     // Check authentication (server already handles redirects)
     let me;
     try {
-      me = await (await api.get('/me')).json();
-      if(!me?.email){ 
+      me = await (await api.get('/api/auth/me')).json();
+      if(!me?.username){ 
         // Server should have redirected already, just return
         return; 
       }
