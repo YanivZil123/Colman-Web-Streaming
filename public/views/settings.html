@@ -1,0 +1,53 @@
+<!doctype html><html><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Settings · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head><body>
+<header><div class="nav"><a href="/">← Home</a><strong>Settings</strong></div></header>
+<div class="container">
+  <h2>Profiles</h2>
+  <div id="profiles" class="row"></div>
+  <form id="profileForm">
+    <input id="pname" placeholder="Profile name" required/>
+    <div class="badge">Choose profile picture</div>
+    <div class="avatar-grid">
+      <div><input type="radio" id="av1" name="av" value="/images/avatar1.png" checked><label for="av1"><img src="/images/avatar1.png"/></label></div>
+      <div><input type="radio" id="av2" name="av" value="/images/avatar2.png"><label for="av2"><img src="/images/avatar2.png"/></label></div>
+      <div><input type="radio" id="av3" name="av" value="/images/avatar3.png"><label for="av3"><img src="/images/avatar3.png"/></label></div>
+      <div><input type="radio" id="av4" name="av" value="/images/avatar4.png"><label for="av4"><img src="/images/avatar4.png"/></label></div>
+      <div><input type="radio" id="av5" name="av" value="/images/avatar5.png"><label for="av5"><img src="/images/avatar5.png"/></label></div>
+    </div>
+    <button class="btn primary">Add Profile</button>
+  </form>
+  <h2>Charts</h2>
+  <div class="row" style="gap:24px">
+    <canvas id="views" width="520" height="320"></canvas>
+    <canvas id="genres" width="520" height="320"></canvas>
+  </div>
+</div>
+<script src="/scripts/api.js"></script>
+<script>
+(async()=>{
+  const pr = await (await api.get('/profiles')).json();
+  const wrap = document.getElementById('profiles');
+  pr.items.forEach(p=>{
+    const d=document.createElement('div'); d.className='card'; d.style.padding='12px';
+    d.innerHTML=`<div class='row' style='align-items:center'><img src='${p.avatarUrl||"/images/avatar1.png"}' style='width:56px;height:56px;border-radius:999px;border:1px solid hsl(var(--disney-border))'/><strong style='margin-left:8px'>${p.name}</strong></div>
+                 <div class='row'><button class='btn' data-id='${p.id}' data-act='del'>Delete</button></div>`;
+    wrap.appendChild(d);
+  });
+  wrap.addEventListener('click', async (e)=>{
+    const id=e.target.getAttribute('data-id'); const act=e.target.getAttribute('data-act');
+    if(act==='del'){ await api.delete('/profiles/'+id); location.reload(); }
+  });
+  profileForm.addEventListener('submit', async (e)=>{
+    e.preventDefault(); const av=document.querySelector('input[name="av"]:checked')?.value || '/images/avatar1.png';
+    await api.post('/profiles',{name:pname.value, avatarUrl: av}); location.reload();
+  });
+  const views = await (await api.get('/stats/views-by-day')).json();
+  new Chart(document.getElementById('views').getContext('2d'),{ type:'bar', data:{ labels:views.days, datasets:[{ label:'Views', data:views.counts }] } });
+  const pop = await (await api.get('/stats/popular-by-genre')).json();
+  new Chart(document.getElementById('genres').getContext('2d'),{ type:'pie', data:{ labels:pop.labels, datasets:[{ data:pop.values }] } });
+})();
+</script>
+</body></html>
