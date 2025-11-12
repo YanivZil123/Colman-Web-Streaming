@@ -26,18 +26,19 @@ app.use(session({
 }));
 
 app.use((req, res, next) => {
-  const publicPaths = ['/signin.html', '/signup.html', '/images/', '/styles/', '/scripts/'];
+  // Public paths that don't require authentication
+  const publicPaths = ['/signin.html', '/signup.html', '/images/', '/styles/', '/scripts/', '/assets/'];
   const publicAPIPaths = ['/api/auth/login', '/api/auth/signup'];
   
   const isPublicPath = publicPaths.some(path => req.path.startsWith(path));
   const isPublicAPI = publicAPIPaths.includes(req.path);
   
-  // Allow public paths and root
+  // Allow public paths, public APIs, and root
   if (isPublicPath || isPublicAPI || req.path === '/') {
     return next();
   }
   
-  // Check if trying to access HTML pages or views
+  // Check if trying to access HTML pages or views directory
   const isHTMLPage = req.path.endsWith('.html') || req.path.startsWith('/views/');
   
   if (isHTMLPage) {
