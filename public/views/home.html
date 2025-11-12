@@ -354,33 +354,108 @@
         function setupSearch() {
             const searchInput = document.getElementById('searchInput');
             const searchBtn = document.querySelector('.search-btn');
+            let searchTimeout;
             
-            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    performSearch(e.target.value);
+                }, 300);
+            });
+            
+            searchBtn.addEventListener('click', function() {
+                performSearch(searchInput.value);
+            });
+            
             searchInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
-                    performSearch();
+                    e.preventDefault();
+                    performSearch(searchInput.value);
                 }
             });
         }
 
-        function performSearch() {
-            const searchInput = document.getElementById('searchInput');
-            const query = searchInput.value.trim();
+        async function performSearch(query) {
+            if (!query || query.trim().length === 0) {
+                await loadContent();
+                return;
+            }
             
-            if (query) {
-                // Redirect to search results page or filter content
-                console.log('Searching for:', query);
-                // window.location.href = `/views/search.html?q=${encodeURIComponent(query)}`;
+            const trimmedQuery = query.trim();
+            try {
+                const response = await api.get(`/api/titles?q=${encodeURIComponent(trimmedQuery)}`);
+                const data = await response.json();
+                
+                const sections = document.querySelectorAll('.content-section');
+                sections.forEach((section, index) => {
+                    if (index === 0) {
+                        const heading = section.querySelector('h2');
+                        if (heading) heading.textContent = `Search Results for "${trimmedQuery}"`;
+                        const grid = section.querySelector('.content-grid');
+                        if (grid) renderGrid(grid, data.items || []);
+                    } else {
+                        const grid = section.querySelector('.content-grid');
+                        if (grid) grid.innerHTML = '';
+                    }
+                });
+            } catch (error) {
+                console.error('Search failed:', error);
             }
         }
 
-        // Load content from API (placeholder for now)
+        function renderGrid(grid, items) {
+            grid.innerHTML = '';
+            
+            if (!items || items.length === 0) {
+                grid.innerHTML = '<p style="color: hsl(var(--disney-muted)); padding: 20px;">No titles found.</p>';
+                return;
+            }
+            
+            items.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'content-card';
+                card.onclick = () => window.location.href = `/title.html?id=${t.id}`;
+                card.innerHTML = `
+                    <div class="content-thumbnail">
+                        <img src="${t.posterUrl || '/images/poster-placeholder.jpg'}" alt="${t.name || 'Title'}" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">${t.name || 'Title'}</h3>
+                        <p class="content-meta">${t.year || '2024'} • ${t.type === 'series' ? 'Series' : 'Movie'}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
         async function loadContent() {
             try {
-                // Load continue watching
-                // Load recommended movies
-                // Load recommended series
-                console.log('Loading content from API...');
+                const continueGrid = document.getElementById('continueWatchingGrid');
+                const moviesGrid = document.getElementById('recommendedMoviesGrid');
+                const seriesGrid = document.getElementById('recommendedSeriesGrid');
+                
+                const sections = document.querySelectorAll('.content-section');
+                if (sections[0]) {
+                    const heading = sections[0].querySelector('h2');
+                    if (heading) heading.textContent = 'Continue Watching';
+                }
+                
+                const [continueResp, moviesResp, seriesResp] = await Promise.all([
+                    api.get('/api/home/continue'),
+                    api.get('/api/titles?type=movie&limit=8'),
+                    api.get('/api/titles?type=series&limit=8')
+                ]);
+                
+                const continueData = await continueResp.json();
+                const moviesData = await moviesResp.json();
+                const seriesData = await seriesResp.json();
+                
+                if (continueGrid) renderGrid(continueGrid, continueData.items || []);
+                if (moviesGrid) renderGrid(moviesGrid, moviesData.items || []);
+                if (seriesGrid) renderGrid(seriesGrid, seriesData.items || []);
             } catch (error) {
                 console.error('Failed to load content:', error);
             }

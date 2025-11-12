@@ -11,7 +11,12 @@ export const getTitles = (req, res) => {
       try {
         const query = {};
         if (genre) query.genres = { $in: [genre] };
-        if (q) query.name = { $regex: String(q), $options: 'i' };
+        if (q) {
+          query.$or = [
+            { name: { $regex: String(q), $options: 'i' } },
+            { genres: { $in: [new RegExp(String(q), 'i')] } }
+          ];
+        }
 
         let sortObj = { createdAt: -1 };
         if (sort === 'name') sortObj = { name: 1 };
