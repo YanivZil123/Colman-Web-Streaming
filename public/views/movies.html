@@ -7,8 +7,22 @@
     <title>Disney+ - Movies</title>
     <meta name="description" content="Browse all movies by genre">
     <link rel="stylesheet" href="/styles/disney-plus.css">
+    <style>
+        .loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#1A1D29;display:flex;justify-content:center;align-items:center;z-index:9999;opacity:1;transition:opacity .8s ease}.loading-screen.hidden{opacity:0;pointer-events:none}.loading-screen.completing{animation:completionFlash .5s ease-out}@keyframes completionFlash{0%{background:#1A1D29}50%{background:rgba(0,214,232,.15)}100%{background:#1A1D29}}.aurora-circle-container{position:relative;width:200px;height:200px}.aurora-circle,.aurora-circle-secondary,.aurora-circle-inner{position:absolute;top:50%;left:50%;border-radius:50%}.aurora-circle{width:150px;height:150px;margin:-75px 0 0 -75px;border:4px solid #00D6E8;box-shadow:0 0 20px rgba(0,214,232,.6),inset 0 0 20px rgba(0,214,232,.3);animation:circleRotate 2s cubic-bezier(.4,0,.2,1) infinite}.aurora-circle-secondary{width:120px;height:120px;margin:-60px 0 0 -60px;border:3px solid rgba(0,214,232,.6);box-shadow:0 0 15px rgba(0,214,232,.4);animation:circleRotateReverse 2.5s cubic-bezier(.4,0,.2,1) infinite}.aurora-circle-inner{width:90px;height:90px;margin:-45px 0 0 -45px;background:radial-gradient(circle,rgba(0,214,232,.2),transparent 70%);animation:innerPulse 2s ease-in-out infinite}@keyframes circleRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes circleRotateReverse{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}@keyframes innerPulse{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}.circle-particle{position:absolute;top:50%;left:50%;width:8px;height:8px;background:#00D6E8;border-radius:50%;margin:-4px 0 0 -4px;box-shadow:0 0 10px rgba(0,214,232,.8);animation:orbitParticle 2s cubic-bezier(.4,0,.2,1) infinite}.circle-particle:nth-child(1){animation-delay:.1s;--orbit-angle:0deg}.circle-particle:nth-child(2){animation-delay:.4s;--orbit-angle:90deg}.circle-particle:nth-child(3){animation-delay:.8s;--orbit-angle:180deg}.circle-particle:nth-child(4){animation-delay:1.2s;--orbit-angle:270deg}@keyframes orbitParticle{0%{transform:rotate(var(--orbit-angle))translateX(75px)rotate(calc(-1*var(--orbit-angle)));opacity:.6}50%{opacity:1}100%{transform:rotate(calc(var(--orbit-angle) + 360deg))translateX(75px)rotate(calc(-1*(var(--orbit-angle) + 360deg)));opacity:.6}}.aurora-circle-container.completing .aurora-circle,.aurora-circle-container.completing .aurora-circle-secondary,.aurora-circle-container.completing .aurora-circle-inner{animation:completeCircle .5s ease-out forwards}@keyframes completeCircle{to{transform:scale(0);opacity:0}}.aurora-circle-container.completing .circle-particle{animation:particleExplode .5s ease-out forwards}.aurora-circle-container.completing .circle-particle:nth-child(1){--explode-x:100px;--explode-y:0}.aurora-circle-container.completing .circle-particle:nth-child(2){--explode-x:0;--explode-y:-100px}.aurora-circle-container.completing .circle-particle:nth-child(3){--explode-x:-100px;--explode-y:0}.aurora-circle-container.completing .circle-particle:nth-child(4){--explode-x:0;--explode-y:100px}@keyframes particleExplode{to{transform:translate(var(--explode-x),var(--explode-y));opacity:0}}body.loading .home-main,body.loading .main-nav{opacity:0}body:not(.loading) .home-main,body:not(.loading) .main-nav{opacity:1;transition:opacity .3s ease}
+    </style>
 </head>
-<body class="home-body">
+<body class="home-body loading">
+    <div class="loading-screen" id="loadingScreen">
+        <div class="aurora-circle-container" id="circleContainer">
+            <div class="aurora-circle"></div>
+            <div class="aurora-circle-secondary"></div>
+            <div class="aurora-circle-inner"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+        </div>
+    </div>
     <!-- Navigation Bar -->
     <nav class="main-nav">
         <div class="nav-container">
@@ -123,6 +137,28 @@
     <script>
         let profiles = [];
         let currentProfile = null;
+
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const circleContainer = document.getElementById('circleContainer');
+            const body = document.body;
+            
+            if (loadingScreen && circleContainer) {
+                loadingScreen.classList.add('completing');
+                circleContainer.classList.add('completing');
+                
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                    body.classList.remove('loading');
+                    
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.parentNode.removeChild(loadingScreen);
+                        }
+                    }, 600);
+                }, 500);
+            }
+        }
 
         // Load profiles and current profile on page load
         document.addEventListener('DOMContentLoaded', function() {

@@ -7,8 +7,25 @@
     <title>Disney+ - Sign In</title>
     <meta name="description" content="Sign in to Disney+ to start streaming your favorite movies and shows">
     <link rel="stylesheet" href="/styles/disney-plus.css">
+    <style>
+        /* Disney+ Cinematic Loading Overlay */
+        .signin-loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#1A1D29;display:none;justify-content:center;align-items:center;z-index:9999}.signin-loading-overlay.active{display:flex}.signin-loading-overlay.completing{animation:completionFlash .5s ease-out}@keyframes completionFlash{0%{background:#1A1D29}50%{background:rgba(0,214,232,.15)}100%{background:#1A1D29}}.aurora-circle-container{position:relative;width:200px;height:200px}.aurora-circle,.aurora-circle-secondary,.aurora-circle-inner{position:absolute;top:50%;left:50%;border-radius:50%}.aurora-circle{width:150px;height:150px;margin:-75px 0 0 -75px;border:4px solid #00D6E8;box-shadow:0 0 20px rgba(0,214,232,.6),inset 0 0 20px rgba(0,214,232,.3);animation:circleRotate 2s cubic-bezier(.4,0,.2,1) infinite}.aurora-circle-secondary{width:120px;height:120px;margin:-60px 0 0 -60px;border:3px solid rgba(0,214,232,.6);box-shadow:0 0 15px rgba(0,214,232,.4);animation:circleRotateReverse 2.5s cubic-bezier(.4,0,.2,1) infinite}.aurora-circle-inner{width:90px;height:90px;margin:-45px 0 0 -45px;background:radial-gradient(circle,rgba(0,214,232,.2),transparent 70%);animation:innerPulse 2s ease-in-out infinite}@keyframes circleRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes circleRotateReverse{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}@keyframes innerPulse{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}.circle-particle{position:absolute;top:50%;left:50%;width:8px;height:8px;background:#00D6E8;border-radius:50%;margin:-4px 0 0 -4px;box-shadow:0 0 10px rgba(0,214,232,.8);animation:orbitParticle 2s cubic-bezier(.4,0,.2,1) infinite}.circle-particle:nth-child(1){animation-delay:.1s;--orbit-angle:0deg}.circle-particle:nth-child(2){animation-delay:.4s;--orbit-angle:90deg}.circle-particle:nth-child(3){animation-delay:.8s;--orbit-angle:180deg}.circle-particle:nth-child(4){animation-delay:1.2s;--orbit-angle:270deg}@keyframes orbitParticle{0%{transform:rotate(var(--orbit-angle))translateX(75px)rotate(calc(-1*var(--orbit-angle)));opacity:.6}50%{opacity:1}100%{transform:rotate(calc(var(--orbit-angle) + 360deg))translateX(75px)rotate(calc(-1*(var(--orbit-angle) + 360deg)));opacity:.6}}.aurora-circle-container.completing .aurora-circle,.aurora-circle-container.completing .aurora-circle-secondary,.aurora-circle-container.completing .aurora-circle-inner{animation:completeCircle .5s ease-out forwards}@keyframes completeCircle{to{transform:scale(0);opacity:0}}.aurora-circle-container.completing .circle-particle{animation:particleExplode .5s ease-out forwards}.aurora-circle-container.completing .circle-particle:nth-child(1){--explode-x:100px;--explode-y:0}.aurora-circle-container.completing .circle-particle:nth-child(2){--explode-x:0;--explode-y:-100px}.aurora-circle-container.completing .circle-particle:nth-child(3){--explode-x:-100px;--explode-y:0}.aurora-circle-container.completing .circle-particle:nth-child(4){--explode-x:0;--explode-y:100px}@keyframes particleExplode{to{transform:translate(var(--explode-x),var(--explode-y));opacity:0}}
+    </style>
 </head>
 <body class="signin-body">
+    <!-- Disney+ Cinematic Loading Overlay -->
+    <div class="signin-loading-overlay" id="signinLoadingOverlay">
+        <div class="aurora-circle-container" id="circleContainer">
+            <div class="aurora-circle"></div>
+            <div class="aurora-circle-secondary"></div>
+            <div class="aurora-circle-inner"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+        </div>
+    </div>
+
     <main class="signin-container">
         <div class="disney-logo">
             <img src="/images/logo.jpeg" alt="Disney Plus">
@@ -152,12 +169,16 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const submitButton = document.querySelector('.signin-button');
+            const loadingOverlay = document.getElementById('signinLoadingOverlay');
             
             clearError('username', 'username-error');
             clearError('password', 'password-error');
             
             submitButton.disabled = true;
             submitButton.textContent = 'Signing In...';
+            
+            // Show loading overlay
+            loadingOverlay.classList.add('active');
 
             try {
                 const response = await fetch('/api/auth/login', {
@@ -174,12 +195,15 @@
                     const meResponse = await fetch('/api/auth/me');
                     const userData = await meResponse.json();
                     
+                    // Keep loading overlay visible during redirect
                     if (userData.role === 'admin') {
                         window.location.href = '/views/admin.html';
                     } else {
                         window.location.href = '/profile-selection.html';
                     }
                 } else {
+                    // Hide loading overlay on error
+                    loadingOverlay.classList.remove('active');
                     showError('username', 'username-error', data.error || 'Invalid credentials');
                     document.getElementById('username').focus();
                     submitButton.disabled = false;
@@ -187,6 +211,7 @@
                 }
             } catch (error) {
                 console.error('Signin error:', error);
+                loadingOverlay.classList.remove('active');
                 showError('username', 'username-error', 'Connection error. Please try again.');
                 submitButton.disabled = false;
                 submitButton.textContent = 'Sign In';

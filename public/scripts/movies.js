@@ -215,6 +215,23 @@
     const genres = ['action', 'drama', 'comedy', 'horror', 'cartoon', 'kids', 'sci-fi', 'thriller'];
     await Promise.all(genres.map(genre => loadGenreContent(genre)));
 
+    // Hide loading screen after content is loaded
+    if (typeof hideLoadingScreen === 'function') {
+      hideLoadingScreen();
+    } else {
+      const loadingScreen = document.getElementById('loadingScreen');
+      const body = document.body;
+      if (loadingScreen) {
+        loadingScreen.classList.add('hidden');
+        body.classList.remove('loading');
+        setTimeout(() => {
+          if (loadingScreen.parentNode) {
+            loadingScreen.parentNode.removeChild(loadingScreen);
+          }
+        }, 500);
+      }
+    }
+
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.querySelector('.search-btn');
     let searchTimeout;
