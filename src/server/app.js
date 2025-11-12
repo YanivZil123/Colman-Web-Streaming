@@ -103,6 +103,11 @@ app.get('*', (req, res, next) => {
     return res.sendFile(path.join(__dirname, '../../public/views', p));
   }
   
+  // Handle title.html (used by links throughout the app)
+  if (p === '/title.html') {
+    return res.sendFile(path.join(__dirname, '../../public/views/title.html'));
+  }
+  
   // Check if requesting a specific view file
   if (p.startsWith('/views/') && p.endsWith('.html')) {
     const fileName = p.replace('/views/', '');

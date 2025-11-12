@@ -70,23 +70,23 @@ export const getTitles = (req, res) => {
   }
 };
 
-export const getTitleById = (req, res) => {
+export const getTitleById = async (req, res) => {
   try {
-    (async () => {
-      try {
-        let doc = await MovieDoc.findOne({ id: req.params.id }).lean();
-        if (doc) return res.json(doc);
-        doc = await SeriesDoc.findOne({ id: req.params.id }).lean();
-        if (doc) return res.json(doc);
-      } catch (err) {
-        // ignore and fallback
-      }
+    try {
+      let doc = await MovieDoc.findOne({ id: req.params.id }).lean();
+      if (doc) return res.json(doc);
+      doc = await SeriesDoc.findOne({ id: req.params.id }).lean();
+      if (doc) return res.json(doc);
+    } catch (err) {
+      console.error('MongoDB query error:', err);
+      // Fallback to in-memory data
+    }
 
-      const title = Title.findById(req.params.id);
-      if (!title) return res.status(404).json({ error: 'Title not found' });
-      res.json(title);
-    })();
+    const title = Title.findById(req.params.id);
+    if (!title) return res.status(404).json({ error: 'Title not found' });
+    res.json(title);
   } catch (error) {
+    console.error('getTitleById error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

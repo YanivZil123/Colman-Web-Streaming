@@ -1077,3 +1077,163 @@ body.screen-shake {
         margin-bottom: 16px;
     }
 }
+
+/* Title Detail Page - Hero Section */
+.title-hero {
+    margin-bottom: 48px;
+    padding: 40px 0;
+}
+
+.title-hero-content {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.title-hero-image {
+    flex-shrink: 0;
+    width: 400px;
+}
+
+.title-hero-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    object-fit: cover;
+}
+
+.title-hero-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.title-hero-name {
+    font-size: 48px;
+    font-weight: 700;
+    margin: 0;
+    color: hsl(var(--disney-text));
+    line-height: 1.2;
+}
+
+.title-hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    color: hsl(var(--disney-muted));
+    flex-wrap: wrap;
+}
+
+.title-hero-meta span:not(:last-child) {
+    margin-right: 4px;
+}
+
+.title-hero-description {
+    font-size: 18px;
+    line-height: 1.6;
+    color: hsl(var(--disney-text));
+    margin: 0;
+    max-width: 800px;
+}
+
+.title-hero-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-play {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 32px;
+    background: hsl(var(--disney-blue));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-play:hover {
+    background: hsl(var(--disney-blue) / 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 132, 255, 0.4);
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 24px;
+    background: hsl(var(--disney-card));
+    color: hsl(var(--disney-text));
+    border: 1px solid hsl(var(--disney-border));
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: hsl(220 25% 18%);
+    border-color: hsl(var(--disney-border) / 0.8);
+}
+
+@media (max-width: 968px) {
+    .title-hero-content {
+        flex-direction: column;
+        gap: 24px;
+    }
+    
+    .title-hero-image {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .title-hero-name {
+        font-size: 36px;
+    }
+    
+    .title-hero-description {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .title-hero {
+        padding: 24px 0;
+    }
+    
+    .title-hero-name {
+        font-size: 28px;
+    }
+    
+    .title-hero-meta {
+        font-size: 14px;
+    }
+    
+    .title-hero-description {
+        font-size: 15px;
+    }
+    
+    .title-hero-actions {
+        flex-direction: column;
+    }
+    
+    .btn-play,
+    .btn-secondary {
+        width: 100%;
+    }
+}
