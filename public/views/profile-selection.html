@@ -17,38 +17,7 @@
         <h1 class="profiles-title">Who's watching?</h1>
         
         <div class="profiles-grid" id="profilesGrid">
-            <!-- Sample profiles -->
-            <div class="profile-card" onclick="selectProfile('Alex')">
-                <div class="profile-avatar">
-                    <img src="/images/avatar1.png" alt="Alex" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <div class="avatar-fallback">A</div>
-                </div>
-                <p class="profile-name">Alex</p>
-            </div>
-            
-            <div class="profile-card" onclick="selectProfile('Emma')">
-                <div class="profile-avatar">
-                    <img src="/images/avatar2.png" alt="Emma" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <div class="avatar-fallback">E</div>
-                </div>
-                <p class="profile-name">Emma</p>
-            </div>
-            
-            <div class="profile-card" onclick="selectProfile('David')">
-                <div class="profile-avatar">
-                    <img src="/images/avatar3.png" alt="David" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <div class="avatar-fallback">D</div>
-                </div>
-                <p class="profile-name">David</p>
-            </div>
-            
-            <!-- Add Profile Button (shows only if less than 5 profiles) -->
-            <div class="profile-card add-profile-card" onclick="showAddProfileModal()" id="addProfileCard">
-                <div class="profile-avatar add-profile-avatar">
-                    <span class="add-icon">+</span>
-                </div>
-                <p class="profile-name">Add Profile</p>
-            </div>
+            <!-- Profiles will be loaded from MongoDB here -->
         </div>
         
         <div class="profile-actions">
@@ -134,38 +103,29 @@
         let profiles = [];
         let manageMode = false;
 
-        // Load profiles from API on page load
+        // Load profiles from MongoDB API
         async function loadProfilesFromAPI() {
             try {
                 const response = await api.get('/profiles');
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    profiles = (data.items || []).map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        avatarUrl: p.avatarUrl
-                    }));
-                    
-                    // Save to localStorage as backup
-                    localStorage.setItem('profiles', JSON.stringify(profiles));
-                } else {
-                    throw new Error('API request failed');
+                if (!response.ok) {
+                    throw new Error('Failed to load profiles');
                 }
-            } catch (error) {
-                console.log('API not available, loading from localStorage:', error);
                 
-                // Load from localStorage
-                const savedProfiles = localStorage.getItem('profiles');
-                if (savedProfiles) {
-                    profiles = JSON.parse(savedProfiles);
-                } else {
-                    // Show default profiles if nothing in localStorage
-                    profiles = [];
-                }
+                const data = await response.json();
+                profiles = (data.items || []).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    avatarUrl: p.avatarUrl
+                }));
+                
+                renderProfiles();
+            } catch (error) {
+                console.error('Failed to load profiles:', error);
+                alert('Failed to load profiles. Please refresh the page.');
+                profiles = [];
+                renderProfiles();
             }
-            
-            renderProfiles();
         }
 
         function selectProfile(profileId) {
@@ -283,45 +243,31 @@
                 return false;
             }
 
-            console.log('Creating new profile...'); // Debug log
-
-            // Try API first, fallback to localStorage
+            // Create profile via MongoDB API
             try {
                 const response = await api.post('/profiles', {
                     name: profileName,
                     avatarUrl: avatarUrl
                 });
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Profile created via API'); // Debug log
-                    // Reload profiles from API
-                    await loadProfilesFromAPI();
-                } else {
-                    throw new Error('API request failed');
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (errorData.error === 'limit') {
+                        alert('You can only have up to 5 profiles.');
+                    } else {
+                        throw new Error('Failed to create profile');
+                    }
+                    return false;
                 }
+                
+                // Reload profiles from MongoDB
+                await loadProfilesFromAPI();
+                closeAddProfileModal();
             } catch (error) {
-                console.log('API not available, using localStorage fallback:', error);
-                
-                // Fallback to localStorage
-                const newProfile = {
-                    id: Date.now(),
-                    name: profileName,
-                    avatarUrl: avatarUrl
-                };
-                
-                profiles.push(newProfile);
-                console.log('Profile added to array:', profiles); // Debug log
-                
-                // Save to localStorage
-                localStorage.setItem('profiles', JSON.stringify(profiles));
-                
-                // Re-render profiles
-                renderProfiles();
-                console.log('Profiles rendered'); // Debug log
+                console.error('Failed to create profile:', error);
+                alert('Failed to create profile. Please try again.');
             }
             
-            closeAddProfileModal();
             return false;
         }
 
@@ -329,22 +275,15 @@
             try {
                 const response = await api.delete('/profiles/' + profileId);
                 
-                if (response.ok) {
-                    await loadProfilesFromAPI();
-                } else {
-                    throw new Error('API request failed');
+                if (!response.ok) {
+                    throw new Error('Failed to delete profile');
                 }
+                
+                // Reload profiles from MongoDB
+                await loadProfilesFromAPI();
             } catch (error) {
-                console.log('API not available, using localStorage fallback:', error);
-                
-                // Fallback to localStorage
-                profiles = profiles.filter(p => p.id !== profileId);
-                
-                // Save to localStorage
-                localStorage.setItem('profiles', JSON.stringify(profiles));
-                
-                // Re-render profiles
-                renderProfiles();
+                console.error('Failed to delete profile:', error);
+                alert('Failed to delete profile. Please try again.');
             }
         }
 
