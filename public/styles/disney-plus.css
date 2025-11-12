@@ -1210,6 +1210,31 @@ body.screen-shake {
     max-width: 800px;
 }
 
+.title-hero-actors {
+    font-size: 16px;
+    line-height: 1.5;
+    color: hsl(var(--disney-text) / 0.85);
+    margin: 16px 0;
+    max-width: 800px;
+}
+
+.title-hero-actors strong {
+    color: hsl(var(--disney-text));
+    margin-right: 8px;
+}
+
+.title-hero-actors .actor-link {
+    color: hsl(var(--disney-primary));
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid transparent;
+}
+
+.title-hero-actors .actor-link:hover {
+    color: hsl(var(--disney-primary) / 0.8);
+    border-bottom: 1px solid hsl(var(--disney-primary) / 0.5);
+}
+
 .title-hero-actions {
     display: flex;
     gap: 16px;

@@ -264,6 +264,19 @@
             const thumbnailUrl = t.thumbnailUrl || t.posterUrl || '/images/poster-placeholder.jpg';
             const genres = (t.genres || []).join(' • ');
             
+            // Format actors with Wikipedia links
+            const formatActorsWithLinks = (actorsString) => {
+                if (!actorsString) return '';
+                const actorsList = actorsString.split(',').map(actor => actor.trim());
+                const actorLinks = actorsList.map(actor => {
+                    const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(actor.replace(/ /g, '_'))}`;
+                    return `<a href="${wikiUrl}" target="_blank" rel="noopener noreferrer" class="actor-link">${actor}</a>`;
+                });
+                return actorLinks.join(', ');
+            };
+            
+            const actorsHtml = t.actors ? `<div class="title-hero-actors"><strong>Cast:</strong> ${formatActorsWithLinks(t.actors)}</div>` : '';
+            
             heroSection.innerHTML = `
                 <div class="title-hero-content">
                     <div class="title-hero-image">
@@ -278,6 +291,7 @@
                             ${genres ? `<span>•</span><span>${genres}</span>` : ''}
                         </div>
                         <p class="title-hero-description">${t.description || 'No description available.'}</p>
+                        ${actorsHtml}
                         <div class="title-hero-actions">
                             <a href="/player.html?titleId=${t.id}" class="btn-play">▶ Play</a>
                             <button id="likeBtn" class="btn-secondary">♥ Like</button>

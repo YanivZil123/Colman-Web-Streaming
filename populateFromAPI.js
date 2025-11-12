@@ -28,6 +28,7 @@ const movieSchema = new mongoose.Schema({
   posterUrl: String,
   thumbnailUrl: String,
   videoUrl: String,
+  actors: String,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -41,6 +42,7 @@ const seriesSchema = new mongoose.Schema({
   posterUrl: String,
   thumbnailUrl: String,
   imdbId: String,
+  actors: String,
   episodes: [episodeSchema],
   createdAt: { type: Date, default: Date.now }
 });
@@ -152,6 +154,7 @@ async function saveMovie(data, videoUrl) {
       posterUrl: posterUrl || data.Poster,
       thumbnailUrl: thumbnailUrl || posterUrl || data.Poster,
       videoUrl: videoUrl,
+      actors: data.Actors || '',
       createdAt: new Date()
     });
 
@@ -217,6 +220,7 @@ async function saveSeries(data, videoUrls) {
       posterUrl: posterUrl || data.Poster,
       thumbnailUrl: '',
       imdbId: data.imdbID,
+      actors: data.Actors || '',
       episodes: episodes,
       createdAt: new Date()
     });

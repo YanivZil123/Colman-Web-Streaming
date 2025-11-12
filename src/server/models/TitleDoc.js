@@ -20,6 +20,7 @@ const movieSchema = new mongoose.Schema({
   posterUrl: String,
   thumbnailUrl: String,
   videoUrl: String,
+  actors: String,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -33,6 +34,7 @@ const seriesSchema = new mongoose.Schema({
   posterUrl: String,
   thumbnailUrl: String,
   imdbId: String,
+  actors: String,
   episodes: [episodeSchema],
   createdAt: { type: Date, default: Date.now }
 });

@@ -216,6 +216,17 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label" for="actors">Actors</label>
+                <input 
+                    type="text" 
+                    id="actors" 
+                    name="actors" 
+                    class="form-input" 
+                    placeholder="e.g. Tom Hanks, Morgan Freeman, Brad Pitt"
+                >
+            </div>
+
+            <div class="form-group">
                 <label class="form-label" for="poster">Poster image</label>
                 <div class="file-input-wrapper">
                     <label for="poster" class="file-input-label">
@@ -717,6 +728,11 @@
                         document.getElementById('desc').value = data.plot;
                     }
 
+                    // Autofill actors
+                    if (data.actors) {
+                        document.getElementById('actors').value = data.actors;
+                    }
+
                     // Autofill year (handle ranges like "1999–2003")
                     if (data.year) {
                         const yearSelect = document.getElementById('year');
@@ -885,6 +901,7 @@
             fd.append('year', yearSelect.value);
             fd.append('genres', document.getElementById('genres').value);
             fd.append('description', document.getElementById('desc').value);
+            fd.append('actors', document.getElementById('actors').value);
             
             // Add series-specific fields if type is series
             if (typeValue === 'series') {

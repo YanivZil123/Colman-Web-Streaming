@@ -6,7 +6,7 @@ import { MovieDoc, SeriesDoc } from '../models/TitleDoc.js';
 
 export const createTitle = async (req, res) => {
   try {
-    const { type, name, year, genres: genStr, description } = req.body;
+    const { type, name, year, genres: genStr, description, actors } = req.body;
 
     const normalizeGenre = g => String(g || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
     const normalizedType = (type || '').toLowerCase();
@@ -15,7 +15,8 @@ export const createTitle = async (req, res) => {
       name,
       year,
       genres: (genStr || '').split(',').map(s => s.trim()).filter(Boolean).map(normalizeGenre),
-      description
+      description,
+      actors: actors || ''
     };
 
     const files = req.files || {};
@@ -135,7 +136,8 @@ export const createTitle = async (req, res) => {
           description: title.description,
           posterUrl: title.posterUrl,
           thumbnailUrl: title.thumbnailUrl,
-          videoUrl: title.videoUrl
+          videoUrl: title.videoUrl,
+          actors: title.actors || ''
         });
       } else {
         const imdbId = req.body.imdbId || '';
@@ -149,6 +151,7 @@ export const createTitle = async (req, res) => {
           posterUrl: title.posterUrl,
           thumbnailUrl: title.thumbnailUrl,
           imdbId: imdbId,
+          actors: title.actors || '',
           episodes: title.episodes
         });
       }
