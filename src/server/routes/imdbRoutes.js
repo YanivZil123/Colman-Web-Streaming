@@ -4,6 +4,7 @@ import * as imdbController from '../controllers/imdbController.js';
 const router = express.Router();
 
 router.get('/search', imdbController.searchTitle);
+router.get('/episode', imdbController.getEpisode);
 router.get('/test', async (req, res) => {
   try {
     const testRes = await fetch('https://www.omdbapi.com/?apikey=k_uysal01d&s=Matrix&type=movie');

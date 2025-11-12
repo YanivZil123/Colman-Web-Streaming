@@ -5,7 +5,8 @@ const episodeSchema = new mongoose.Schema({
   season: Number,
   episodeNumber: Number,
   name: String,
-  videoUrl: String
+  videoUrl: String,
+  rating: String
 }, { _id: false });
 
 const movieSchema = new mongoose.Schema({
@@ -16,6 +17,7 @@ const movieSchema = new mongoose.Schema({
   genres: [String],
   description: String,
   posterUrl: String,
+  thumbnailUrl: String,
   videoUrl: String,
   createdAt: { type: Date, default: Date.now }
 });
@@ -28,6 +30,8 @@ const seriesSchema = new mongoose.Schema({
   genres: [String],
   description: String,
   posterUrl: String,
+  thumbnailUrl: String,
+  imdbId: String,
   episodes: [episodeSchema],
   createdAt: { type: Date, default: Date.now }
 });

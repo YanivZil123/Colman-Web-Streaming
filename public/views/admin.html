@@ -232,6 +232,70 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label" for="thumbnail">Thumbnail image</label>
+                <div class="file-input-wrapper">
+                    <label for="thumbnail" class="file-input-label">
+                        <span class="file-icon">🖼️</span>
+                        <span class="file-name" id="thumbnailName">Choose thumbnail...</span>
+                    </label>
+                    <input 
+                        type="file" 
+                        id="thumbnail" 
+                        name="thumbnail" 
+                        accept="image/*"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group" id="seriesFields" style="display: none;">
+                <div style="padding: 16px; background: hsl(220 25% 14%); border-radius: 8px; border: 1px solid hsl(var(--disney-border));">
+                    <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600;">Series Episode Information</h3>
+                    <div class="form-row">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="season">Season</label>
+                            <input 
+                                type="number" 
+                                id="season" 
+                                name="season" 
+                                class="form-input" 
+                                placeholder="1"
+                                min="1"
+                                value="1"
+                            >
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="episodeNumber">Episode Number</label>
+                            <input 
+                                type="number" 
+                                id="episodeNumber" 
+                                name="episodeNumber" 
+                                class="form-input" 
+                                placeholder="1"
+                                min="1"
+                                value="1"
+                            >
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 12px; margin-bottom: 0;">
+                        <label class="form-label" for="episodeName">Episode Name</label>
+                        <input 
+                            type="text" 
+                            id="episodeName" 
+                            name="episodeName" 
+                            class="form-input" 
+                            placeholder="Episode 1"
+                        >
+                    </div>
+                    <button type="button" class="signup-button" onclick="fetchEpisodeInfo()" style="margin-top: 12px; width: 100%;">
+                        🔍 Fetch Episode Info from IMDB
+                    </button>
+                    <div id="episodeInfoResult" style="display:none; margin-top: 8px; padding: 10px; border-radius: 8px; border: 1px solid hsl(206 100% 50%); background: rgba(0, 102, 255, 0.1);">
+                        <p id="episodeInfoText" style="margin: 0; color: hsl(var(--disney-text)); font-size: 13px;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label class="form-label" for="video">Video file (mp4)</label>
                 <div class="file-input-wrapper">
                     <label for="video" class="file-input-label">
@@ -251,6 +315,19 @@
                 ✨ Create
             </button>
         </form>
+
+        <!-- Existing Series Section -->
+        <div style="margin-top: 48px; padding-top: 32px; border-top: 2px solid hsl(var(--disney-border));">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="signin-title" style="margin: 0;">Manage Existing Series</h2>
+                <button type="button" class="signup-button" onclick="loadExistingSeries()" style="padding: 8px 16px;">
+                    🔄 Refresh
+                </button>
+            </div>
+            <div id="existingSeriesList" style="display: grid; gap: 16px;">
+                <p style="color: hsl(var(--disney-muted)); text-align: center;">Click refresh to load existing series</p>
+            </div>
+        </div>
         
         <div class="auth-links">
             <div class="signin-section">
@@ -264,6 +341,19 @@
 
     <script src="/scripts/api.js"></script>
     <script>
+        // Toggle series fields based on type selection
+        document.getElementById('type').addEventListener('change', function() {
+            const seriesFields = document.getElementById('seriesFields');
+            const videoLabel = document.querySelector('label[for="video"]');
+            if (this.value === 'series') {
+                seriesFields.style.display = 'block';
+                videoLabel.innerHTML = '<span class="form-label">Episode Video file (mp4)</span>';
+            } else {
+                seriesFields.style.display = 'none';
+                videoLabel.innerHTML = '<span class="form-label">Video file (mp4)</span>';
+            }
+        });
+
         // Populate year dropdown
         function populateYears() {
             const yearSelect = document.getElementById('year');
@@ -284,10 +374,249 @@
             document.getElementById('posterName').textContent = name;
         });
 
+        document.getElementById('thumbnail').addEventListener('change', function() {
+            const name = this.files[0] ? this.files[0].name : 'Choose thumbnail...';
+            document.getElementById('thumbnailName').textContent = name;
+        });
+
         document.getElementById('video').addEventListener('change', function() {
             const name = this.files[0] ? this.files[0].name : 'Choose video...';
             document.getElementById('videoName').textContent = name;
         });
+
+        // Load existing series
+        async function loadExistingSeries() {
+            try {
+                const res = await api.get('/api/admin/debug/titles');
+                const data = await res.json();
+                const seriesList = document.getElementById('existingSeriesList');
+                
+                if (!data.series || data.series.length === 0) {
+                    seriesList.innerHTML = '<p style="color: hsl(var(--disney-muted)); text-align: center;">No series found</p>';
+                    return;
+                }
+
+                seriesList.innerHTML = '';
+                data.series.forEach(series => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background: hsl(220 25% 14%); padding: 20px; border-radius: 8px; border: 1px solid hsl(var(--disney-border));';
+                    
+                    const episodeCount = series.episodes ? series.episodes.length : 0;
+                    const episodeList = series.episodes ? series.episodes.map(ep => 
+                        `S${ep.season}E${ep.episodeNumber}: ${ep.name}`
+                    ).join(', ') : 'No episodes';
+
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <div>
+                                <h3 style="margin: 0 0 4px 0; font-size: 18px; font-weight: 600;">${series.name}</h3>
+                                <p style="margin: 0; color: hsl(var(--disney-muted)); font-size: 14px;">${series.year} • ${episodeCount} episode(s)</p>
+                            </div>
+                            <button class="signup-button" onclick="showAddEpisodeForm('${series.id}', '${series.name}')" style="padding: 6px 12px; font-size: 14px;">
+                                ➕ Add Episode
+                            </button>
+                        </div>
+                        <p style="margin: 8px 0 0 0; color: hsl(var(--disney-muted)); font-size: 13px;">Episodes: ${episodeList}</p>
+                    `;
+                    seriesList.appendChild(card);
+                });
+            } catch (err) {
+                console.error('Failed to load series:', err);
+                alert('Failed to load series: ' + err.message);
+            }
+        }
+
+        function showAddEpisodeForm(seriesId, seriesName) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            const form = document.createElement('div');
+            form.style.cssText = 'background: hsl(220 25% 10%); padding: 32px; border-radius: 12px; max-width: 500px; width: 90%;';
+            form.innerHTML = `
+                <h3 style="margin: 0 0 20px 0; font-size: 20px;">Add Episode to ${seriesName}</h3>
+                <form id="addEpisodeForm">
+                    <div class="form-row" style="margin-bottom: 16px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Season</label>
+                            <input type="number" id="newSeason" class="form-input" value="1" min="1" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Episode Number</label>
+                            <input type="number" id="newEpisodeNumber" class="form-input" value="1" min="1" required>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label">Episode Name</label>
+                        <input type="text" id="newEpisodeName" class="form-input" placeholder="Episode 1" required>
+                    </div>
+                    <button type="button" class="signup-button" onclick="fetchNewEpisodeInfo('${seriesId}')" style="margin-bottom: 12px; width: 100%;">
+                        🔍 Fetch Episode Info from IMDB
+                    </button>
+                    <div id="newEpisodeInfoResult" style="display:none; margin-bottom: 12px; padding: 10px; border-radius: 8px; border: 1px solid hsl(206 100% 50%); background: rgba(0, 102, 255, 0.1);">
+                        <p id="newEpisodeInfoText" style="margin: 0; color: hsl(var(--disney-text)); font-size: 13px;"></p>
+                    </div>
+                    <input type="hidden" id="newEpisodeRating" value="">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label">Video File</label>
+                        <input type="file" id="newEpisodeVideo" accept="video/mp4" required style="display: block; width: 100%; padding: 8px; background: hsl(220 25% 16%); border: 2px solid hsl(var(--disney-border)); border-radius: 8px; color: hsl(var(--disney-text));">
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="submit" class="signin-button" style="flex: 1;">Add Episode</button>
+                        <button type="button" class="signup-button" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+                    </div>
+                </form>
+            `;
+
+            form.querySelector('#addEpisodeForm').onsubmit = async (e) => {
+                e.preventDefault();
+                await addEpisodeToSeries(seriesId, modal);
+            };
+
+            modal.appendChild(form);
+            document.body.appendChild(modal);
+        }
+
+        async function addEpisodeToSeries(seriesId, modal) {
+            try {
+                const fd = new FormData();
+                fd.append('season', document.getElementById('newSeason').value);
+                fd.append('episodeNumber', document.getElementById('newEpisodeNumber').value);
+                fd.append('episodeName', document.getElementById('newEpisodeName').value);
+                
+                const episodeRating = document.getElementById('newEpisodeRating').value;
+                if (episodeRating) fd.append('episodeRating', episodeRating);
+                
+                const videoFile = document.getElementById('newEpisodeVideo').files[0];
+                if (!videoFile) {
+                    alert('Please select a video file');
+                    return;
+                }
+                fd.append('video', videoFile);
+
+                const res = await fetch(`/api/admin/titles/${seriesId}/episodes`, {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'include'
+                });
+
+                if (res.ok) {
+                    alert('✓ Episode added successfully!');
+                    modal.remove();
+                    loadExistingSeries();
+                } else {
+                    const json = await res.json().catch(() => ({}));
+                    alert('✗ Failed: ' + (json.error || res.statusText));
+                }
+            } catch (err) {
+                alert('✗ Network error: ' + err.message);
+            }
+        }
+
+        // Fetch episode info for adding to existing series
+        async function fetchNewEpisodeInfo(seriesId) {
+            const season = document.getElementById('newSeason').value;
+            const episodeNumber = document.getElementById('newEpisodeNumber').value;
+            
+            if (!season || !episodeNumber) {
+                alert('Please enter season and episode number');
+                return;
+            }
+
+            try {
+                // Get series details to find imdbId
+                const seriesRes = await api.get('/api/admin/debug/titles');
+                const data = await seriesRes.json();
+                const series = data.series.find(s => s.id === seriesId);
+                
+                if (!series || !series.imdbId) {
+                    alert('Series does not have an IMDB ID. Please verify the series was created with IMDB verification.');
+                    return;
+                }
+
+                const resultDiv = document.getElementById('newEpisodeInfoResult');
+                const resultText = document.getElementById('newEpisodeInfoText');
+
+                const res = await fetch(`/api/imdb/episode?imdbId=${encodeURIComponent(series.imdbId)}&season=${season}&episode=${episodeNumber}`);
+                const episodeData = await res.json();
+
+                if (res.ok && episodeData.found) {
+                    document.getElementById('newEpisodeName').value = episodeData.title;
+                    document.getElementById('newEpisodeRating').value = episodeData.rating;
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.borderColor = 'hsl(120 100% 50%)';
+                    resultDiv.style.background = 'rgba(0, 255, 0, 0.05)';
+                    resultText.textContent = `✓ Found: ${episodeData.title} | Rating: ${episodeData.rating}/10`;
+                } else {
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.borderColor = 'hsl(0 100% 50%)';
+                    resultDiv.style.background = 'rgba(255, 0, 0, 0.05)';
+                    resultText.textContent = `✗ ${episodeData.error || 'Episode not found'}`;
+                }
+            } catch (err) {
+                const resultDiv = document.getElementById('newEpisodeInfoResult');
+                const resultText = document.getElementById('newEpisodeInfoText');
+                resultDiv.style.display = 'block';
+                resultDiv.style.borderColor = 'hsl(0 100% 50%)';
+                resultDiv.style.background = 'rgba(255, 0, 0, 0.05)';
+                resultText.textContent = `✗ Error: ${err.message}`;
+            }
+        }
+
+        // Fetch episode info from OMDB
+        async function fetchEpisodeInfo() {
+            const season = document.getElementById('season').value;
+            const episodeNumber = document.getElementById('episodeNumber').value;
+            const imdbIdField = document.getElementById('meta-imdbId');
+            
+            if (!imdbIdField || !imdbIdField.value) {
+                alert('Please verify the series on IMDB first to get the IMDB ID');
+                return;
+            }
+
+            if (!season || !episodeNumber) {
+                alert('Please enter season and episode number');
+                return;
+            }
+
+            const imdbId = imdbIdField.value;
+            const resultDiv = document.getElementById('episodeInfoResult');
+            const resultText = document.getElementById('episodeInfoText');
+
+            try {
+                const res = await fetch(`/api/imdb/episode?imdbId=${encodeURIComponent(imdbId)}&season=${season}&episode=${episodeNumber}`);
+                const data = await res.json();
+
+                if (res.ok && data.found) {
+                    document.getElementById('episodeName').value = data.title;
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.borderColor = 'hsl(120 100% 50%)';
+                    resultDiv.style.background = 'rgba(0, 255, 0, 0.05)';
+                    resultText.textContent = `✓ Found: ${data.title} | Rating: ${data.rating}/10`;
+                    
+                    // Store rating in hidden field
+                    let ratingField = document.getElementById('episodeRating');
+                    if (!ratingField) {
+                        ratingField = document.createElement('input');
+                        ratingField.type = 'hidden';
+                        ratingField.id = 'episodeRating';
+                        ratingField.name = 'episodeRating';
+                        document.getElementById('titleForm').appendChild(ratingField);
+                    }
+                    ratingField.value = data.rating;
+                } else {
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.borderColor = 'hsl(0 100% 50%)';
+                    resultDiv.style.background = 'rgba(255, 0, 0, 0.05)';
+                    resultText.textContent = `✗ ${data.error || 'Episode not found'}`;
+                }
+            } catch (err) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.borderColor = 'hsl(0 100% 50%)';
+                resultDiv.style.background = 'rgba(255, 0, 0, 0.05)';
+                resultText.textContent = `✗ Error: ${err.message}`;
+            }
+        }
 
         // Clear error styling when user starts typing
         document.addEventListener('DOMContentLoaded', function() {
@@ -514,16 +843,43 @@
 
             // Submit the form
             const fd = new FormData();
-            fd.append('type', document.getElementById('type').value);
+            const typeValue = document.getElementById('type').value;
+            fd.append('type', typeValue);
             fd.append('name', nameInput.value);
             fd.append('year', yearSelect.value);
             fd.append('genres', document.getElementById('genres').value);
             fd.append('description', document.getElementById('desc').value);
             
+            // Add series-specific fields if type is series
+            if (typeValue === 'series') {
+                const season = document.getElementById('season').value || '1';
+                const episodeNumber = document.getElementById('episodeNumber').value || '1';
+                const episodeName = document.getElementById('episodeName').value || `Episode ${episodeNumber}`;
+                const episodeRating = document.getElementById('episodeRating')?.value || '';
+                fd.append('season', season);
+                fd.append('episodeNumber', episodeNumber);
+                fd.append('episodeName', episodeName);
+                if (episodeRating) fd.append('episodeRating', episodeRating);
+            }
+            
             const posterInput = document.getElementById('poster');
+            const thumbnailInput = document.getElementById('thumbnail');
             const videoInput = document.getElementById('video');
             if (posterInput.files[0]) fd.append('poster', posterInput.files[0]);
+            if (thumbnailInput.files[0]) fd.append('thumbnail', thumbnailInput.files[0]);
             if (videoInput.files[0]) fd.append('video', videoInput.files[0]);
+
+            // Add IMDB poster URL if available
+            const imdbPosterField = document.getElementById('meta-imdbPoster');
+            if (imdbPosterField && imdbPosterField.value) {
+                fd.append('imdbPoster', imdbPosterField.value);
+            }
+
+            // Add IMDB ID if available (for series)
+            const imdbIdField = document.getElementById('meta-imdbId');
+            if (imdbIdField && imdbIdField.value && typeValue === 'series') {
+                fd.append('imdbId', imdbIdField.value);
+            }
 
             try {
                 const res = await fetch('/api/admin/titles', { 
@@ -541,7 +897,11 @@
                     }
                     document.getElementById('titleForm').reset();
                     document.getElementById('posterName').textContent = 'Choose image...';
+                    document.getElementById('thumbnailName').textContent = 'Choose thumbnail...';
                     document.getElementById('videoName').textContent = 'Choose video...';
+                    document.getElementById('season').value = '1';
+                    document.getElementById('episodeNumber').value = '1';
+                    document.getElementById('episodeName').value = '';
                     document.getElementById('verifyResult').style.display = 'none';
                     imdbVerified = false;
                     yearSelect.value = '';

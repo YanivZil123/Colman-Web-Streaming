@@ -71,3 +71,51 @@ export const searchTitle = async (req, res) => {
     res.status(500).json({ error: 'Failed to search IMDB: ' + error.message });
   }
 };
+
+export const getEpisode = async (req, res) => {
+  try {
+    const { imdbId, season, episode } = req.query;
+
+    if (!imdbId || !season || !episode) {
+      return res.status(400).json({ error: 'imdbId, season, and episode are required' });
+    }
+
+    if (!config.omdbApiKey) {
+      return res.status(500).json({ error: 'OMDB API key not configured. Please set OMDB_API_KEY environment variable.' });
+    }
+
+    const episodeUrl = `https://www.omdbapi.com/?apikey=${config.omdbApiKey}&i=${imdbId}&Season=${season}&Episode=${episode}`;
+
+    console.log('OMDB episode URL:', episodeUrl.replace(config.omdbApiKey, 'KEY_HIDDEN'));
+
+    const episodeRes = await fetch(episodeUrl, { timeout: 5000 });
+    const episodeData = await episodeRes.json();
+
+    console.log('OMDB episode response:', episodeData);
+
+    if (episodeData.Response === 'False') {
+      return res.status(404).json({ error: episodeData.Error || 'Episode not found on IMDB' });
+    }
+
+    res.json({
+      found: true,
+      title: episodeData.Title || `Episode ${episode}`,
+      season: parseInt(season),
+      episode: parseInt(episode),
+      rating: episodeData.imdbRating || 'N/A',
+      plot: episodeData.Plot || '',
+      released: episodeData.Released || '',
+      runtime: episodeData.Runtime || '',
+      imdbId: episodeData.imdbID || ''
+    });
+  } catch (error) {
+    console.error('IMDB episode fetch error:', error);
+    await ErrorLog.create({
+      message: error.message,
+      stack: error.stack,
+      endpoint: '/api/imdb/episode',
+      method: 'GET'
+    }).catch(() => {});
+    res.status(500).json({ error: 'Failed to fetch episode from IMDB: ' + error.message });
+  }
+};
