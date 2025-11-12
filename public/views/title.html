@@ -1,21 +1,392 @@
-<!doctype html><html><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Title · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
-</head><body>
-<header><div class="nav"><a href="/">← Home</a><strong id="name">Title</strong></div></header>
-<div class="container" id="content"></div>
-<script src="/scripts/api.js"></script>
-<script>
-const id=new URLSearchParams(location.search).get('id');
-(async()=>{
-  const res=await api.get('/titles/'+id); const t=await res.json();
-  document.getElementById('name').textContent=t.name;
-  const c=document.getElementById('content');
-  const episodes=(t.type==='series'&&t.episodes)?`<h3>Episodes</h3><div class="grid">`+t.episodes.map(e=>`<a class="card" href="/player.html?title=${{t.id}}&episode=${{e.id}}"><div class='p16'>S${{e.season}}·E${{e.episodeNumber}} — ${{e.name}}</div></a>`).join('')+`</div>`:'';
-  c.innerHTML=`<div class="row"><img src="${{t.posterUrl||'/images/poster-placeholder.jpg'}}" style="width:240px;border-radius:12px;border:1px solid hsl(var(--disney-border))"/><div><p>${{t.description||''}}</p><p class="badge">${{t.year}} · ${{t.type}} · ${{(t.genres||[]).join(', ')}}</p><div class="row"><a class="btn primary" href="/player.html?title=${{t.id}}">Play</a><button id="likeBtn" class="btn">♥ Like</button><a class="btn" href="#" id="restartBtn">Re-watch</a></div></div></div><h3>Similar</h3><div id="similarGrid" class="grid"></div>${{episodes}}`;
-  likeBtn.onclick=async()=>{{ await api.post('/likes/toggle',{{titleId:id}}); alert('Toggled like');}};
-  restartBtn.onclick=async(e)=>{{ e.preventDefault(); await api.post('/watch/finish',{{ titleId:id, reset:true }}); alert('Marked as ready to re-watch'); }};
-  const sim=await (await api.get('/titles/'+id+'/similar')).json(); const grid=document.getElementById('similarGrid');
-  sim.items.forEach(t=>{{ const a=document.createElement('a'); a.href='/title.html?id='+t.id; a.className='card'; a.innerHTML=`<img src="${{t.posterUrl||'/images/poster-placeholder.jpg'}}"><div class='p16'><div>${{t.name}}</div></div>`; grid.appendChild(a); }});
-})();
-</script></body></html>
+<!-- yaniv-berniker-213371776-yaniv-zilberson-214269292 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Title · Disney+</title>
+    <meta name="description" content="Details for your selected title">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+</head>
+<body class="home-body">
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
+                <a href="/views/home.html" class="nav-link">Home</a>
+                <a href="/views/series.html" class="nav-link">Series</a>
+                <a href="/views/movies.html" class="nav-link">Movies</a>
+            </div>
+            
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <a href="/views/admin.html" class="nav-link">Admin</a>
+                <div class="profile-menu-container">
+                    <button class="profile-icon-btn" onclick="toggleProfileMenu()">
+                        <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                        <script>
+                            (function(){try{const s=sessionStorage.getItem('cachedProfiles'),p=localStorage.getItem('selectedProfileId');if(s&&p){const ps=JSON.parse(s),cp=ps.find(pr=>pr.id==p||pr.id.toString()===p.toString()||String(pr.id)===String(p));if(cp&&cp.avatarUrl){const img=document.getElementById('currentProfileAvatar');if(img)img.src=cp.avatarUrl;}}}catch(e){}})();
+                        </script>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-dropdown-header">Switch Profile</div>
+                        <div id="profileList" class="profile-list"></div>
+                        <div class="profile-dropdown-divider"></div>
+                        <a href="/views/profile-selection.html" class="profile-dropdown-item">Manage Profiles</a>
+                        <a href="/" class="profile-dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="home-main">
+        <div class="title-hero" id="titleHero">
+            <!-- Hero content will be loaded here -->
+        </div>
+
+        <section class="content-section" id="episodesSection" style="display: none;">
+            <h2 class="section-title">Episodes</h2>
+            <div class="content-grid" id="episodesGrid">
+                <!-- Episodes will be loaded here -->
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2 class="section-title">Similar Titles</h2>
+            <div class="content-grid" id="similarGrid">
+                <!-- Similar titles will be loaded here -->
+            </div>
+        </section>
+    </main>
+
+    <script src="/scripts/api.js"></script>
+    <script>
+        let profiles = [];
+        let currentProfile = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setAvatarFromCache();
+            loadProfiles();
+            loadTitle();
+            setupSearch();
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('profileDropdown');
+                const profileBtn = document.querySelector('.profile-icon-btn');
+                
+                if (!dropdown.contains(event.target) && !profileBtn.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        });
+
+        function setAvatarFromCache() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
+            if (selectedProfileId && avatarImg) {
+                try {
+                    const cachedProfiles = sessionStorage.getItem('cachedProfiles');
+                    if (cachedProfiles) {
+                        const profiles = JSON.parse(cachedProfiles);
+                        const cachedProfile = profiles.find(p => {
+                            return p.id == selectedProfileId || 
+                                   p.id.toString() === selectedProfileId.toString() ||
+                                   String(p.id) === String(selectedProfileId);
+                        });
+                        if (cachedProfile && cachedProfile.avatarUrl) {
+                            avatarImg.src = cachedProfile.avatarUrl;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore cache errors
+                }
+            }
+        }
+
+        async function loadProfiles() {
+            try {
+                const response = await api.get('/api/profiles');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load profiles');
+                }
+                
+                const data = await response.json();
+                profiles = (data.items || []).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    avatarUrl: p.avatarUrl
+                }));
+                
+                try {
+                    sessionStorage.setItem('cachedProfiles', JSON.stringify(profiles));
+                } catch (e) {
+                    // Ignore storage errors
+                }
+                
+                renderProfileList();
+                loadCurrentProfile();
+            } catch (error) {
+                console.error('Failed to load profiles:', error);
+                profiles = [];
+                renderProfileList();
+                loadCurrentProfile();
+            }
+        }
+
+        function loadCurrentProfile() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
+            if (selectedProfileId && profiles.length > 0) {
+                currentProfile = profiles.find(p => {
+                    return p.id == selectedProfileId || 
+                           p.id.toString() === selectedProfileId.toString() ||
+                           String(p.id) === String(selectedProfileId);
+                });
+                
+                if (currentProfile && avatarImg) {
+                    const avatarUrl = currentProfile.avatarUrl || '/images/avatar1.png';
+                    avatarImg.src = avatarUrl;
+                    avatarImg.onerror = function() {
+                        this.src = '/images/avatar1.png';
+                    };
+                } else if (avatarImg) {
+                    avatarImg.src = '/images/avatar1.png';
+                }
+            } else if (avatarImg) {
+                avatarImg.src = '/images/avatar1.png';
+            }
+        }
+
+        function renderProfileList() {
+            const profileList = document.getElementById('profileList');
+            if (!profileList) return;
+            
+            profileList.innerHTML = '';
+            
+            profiles.forEach(profile => {
+                const profileItem = document.createElement('div');
+                profileItem.className = 'profile-dropdown-profile';
+                profileItem.onclick = () => switchProfile(profile.id);
+                
+                const initials = (profile.name || 'P').charAt(0).toUpperCase();
+                
+                profileItem.innerHTML = `
+                    <img src="${profile.avatarUrl || '/images/avatar1.png'}" alt="${profile.name}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="avatar-fallback-small">${initials}</div>
+                    <span>${profile.name}</span>
+                `;
+                
+                profileList.appendChild(profileItem);
+            });
+        }
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function switchProfile(profileId) {
+            localStorage.setItem('selectedProfileId', profileId);
+            loadCurrentProfile();
+            toggleProfileMenu();
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.querySelector('.search-btn');
+            
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+
+        function performSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput.value.trim();
+            
+            if (query) {
+                window.location.href = `/views/genre.html?q=${encodeURIComponent(query)}`;
+            }
+        }
+
+        async function loadTitle() {
+            const id = new URLSearchParams(location.search).get('id');
+            if (!id) {
+                document.getElementById('titleHero').innerHTML = '<p style="color: hsl(var(--disney-muted)); padding: 20px;">Title ID not provided.</p>';
+                return;
+            }
+
+            try {
+                const res = await api.get('/api/titles/' + id);
+                if (!res.ok) {
+                    throw new Error('Failed to load title');
+                }
+                
+                const t = await res.json();
+                console.log('Title data loaded:', t);
+                
+                // Update page title
+                document.title = `${t.name} · Disney+`;
+                
+                // Render hero section
+                renderHero(t);
+                
+                // Render episodes if it's a series
+                if (t.type === 'series' && t.episodes && t.episodes.length > 0) {
+                    renderEpisodes(t);
+                }
+                
+                // Load similar titles
+                loadSimilarTitles(id);
+            } catch (error) {
+                console.error('Failed to load title:', error);
+                document.getElementById('titleHero').innerHTML = '<p style="color: hsl(var(--disney-muted)); padding: 20px;">Failed to load title. Please try again.</p>';
+            }
+        }
+
+        function renderHero(t) {
+            const heroSection = document.getElementById('titleHero');
+            const thumbnailUrl = t.thumbnailUrl || t.posterUrl || '/images/poster-placeholder.jpg';
+            const genres = (t.genres || []).join(' • ');
+            
+            heroSection.innerHTML = `
+                <div class="title-hero-content">
+                    <div class="title-hero-image">
+                        <img src="${thumbnailUrl}" alt="${t.name}" onerror="this.src='/images/poster-placeholder.jpg'">
+                    </div>
+                    <div class="title-hero-info">
+                        <h1 class="title-hero-name">${t.name}</h1>
+                        <div class="title-hero-meta">
+                            <span>${t.year || 'N/A'}</span>
+                            <span>•</span>
+                            <span>${t.type === 'series' ? 'Series' : 'Movie'}</span>
+                            ${genres ? `<span>•</span><span>${genres}</span>` : ''}
+                        </div>
+                        <p class="title-hero-description">${t.description || 'No description available.'}</p>
+                        <div class="title-hero-actions">
+                            <a href="/player.html?titleId=${t.id}" class="btn-play">▶ Play</a>
+                            <button id="likeBtn" class="btn-secondary">♥ Like</button>
+                            <button id="restartBtn" class="btn-secondary">Re-watch</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Setup button handlers
+            const likeBtn = document.getElementById('likeBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            
+            if (likeBtn) {
+                likeBtn.onclick = async () => {
+                    try {
+                        await api.post('/api/likes/toggle', { titleId: t.id });
+                        alert('Toggled like');
+                    } catch (error) {
+                        console.error('Failed to toggle like:', error);
+                    }
+                };
+            }
+            
+            if (restartBtn) {
+                restartBtn.onclick = async (e) => {
+                    e.preventDefault();
+                    try {
+                        await api.post('/api/watch/finish', { titleId: t.id, reset: true });
+                        alert('Marked as ready to re-watch');
+                    } catch (error) {
+                        console.error('Failed to reset watch status:', error);
+                    }
+                };
+            }
+        }
+
+        function renderEpisodes(t) {
+            const episodesSection = document.getElementById('episodesSection');
+            const episodesGrid = document.getElementById('episodesGrid');
+            
+            if (!episodesSection || !episodesGrid) return;
+            
+            episodesSection.style.display = 'block';
+            episodesGrid.innerHTML = '';
+            
+            t.episodes.forEach(episode => {
+                const episodeCard = document.createElement('a');
+                episodeCard.className = 'content-card';
+                episodeCard.href = `/player.html?titleId=${t.id}&episodeId=${episode.id}`;
+                
+                episodeCard.innerHTML = `
+                    <div class="content-thumbnail">
+                        <img src="${t.thumbnailUrl || t.posterUrl || '/images/poster-placeholder.jpg'}" 
+                             alt="${episode.name}" 
+                             onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">S${episode.season || 1} E${episode.episodeNumber || 1} - ${episode.name || 'Episode'}</h3>
+                        <p class="content-meta">${episode.rating ? `Rating: ${episode.rating}` : ''}</p>
+                    </div>
+                `;
+                
+                episodesGrid.appendChild(episodeCard);
+            });
+        }
+
+        async function loadSimilarTitles(id) {
+            try {
+                const sim = await (await api.get('/api/titles/' + id + '/similar')).json();
+                const grid = document.getElementById('similarGrid');
+                
+                if (!grid) return;
+                
+                grid.innerHTML = '';
+                
+                if (!sim.items || sim.items.length === 0) {
+                    grid.innerHTML = '<p style="color: hsl(var(--disney-muted)); padding: 20px;">No similar titles found.</p>';
+                    return;
+                }
+                
+                sim.items.forEach(t => {
+                    const card = document.createElement('a');
+                    card.className = 'content-card';
+                    card.href = `/title.html?id=${t.id}`;
+                    
+                    card.innerHTML = `
+                        <div class="content-thumbnail">
+                            <img src="${t.posterUrl || '/images/poster-placeholder.jpg'}" 
+                                 alt="${t.name}" 
+                                 onerror="this.src='/images/poster-placeholder.jpg'">
+                            <div class="play-overlay">
+                                <span class="play-icon">▶</span>
+                            </div>
+                        </div>
+                        <div class="content-info">
+                            <h3 class="content-title">${t.name || 'Title'}</h3>
+                        </div>
+                    `;
+                    
+                    grid.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Failed to load similar titles:', error);
+            }
+        }
+    </script>
+</body>
+</html>
