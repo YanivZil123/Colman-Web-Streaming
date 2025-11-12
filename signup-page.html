@@ -16,7 +16,7 @@
         
         <h1 class="signin-title">Create Account</h1>
         
-        <form class="signin-form" action="account-choosing.html" method="get">
+        <form class="signin-form" action="profile-selection.html" method="get" onsubmit="return validateSignupForm(event)">
             <div class="form-group">
                 <label class="form-label" for="signup-username">Username</label>
                 <input 
@@ -25,8 +25,6 @@
                     name="username" 
                     class="form-input" 
                     placeholder="Choose a username"
-                    required
-                    minlength="3"
                 >
             </div>
             
@@ -39,8 +37,6 @@
                         name="password" 
                         class="form-input" 
                         placeholder="Create a password"
-                        required
-                        minlength="6"
                     >
                     <button type="button" class="password-toggle" onclick="togglePassword('signup-password')">
                         <span class="eye-icon">👁️</span>
@@ -57,8 +53,6 @@
                         name="confirmPassword" 
                         class="form-input" 
                         placeholder="Confirm your password"
-                        required
-                        minlength="6"
                     >
                     <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
                         <span class="eye-icon">👁️</span>
@@ -95,6 +89,92 @@
                 eyeIcon.textContent = '👁️';
             }
         }
+
+        function validateSignupForm(event) {
+            const usernameInput = document.getElementById('signup-username');
+            const passwordInput = document.getElementById('signup-password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+            let isValid = true;
+            let firstError = null;
+
+            // Clear previous error styling
+            usernameInput.classList.remove('error');
+            passwordInput.classList.remove('error');
+            confirmPasswordInput.classList.remove('error');
+
+            // Validate username
+            if (!usernameInput.value.trim()) {
+                usernameInput.classList.add('error');
+                if (!firstError) firstError = usernameInput;
+                isValid = false;
+            } else if (usernameInput.value.trim().length < 3) {
+                usernameInput.classList.add('error');
+                if (!firstError) firstError = usernameInput;
+                isValid = false;
+            }
+
+            // Validate password
+            if (!passwordInput.value.trim()) {
+                passwordInput.classList.add('error');
+                if (!firstError) firstError = passwordInput;
+                isValid = false;
+            } else if (passwordInput.value.length < 6) {
+                passwordInput.classList.add('error');
+                if (!firstError) firstError = passwordInput;
+                isValid = false;
+            }
+
+            // Validate confirm password
+            if (!confirmPasswordInput.value.trim()) {
+                confirmPasswordInput.classList.add('error');
+                if (!firstError) firstError = confirmPasswordInput;
+                isValid = false;
+            } else if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.classList.add('error');
+                if (!firstError) firstError = confirmPasswordInput;
+                isValid = false;
+            }
+
+            if (!isValid) {
+                event.preventDefault();
+                
+                // Scroll to first error field
+                if (firstError) {
+                    firstError.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    // Focus and select the first error field
+                    setTimeout(() => {
+                        firstError.focus();
+                        firstError.select();
+                    }, 300);
+                }
+                
+                // Vibrate device if supported
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+                
+                return false;
+            }
+
+            return true;
+        }
+
+        // Clear error styling when user starts typing
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('error');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
