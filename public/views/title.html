@@ -1,0 +1,21 @@
+<!doctype html><html><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Title · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
+</head><body>
+<header><div class="nav"><a href="/">← Home</a><strong id="name">Title</strong></div></header>
+<div class="container" id="content"></div>
+<script src="/scripts/api.js"></script>
+<script>
+const id=new URLSearchParams(location.search).get('id');
+(async()=>{
+  const res=await api.get('/titles/'+id); const t=await res.json();
+  document.getElementById('name').textContent=t.name;
+  const c=document.getElementById('content');
+  const episodes=(t.type==='series'&&t.episodes)?`<h3>Episodes</h3><div class="grid">`+t.episodes.map(e=>`<a class="card" href="/player.html?title=${{t.id}}&episode=${{e.id}}"><div class='p16'>S${{e.season}}·E${{e.episodeNumber}} — ${{e.name}}</div></a>`).join('')+`</div>`:'';
+  c.innerHTML=`<div class="row"><img src="${{t.posterUrl||'/images/poster-placeholder.jpg'}}" style="width:240px;border-radius:12px;border:1px solid hsl(var(--disney-border))"/><div><p>${{t.description||''}}</p><p class="badge">${{t.year}} · ${{t.type}} · ${{(t.genres||[]).join(', ')}}</p><div class="row"><a class="btn primary" href="/player.html?title=${{t.id}}">Play</a><button id="likeBtn" class="btn">♥ Like</button><a class="btn" href="#" id="restartBtn">Re-watch</a></div></div></div><h3>Similar</h3><div id="similarGrid" class="grid"></div>${{episodes}}`;
+  likeBtn.onclick=async()=>{{ await api.post('/likes/toggle',{{titleId:id}}); alert('Toggled like');}};
+  restartBtn.onclick=async(e)=>{{ e.preventDefault(); await api.post('/watch/finish',{{ titleId:id, reset:true }}); alert('Marked as ready to re-watch'); }};
+  const sim=await (await api.get('/titles/'+id+'/similar')).json(); const grid=document.getElementById('similarGrid');
+  sim.items.forEach(t=>{{ const a=document.createElement('a'); a.href='/title.html?id='+t.id; a.className='card'; a.innerHTML=`<img src="${{t.posterUrl||'/images/poster-placeholder.jpg'}}"><div class='p16'><div>${{t.name}}</div></div>`; grid.appendChild(a); }});
+})();
+</script></body></html>

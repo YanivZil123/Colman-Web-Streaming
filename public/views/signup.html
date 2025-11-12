@@ -1,0 +1,180 @@
+<!-- yaniv-berniker-213371776-yaniv-zilberson-214269292 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney+ - Sign Up</title>
+    <meta name="description" content="Sign up for Disney+ to start streaming your favorite movies and shows">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+</head>
+<body class="signin-body">
+    <main class="signin-container">
+        <div class="disney-logo">
+            <img src="/images/logo.jpeg" alt="Disney Plus">
+        </div>
+        
+        <h1 class="signin-title">Create Account</h1>
+        
+        <form class="signin-form" action="/views/profile-selection.html" method="get" onsubmit="return validateSignupForm(event)">
+            <div class="form-group">
+                <label class="form-label" for="signup-username">Username</label>
+                <input 
+                    type="text" 
+                    id="signup-username" 
+                    name="username" 
+                    class="form-input" 
+                    placeholder="Choose a username"
+                >
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="signup-password">Password</label>
+                <div class="password-input-wrapper">
+                    <input 
+                        type="password" 
+                        id="signup-password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Create a password"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword('signup-password')">
+                        <span class="eye-icon">👁️</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="confirm-password">Confirm Password</label>
+                <div class="password-input-wrapper">
+                    <input 
+                        type="password" 
+                        id="confirm-password" 
+                        name="confirmPassword" 
+                        class="form-input" 
+                        placeholder="Confirm your password"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
+                        <span class="eye-icon">👁️</span>
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="signin-button">
+                Create Account
+            </button>
+        </form>
+        
+        <div class="auth-links">
+            <div class="signin-section">
+                <p class="signup-text">Already have an account?</p>
+                <button type="button" class="signup-button" onclick="location.href='/'">
+                    Sign In
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+            const eyeIcon = button.querySelector('.eye-icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                eyeIcon.textContent = '👁️';
+            }
+        }
+
+        function validateSignupForm(event) {
+            const usernameInput = document.getElementById('signup-username');
+            const passwordInput = document.getElementById('signup-password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+            let isValid = true;
+            let firstError = null;
+
+            // Clear previous error styling
+            usernameInput.classList.remove('error');
+            passwordInput.classList.remove('error');
+            confirmPasswordInput.classList.remove('error');
+
+            // Validate username
+            if (!usernameInput.value.trim()) {
+                usernameInput.classList.add('error');
+                if (!firstError) firstError = usernameInput;
+                isValid = false;
+            } else if (usernameInput.value.trim().length < 3) {
+                usernameInput.classList.add('error');
+                if (!firstError) firstError = usernameInput;
+                isValid = false;
+            }
+
+            // Validate password
+            if (!passwordInput.value.trim()) {
+                passwordInput.classList.add('error');
+                if (!firstError) firstError = passwordInput;
+                isValid = false;
+            } else if (passwordInput.value.length < 6) {
+                passwordInput.classList.add('error');
+                if (!firstError) firstError = passwordInput;
+                isValid = false;
+            }
+
+            // Validate confirm password
+            if (!confirmPasswordInput.value.trim()) {
+                confirmPasswordInput.classList.add('error');
+                if (!firstError) firstError = confirmPasswordInput;
+                isValid = false;
+            } else if (passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.classList.add('error');
+                if (!firstError) firstError = confirmPasswordInput;
+                isValid = false;
+            }
+
+            if (!isValid) {
+                event.preventDefault();
+                
+                // Scroll to first error field
+                if (firstError) {
+                    firstError.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    // Focus and select the first error field
+                    setTimeout(() => {
+                        firstError.focus();
+                        firstError.select();
+                    }, 300);
+                }
+                
+                // Vibrate device if supported
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+                
+                return false;
+            }
+
+            return true;
+        }
+
+        // Clear error styling when user starts typing
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('error');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Login · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
+</head><body class="auth-bg">
+<div class="auth-card">
+  <img class="auth-logo" src="/images/logo.jpeg" alt="Disney+"/>
+  <form id="loginForm">
+    <h2 style="text-align:center;margin-bottom:8px">Login</h2>
+    <input id="email" placeholder="Email" required/>
+    <input id="password" placeholder="Password" type="password" required/>
+    <button class="btn primary" type="submit" style="width:100%">Continue</button>
+    <p style="text-align:center;margin-top:6px">No account? <a href="/signup.html">Sign up</a></p>
+  </form>
+</div>
+<script src="/scripts/api.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{e.preventDefault();const res=await api.post('/auth/login',{email:email.value,password:password.value});if(res.ok){location.href='/';} else {alert('Login failed');}});
+if(Math.random()>0.5){ document.body.style.backgroundImage="radial-gradient(1200px 600px at 20% 5%, rgba(255,255,255,0.08), transparent 40%), url('/images/signin1.jpeg')"; }
+</script>
+</body></html>
