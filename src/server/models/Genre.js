@@ -3,7 +3,12 @@ class Genre {
     this.genres = [
       { name: 'Action', slug: 'action' },
       { name: 'Drama', slug: 'drama' },
-      { name: 'Kids', slug: 'kids' }
+      { name: 'Kids', slug: 'kids' },
+      { name: 'Comedy', slug: 'comedy' },
+      { name: 'Horror', slug: 'horror' },
+      { name: 'Cartoon', slug: 'cartoon' },
+      { name: 'Sci-Fi', slug: 'sci-fi' },
+      { name: 'Thriller', slug: 'thriller' }
     ];
   }
 

@@ -66,10 +66,21 @@ app.use(express.static(path.join(__dirname, '../../public')));
 
 registerRoutes(app);
 
-app.get('*', (req, res) => {
+// View routing - catch-all for SPA (skip static assets)
+app.get('*', (req, res, next) => {
   const p = req.path;
   
-  if (p === '/signin-page.html') return res.redirect('/signin.html');
+  // Skip static assets - let static middleware handle them
+  if (p.startsWith('/styles/') || 
+      p.startsWith('/scripts/') || 
+      p.startsWith('/images/') || 
+      p.startsWith('/assets/') ||
+      !p.endsWith('.html')) {
+    return next();
+  }
+  
+  // Redirect old root-level pages to new locations
+  if (p === '/signin-page.html') return res.redirect('/login.html');
   if (p === '/signup-page.html') return res.redirect('/signup.html');
   
   if (p === '/signin.html' || p === '/signup.html') {
@@ -91,6 +102,13 @@ app.get('*', (req, res) => {
     return res.sendFile(path.join(__dirname, '../../public/views', p));
   }
   
+  // Check if requesting a specific view file
+  if (p.startsWith('/views/') && p.endsWith('.html')) {
+    const fileName = p.replace('/views/', '');
+    return res.sendFile(path.join(__dirname, '../../public/views', fileName));
+  }
+  
+  // Serve main app for authenticated users (fallback)
   res.sendFile(path.join(__dirname, '../../public/views', 'index.html'));
 });
 
