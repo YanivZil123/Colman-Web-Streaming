@@ -203,6 +203,9 @@
 
         // Load profiles and current profile on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Set avatar immediately from cached data if available (prevents flash of default)
+            setAvatarFromCache();
+            
             loadProfiles();
             setupSearch();
             
@@ -216,6 +219,33 @@
                 }
             });
         });
+
+        // Set avatar immediately from cached profile data to prevent flash
+        function setAvatarFromCache() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
+            if (selectedProfileId && avatarImg) {
+                // Try to get cached profile data from a previous load
+                try {
+                    const cachedProfiles = sessionStorage.getItem('cachedProfiles');
+                    if (cachedProfiles) {
+                        const profiles = JSON.parse(cachedProfiles);
+                        const cachedProfile = profiles.find(p => {
+                            return p.id == selectedProfileId || 
+                                   p.id.toString() === selectedProfileId.toString() ||
+                                   String(p.id) === String(selectedProfileId);
+                        });
+                        if (cachedProfile && cachedProfile.avatarUrl) {
+                            avatarImg.src = cachedProfile.avatarUrl;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore cache errors
+                }
+            }
+        }
 
         // Load profiles from MongoDB API
         async function loadProfiles() {
@@ -232,6 +262,13 @@
                     name: p.name,
                     avatarUrl: p.avatarUrl
                 }));
+                
+                // Cache profiles in sessionStorage for instant loading on next page
+                try {
+                    sessionStorage.setItem('cachedProfiles', JSON.stringify(profiles));
+                } catch (e) {
+                    // Ignore storage errors
+                }
                 
                 renderProfileList();
                 loadCurrentProfile();
