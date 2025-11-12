@@ -1,84 +1,72 @@
+import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import { nanoid } from 'nanoid';
 
-class User {
-  constructor() {
-    this.users = [];
+const profileSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    maxlength: 20
+  },
+  avatarUrl: {
+    type: String,
+    default: '/images/avatar1.png'
   }
+}, { _id: true });
 
-  async seed() {
-    if (!this.users.find(u => u.email === 'admin@example.com')) {
-      this.users.push({
-        id: nanoid(),
-        email: 'admin@example.com',
-        passHash: await bcrypt.hash('admin123', 10),
-        role: 'admin',
-        profiles: [{
-          id: nanoid(),
-          name: 'Main',
-          avatarUrl: '/images/avatar1.png'
-        }]
-      });
-    }
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    minlength: 3
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  profiles: [profileSchema],
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
+}, { 
+  timestamps: true 
+});
 
-  async create(email, password, role = 'user') {
-    if (this.findByEmail(email)) {
-      return null;
-    }
-    const passHash = await bcrypt.hash(password, 10);
-    const user = {
-      id: nanoid(),
-      email,
-      passHash,
-      role,
-      profiles: []
-    };
-    this.users.push(user);
-    return user;
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+userSchema.methods.verifyPassword = async function(password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+userSchema.methods.addProfile = function(profileData) {
+  if (this.profiles.length >= 5) {
+    return null;
   }
+  const profile = {
+    name: (profileData.name || 'Profile').slice(0, 20),
+    avatarUrl: profileData.avatarUrl || '/images/avatar1.png'
+  };
+  this.profiles.push(profile);
+  return profile;
+};
 
-  findByEmail(email) {
-    return this.users.find(u => u.email === email);
-  }
+userSchema.methods.deleteProfile = function(profileId) {
+  this.profiles = this.profiles.filter(p => p._id.toString() !== profileId);
+  return true;
+};
 
-  findById(id) {
-    return this.users.find(u => u.id === id);
-  }
+const User = mongoose.model('User', userSchema);
 
-  async verifyPassword(user, password) {
-    return await bcrypt.compare(password, user.passHash);
-  }
-
-  addProfile(userId, profileData) {
-    const user = this.findById(userId);
-    if (!user || user.profiles.length >= 5) {
-      return null;
-    }
-    const profile = {
-      id: nanoid(),
-      name: (profileData.name || 'Profile').slice(0, 20),
-      avatarUrl: profileData.avatarUrl || '/images/avatar1.png'
-    };
-    user.profiles.push(profile);
-    return profile;
-  }
-
-  getProfiles(userId) {
-    const user = this.findById(userId);
-    return user ? user.profiles : [];
-  }
-
-  deleteProfile(userId, profileId) {
-    const user = this.findById(userId);
-    if (!user) return false;
-    user.profiles = user.profiles.filter(p => p.id !== profileId);
-    return true;
-  }
-
-  getAll() {
-    return this.users;
-  }
-}
-
-export default new User();
+export default User;

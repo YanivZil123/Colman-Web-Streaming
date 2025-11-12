@@ -11,15 +11,15 @@ import catalogueRoutes from './catalogueRoutes.js';
 import watchHabitsRoutes from './watchHabitsRoutes.js';
 
 export default function registerRoutes(app) {
-  app.use('/auth', authRoutes);
-  app.use('/profiles', profileRoutes);
-  app.use('/titles', titleRoutes);
-  app.use('/genres', genreRoutes);
-  app.use('/watch', watchRoutes);
-  app.use('/home', homeRoutes);
-  app.use('/admin', adminRoutes);
-  app.use('/stats', statsRoutes);
-  app.use('/likes', likeRoutes);
-  app.use('/catalogues', catalogueRoutes);
-  app.use('/watch-habits', watchHabitsRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/profiles', profileRoutes);
+  app.use('/api/titles', titleRoutes);
+  app.use('/api/genres', genreRoutes);
+  app.use('/api/watch', watchRoutes);
+  app.use('/api/home', homeRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/stats', statsRoutes);
+  app.use('/api/likes', likeRoutes);
+  app.use('/api/catalogues', catalogueRoutes);
+  app.use('/api/watch-habits', watchHabitsRoutes);
 }

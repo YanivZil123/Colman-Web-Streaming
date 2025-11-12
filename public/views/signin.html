@@ -16,7 +16,7 @@
         
         <h1 class="signin-title">Sign In</h1>
         
-        <form class="signin-form" action="/profile-selection.html" method="get" onsubmit="return validateSigninForm(event)">
+        <form class="signin-form" id="signinForm" onsubmit="return validateSigninForm(event)">
             <div class="form-group">
                 <label class="form-label" for="username">Username</label>
                 <input 
@@ -26,6 +26,7 @@
                     class="form-input" 
                     placeholder="Enter your username"
                 >
+                <span class="error-message" id="username-error"></span>
             </div>
             
             <div class="form-group">
@@ -42,6 +43,7 @@
                         <span class="eye-icon">👁️</span>
                     </button>
                 </div>
+                <span class="error-message" id="password-error"></span>
             </div>
             
             <button type="submit" class="signin-button">
@@ -60,19 +62,38 @@
     </main>
 
     <script>
-        // Clear error styling when user starts typing
+        function clearError(inputId, errorId) {
+            document.getElementById(inputId).classList.remove('error');
+            document.getElementById(errorId).textContent = '';
+        }
+
+        function showError(inputId, errorId, message) {
+            document.getElementById(inputId).classList.add('error');
+            document.getElementById(errorId).textContent = message;
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('.form-input');
-            inputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    this.classList.remove('error');
-                });
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+
+            usernameInput.addEventListener('input', function() {
+                clearError('username', 'username-error');
+            });
+
+            passwordInput.addEventListener('input', function() {
+                clearError('password', 'password-error');
+            });
+
+            document.body.addEventListener('animationend', function(e) {
+                if (e.animationName === 'screenShake') {
+                    document.body.classList.remove('screen-shake');
+                }
             });
         });
 
-        function togglePassword() {
+        function togglePassword(inputId) {
             const input = document.getElementById(inputId);
-            const button = input.nextElementSibling;
+            const button = input.parentElement.querySelector('.password-toggle');
             const eyeIcon = button.querySelector('.eye-icon');
             
             if (input.type === 'password') {
@@ -85,53 +106,37 @@
         }
 
         function validateSigninForm(event) {
-            event.preventDefault(); // Always prevent default first
+            event.preventDefault();
             
             const usernameInput = document.getElementById('username');
             const passwordInput = document.getElementById('password');
             let isValid = true;
             let firstErrorField = null;
 
-            console.log('Validating form...'); // Debug log
+            clearError('username', 'username-error');
+            clearError('password', 'password-error');
 
-            // Clear previous error styling
-            usernameInput.classList.remove('error');
-            passwordInput.classList.remove('error');
-
-            // Validate username
             if (!usernameInput.value.trim()) {
-                console.log('Username is empty'); // Debug log
-                usernameInput.classList.add('error');
+                showError('username', 'username-error', 'Username is required');
                 if (!firstErrorField) firstErrorField = usernameInput;
                 isValid = false;
             }
 
-            // Validate password
-            if (!passwordInput.value.trim()) {
-                console.log('Password is empty'); // Debug log
-                passwordInput.classList.add('error');
+            if (!passwordInput.value) {
+                showError('password', 'password-error', 'Password is required');
                 if (!firstErrorField) firstErrorField = passwordInput;
                 isValid = false;
             }
 
             if (!isValid) {
-                console.log('Form is invalid, showing effects'); // Debug log
-                
-                // Scroll to first error field
                 if (firstErrorField) {
                     firstErrorField.scrollIntoView({ 
                         behavior: 'smooth', 
                         block: 'center' 
                     });
-                    
-                    // Focus and select the first error field
-                    setTimeout(() => {
-                        firstErrorField.focus();
-                        firstErrorField.select();
-                    }, 300);
+                    setTimeout(() => firstErrorField.focus(), 300);
                 }
                 
-                // Vibrate device if supported
                 if (navigator.vibrate) {
                     navigator.vibrate([200, 100, 200]);
                 }
@@ -139,28 +144,54 @@
                 return false;
             }
 
-            // If validation passes, submit the form
-            console.log('Form is valid, submitting...'); // Debug log
-            document.querySelector('.signin-form').submit();
-            return true;
+            submitSignin();
+            return false;
         }
 
-        // Clear error styling when user starts typing
-        document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('.form-input');
-            inputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    this.classList.remove('error');
-                });
-            });
+        async function submitSignin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const submitButton = document.querySelector('.signin-button');
+            
+            clearError('username', 'username-error');
+            clearError('password', 'password-error');
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Signing In...';
 
-            // Remove screen shake animation after it completes
-            document.body.addEventListener('animationend', function(e) {
-                if (e.animationName === 'screenShake') {
-                    document.body.classList.remove('screen-shake');
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.ok) {
+                    const meResponse = await fetch('/api/auth/me');
+                    const userData = await meResponse.json();
+                    
+                    if (userData.role === 'admin') {
+                        window.location.href = '/views/admin.html';
+                    } else {
+                        window.location.href = '/profile-selection.html';
+                    }
+                } else {
+                    showError('username', 'username-error', data.error || 'Invalid credentials');
+                    document.getElementById('username').focus();
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Sign In';
                 }
-            });
-        });
+            } catch (error) {
+                console.error('Signin error:', error);
+                showError('username', 'username-error', 'Connection error. Please try again.');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Sign In';
+            }
+        }
     </script>
 </body>
 </html>
