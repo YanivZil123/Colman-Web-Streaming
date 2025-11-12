@@ -231,7 +231,7 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="movieThumbnail">
                 <label class="form-label" for="thumbnail">Thumbnail image</label>
                 <div class="file-input-wrapper">
                     <label for="thumbnail" class="file-input-label">
@@ -310,6 +310,22 @@
                     >
                 </div>
             </div>
+
+            <div class="form-group episode-only" style="display: none;">
+                <label class="form-label" for="episodeThumbnail">Episode Thumbnail (for series episodes)</label>
+                <div class="file-input-wrapper">
+                    <label for="episodeThumbnail" class="file-input-label">
+                        <span class="file-icon">🖼️</span>
+                        <span class="file-name" id="episodeThumbnailName">Choose episode thumbnail...</span>
+                    </label>
+                    <input 
+                        type="file" 
+                        id="episodeThumbnail" 
+                        name="episodeThumbnail" 
+                        accept="image/*"
+                    >
+                </div>
+            </div>
             
             <button type="submit" class="signin-button">
                 ✨ Create
@@ -344,12 +360,18 @@
         // Toggle series fields based on type selection
         document.getElementById('type').addEventListener('change', function() {
             const seriesFields = document.getElementById('seriesFields');
+            const movieThumbnail = document.getElementById('movieThumbnail');
+            const episodeThumbnailField = document.querySelector('.episode-only');
             const videoLabel = document.querySelector('label[for="video"]');
             if (this.value === 'series') {
                 seriesFields.style.display = 'block';
+                movieThumbnail.style.display = 'none';
+                if (episodeThumbnailField) episodeThumbnailField.style.display = 'block';
                 videoLabel.innerHTML = '<span class="form-label">Episode Video file (mp4)</span>';
             } else {
                 seriesFields.style.display = 'none';
+                movieThumbnail.style.display = 'block';
+                if (episodeThumbnailField) episodeThumbnailField.style.display = 'none';
                 videoLabel.innerHTML = '<span class="form-label">Video file (mp4)</span>';
             }
         });
@@ -382,6 +404,11 @@
         document.getElementById('video').addEventListener('change', function() {
             const name = this.files[0] ? this.files[0].name : 'Choose video...';
             document.getElementById('videoName').textContent = name;
+        });
+
+        document.getElementById('episodeThumbnail').addEventListener('change', function() {
+            const name = this.files[0] ? this.files[0].name : 'Choose episode thumbnail...';
+            document.getElementById('episodeThumbnailName').textContent = name;
         });
 
         // Load existing series
@@ -457,9 +484,13 @@
                         <p id="newEpisodeInfoText" style="margin: 0; color: hsl(var(--disney-text)); font-size: 13px;"></p>
                     </div>
                     <input type="hidden" id="newEpisodeRating" value="">
-                    <div class="form-group" style="margin-bottom: 20px;">
+                    <div class="form-group" style="margin-bottom: 16px;">
                         <label class="form-label">Video File</label>
                         <input type="file" id="newEpisodeVideo" accept="video/mp4" required style="display: block; width: 100%; padding: 8px; background: hsl(220 25% 16%); border: 2px solid hsl(var(--disney-border)); border-radius: 8px; color: hsl(var(--disney-text));">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label">Episode Thumbnail</label>
+                        <input type="file" id="newEpisodeThumbnail" accept="image/*" style="display: block; width: 100%; padding: 8px; background: hsl(220 25% 16%); border: 2px solid hsl(var(--disney-border)); border-radius: 8px; color: hsl(var(--disney-text));">
                     </div>
                     <div style="display: flex; gap: 12px;">
                         <button type="submit" class="signin-button" style="flex: 1;">Add Episode</button>
@@ -493,6 +524,11 @@
                     return;
                 }
                 fd.append('video', videoFile);
+                
+                const thumbnailFile = document.getElementById('newEpisodeThumbnail').files[0];
+                if (thumbnailFile) {
+                    fd.append('episodeThumbnail', thumbnailFile);
+                }
 
                 const res = await fetch(`/api/admin/titles/${seriesId}/episodes`, {
                     method: 'POST',
@@ -865,9 +901,13 @@
             const posterInput = document.getElementById('poster');
             const thumbnailInput = document.getElementById('thumbnail');
             const videoInput = document.getElementById('video');
+            const episodeThumbnailInput = document.getElementById('episodeThumbnail');
             if (posterInput.files[0]) fd.append('poster', posterInput.files[0]);
             if (thumbnailInput.files[0]) fd.append('thumbnail', thumbnailInput.files[0]);
             if (videoInput.files[0]) fd.append('video', videoInput.files[0]);
+            if (typeValue === 'series' && episodeThumbnailInput.files[0]) {
+                fd.append('episodeThumbnail', episodeThumbnailInput.files[0]);
+            }
 
             // Add IMDB poster URL if available
             const imdbPosterField = document.getElementById('meta-imdbPoster');

@@ -98,12 +98,24 @@ export const createTitle = async (req, res) => {
         const episodeNumber = parseInt(req.body.episodeNumber) || 1;
         const episodeName = req.body.episodeName || `Episode ${episodeNumber}`;
         const episodeRating = req.body.episodeRating || 'N/A';
+        
+        let episodeThumbnailUrl = '';
+        if (files.episodeThumbnail && files.episodeThumbnail[0]) {
+          const etf = files.episodeThumbnail[0];
+          const etExt = path.extname(etf.originalname) || '.jpg';
+          const etFilename = `${Date.now()}-${nanoid(6)}-ep-thumb${etExt}`;
+          const etFilepath = path.join(thumbnailDir, etFilename);
+          await fs.promises.writeFile(etFilepath, etf.buffer);
+          episodeThumbnailUrl = `/uploads/thumbnail/${etFilename}`;
+        }
+        
         titleData.episodes = [{ 
           id: nanoid(), 
           season, 
           episodeNumber, 
           name: episodeName, 
           videoUrl: `/uploads/videos/${filename}`,
+          thumbnailUrl: episodeThumbnailUrl,
           rating: episodeRating
         }];
       }
