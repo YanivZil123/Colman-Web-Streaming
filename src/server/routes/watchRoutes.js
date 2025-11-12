@@ -1,0 +1,12 @@
+import express from 'express';
+import * as watchController from '../controllers/watchController.js';
+import { requireAuth } from '../middleware/auth.js';
+
+const router = express.Router();
+
+router.get('/source', requireAuth, watchController.getVideoSource);
+router.post('/progress', requireAuth, watchController.updateProgress);
+router.post('/finish', requireAuth, watchController.markFinished);
+router.get('/next-episode', requireAuth, watchController.getNextEpisode);
+
+export default router;
