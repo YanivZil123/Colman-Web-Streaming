@@ -3,8 +3,8 @@ import { MovieDoc, SeriesDoc } from '../models/TitleDoc.js';
 
 export const getTitles = (req, res) => {
   try {
-    const { page = '1', genre, sort = 'popularity', q, type } = req.query;
-    const limit = 12;
+    const { page = '1', genre, sort = 'popularity', q, type, limit: queryLimit } = req.query;
+    const limit = queryLimit ? parseInt(queryLimit) : 12;
     const p = Math.max(1, parseInt(page));
 
     (async () => {

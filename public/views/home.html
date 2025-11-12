@@ -197,6 +197,67 @@
                 </div>
             </div>
         </section>
+
+        <!-- New Content Section -->
+        <section class="content-section" style="margin-bottom: 40px;">
+            <h2 class="section-title" style="font-size: 32px; font-weight: 700; margin-bottom: 10px;">New</h2>
+        </section>
+
+        <!-- Latest Action -->
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Latest Action</h2>
+            <div class="content-grid" id="latestActionGrid">
+            </div>
+        </section>
+
+        <!-- Latest Drama -->
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Latest Drama</h2>
+            <div class="content-grid" id="latestDramaGrid">
+            </div>
+        </section>
+
+        <!-- Latest Comedy -->
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Latest Comedy</h2>
+            <div class="content-grid" id="latestComedyGrid">
+            </div>
+        </section>
+
+        <!-- Latest Horror -->
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Latest Horror</h2>
+            <div class="content-grid" id="latestHorrorGrid">
+            </div>
+        </section>
+
+        <!-- Latest Cartoon -->
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Latest Cartoon</h2>
+            <div class="content-grid" id="latestCartoonGrid">
+            </div>
+        </section>
+
+        <!-- Latest Kids -->
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Latest Kids</h2>
+            <div class="content-grid" id="latestKidsGrid">
+            </div>
+        </section>
+
+        <!-- Latest Sci-Fi -->
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Latest Sci-Fi</h2>
+            <div class="content-grid" id="latestScifiGrid">
+            </div>
+        </section>
+
+        <!-- Latest Thriller -->
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Latest Thriller</h2>
+            <div class="content-grid" id="latestThrillerGrid">
+            </div>
+        </section>
     </main>
 
     <script src="/scripts/api.js"></script>
@@ -456,8 +517,34 @@
                 if (continueGrid) renderGrid(continueGrid, continueData.items || []);
                 if (moviesGrid) renderGrid(moviesGrid, moviesData.items || []);
                 if (seriesGrid) renderGrid(seriesGrid, seriesData.items || []);
+
+                await loadLatestByGenre();
             } catch (error) {
                 console.error('Failed to load content:', error);
+            }
+        }
+
+        async function loadLatestByGenre() {
+            const genres = [
+                { name: 'action', gridId: 'latestActionGrid' },
+                { name: 'drama', gridId: 'latestDramaGrid' },
+                { name: 'comedy', gridId: 'latestComedyGrid' },
+                { name: 'horror', gridId: 'latestHorrorGrid' },
+                { name: 'cartoon', gridId: 'latestCartoonGrid' },
+                { name: 'kids', gridId: 'latestKidsGrid' },
+                { name: 'sci-fi', gridId: 'latestScifiGrid' },
+                { name: 'thriller', gridId: 'latestThrillerGrid' }
+            ];
+
+            for (const genre of genres) {
+                try {
+                    const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre.name)}&sort=createdAt&limit=10`);
+                    const data = await response.json();
+                    const grid = document.getElementById(genre.gridId);
+                    if (grid) renderGrid(grid, data.items || []);
+                } catch (error) {
+                    console.error(`Failed to load latest ${genre.name}:`, error);
+                }
             }
         }
 
