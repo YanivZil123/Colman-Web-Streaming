@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Disney+ - Sign In</title>
     <meta name="description" content="Sign in to Disney+ to start streaming your favorite movies and shows">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
 </head>
 <body class="signin-body">
     <main class="signin-container">
@@ -16,7 +16,7 @@
         
         <h1 class="signin-title">Sign In</h1>
         
-        <form class="signin-form" action="/profile-selection.html" method="get" onsubmit="return validateSigninForm(event)">
+        <form class="signin-form" action="/views/profile-selection.html" method="get" onsubmit="return validateSigninForm(event)">
             <div class="form-group">
                 <label class="form-label" for="username">Username</label>
                 <input 
@@ -52,7 +52,7 @@
         <div class="auth-links">
             <div class="signup-section">
                 <p class="signup-text">New to Disney+?</p>
-                <button type="button" class="signup-button" onclick="location.href='/signup.html'">
+                <button type="button" class="signup-button" onclick="location.href='/views/signup.html'">
                     Sign Up
                 </button>
             </div>
@@ -70,7 +70,7 @@
             });
         });
 
-        function togglePassword() {
+        function togglePassword(inputId) {
             const input = document.getElementById(inputId);
             const button = input.nextElementSibling;
             const eyeIcon = button.querySelector('.eye-icon');
@@ -144,23 +144,6 @@
             document.querySelector('.signin-form').submit();
             return true;
         }
-
-        // Clear error styling when user starts typing
-        document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('.form-input');
-            inputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    this.classList.remove('error');
-                });
-            });
-
-            // Remove screen shake animation after it completes
-            document.body.addEventListener('animationend', function(e) {
-                if (e.animationName === 'screenShake') {
-                    document.body.classList.remove('screen-shake');
-                }
-            });
-        });
     </script>
 </body>
 </html>

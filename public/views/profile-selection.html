@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Disney+ - Profile Selection</title>
     <meta name="description" content="Choose your Disney+ profile to continue streaming">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
 </head>
 <body class="profiles-body">
     <main class="profiles-container">
@@ -62,7 +62,7 @@
     <div class="modal-overlay" id="addProfileModal">
         <div class="modal-content">
             <h2>Add Profile</h2>
-            <form class="add-profile-form" onsubmit="addProfile(event)">
+            <form class="add-profile-form" onsubmit="return addProfile(event)">
                 <div class="form-group">
                     <label class="form-label" for="profileName">Your Name</label>
                     <input 
@@ -78,38 +78,58 @@
                 <div class="form-group">
                     <label class="form-label">Choose Avatar</label>
                     <div class="avatar-selection">
-                        <div class="avatar-option selected" data-avatar="avatar1">
-                            <img src="/images/avatar1.png" alt="Avatar 1" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div class="avatar-fallback">1</div>
+                        <div class="avatar-option selected" data-avatar="disney-character">
+                            <img src="/assets/profile-avatars/disney-character.png" alt="Disney Character" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">D</div>
                         </div>
-                        <div class="avatar-option" data-avatar="avatar2">
-                            <img src="/images/avatar2.png" alt="Avatar 2" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div class="avatar-fallback">2</div>
+                        <div class="avatar-option" data-avatar="mickey-mouse">
+                            <img src="/assets/profile-avatars/mickey-mouse.png" alt="Mickey Mouse" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">M</div>
                         </div>
-                        <div class="avatar-option" data-avatar="avatar3">
-                            <img src="/images/avatar3.png" alt="Avatar 3" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div class="avatar-fallback">3</div>
+                        <div class="avatar-option" data-avatar="minnie-mouse">
+                            <img src="/assets/profile-avatars/minnie-mouse.png" alt="Minnie Mouse" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">M</div>
                         </div>
-                        <div class="avatar-option" data-avatar="avatar4">
-                            <img src="/images/avatar4.png" alt="Avatar 4" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div class="avatar-fallback">4</div>
+                        <div class="avatar-option" data-avatar="donald-duck">
+                            <img src="/assets/profile-avatars/donald-duck.png" alt="Donald Duck" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">D</div>
                         </div>
-                        <div class="avatar-option" data-avatar="avatar5">
-                            <img src="/images/avatar5.png" alt="Avatar 5" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div class="avatar-fallback">5</div>
+                        <div class="avatar-option" data-avatar="goofy">
+                            <img src="/assets/profile-avatars/goofy.png" alt="Goofy" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">G</div>
+                        </div>
+                        <div class="avatar-option" data-avatar="lion-portrait">
+                            <img src="/assets/profile-avatars/lion-portrait.jpg" alt="Lion Portrait" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">🦁</div>
+                        </div>
+                        <div class="avatar-option" data-avatar="formal-dog">
+                            <img src="/assets/profile-avatars/formal-dog.jpg" alt="Formal Dog" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">🐕</div>
+                        </div>
+                        <div class="avatar-option" data-avatar="smoking-camel">
+                            <img src="/assets/profile-avatars/smoking-camel.jpg" alt="Smoking Camel" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">🐫</div>
+                        </div>
+                        <div class="avatar-option" data-avatar="pepe-frog">
+                            <img src="/assets/profile-avatars/pepe-frog.jpg" alt="Pepe Frog" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">🐸</div>
+                        </div>
+                        <div class="avatar-option" data-avatar="tree-creature">
+                            <img src="/assets/profile-avatars/tree-creature.png" alt="Tree Creature" onload="this.style.display='block'; this.nextElementSibling.style.display='none'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                            <div class="avatar-fallback">🌳</div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="modal-actions">
+                <div class="form-buttons">
                     <button type="button" class="cancel-btn" onclick="closeAddProfileModal()">Cancel</button>
-                    <button type="submit" class="create-btn">Create Profile</button>
+                    <button type="submit" class="submit-btn">Create Profile</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="/js/api.js"></script>
+    <script src="/scripts/api.js"></script>
     <script>
         let profiles = [];
         let manageMode = false;
@@ -118,22 +138,34 @@
         async function loadProfilesFromAPI() {
             try {
                 const response = await api.get('/profiles');
-                const data = await response.json();
-                profiles = (data.items || []).map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    avatarUrl: p.avatarUrl
-                }));
-                renderProfiles();
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    profiles = (data.items || []).map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        avatarUrl: p.avatarUrl
+                    }));
+                    
+                    // Save to localStorage as backup
+                    localStorage.setItem('profiles', JSON.stringify(profiles));
+                } else {
+                    throw new Error('API request failed');
+                }
             } catch (error) {
-                console.error('Failed to load profiles:', error);
-                // Show fallback profiles if API fails
-                profiles = [
-                    { id: 1, name: 'Profile 1', avatarUrl: '/images/avatar1.png' },
-                    { id: 2, name: 'Profile 2', avatarUrl: '/images/avatar2.png' }
-                ];
-                renderProfiles();
+                console.log('API not available, loading from localStorage:', error);
+                
+                // Load from localStorage
+                const savedProfiles = localStorage.getItem('profiles');
+                if (savedProfiles) {
+                    profiles = JSON.parse(savedProfiles);
+                } else {
+                    // Show default profiles if nothing in localStorage
+                    profiles = [];
+                }
             }
+            
+            renderProfiles();
         }
 
         function selectProfile(profileId) {
@@ -145,9 +177,9 @@
                 return;
             }
             
-            // Normal selection - store profile and redirect to main screen
+            // Normal selection - store profile and redirect to home screen
             localStorage.setItem('selectedProfileId', profileId);
-            window.location.href = '/index.html';
+            window.location.href = '/views/home.html';
         }
 
         function showAddProfileModal() {
@@ -175,18 +207,27 @@
             
             if (profiles.length >= 5) {
                 alert('You can only have up to 5 profiles.');
-                return;
+                return false;
             }
 
+            // Get profile name
             const profileNameInput = document.getElementById('profileName');
             const profileName = profileNameInput.value.trim();
+            
+            // Get selected avatar data
             const selectedAvatarElement = document.querySelector('.avatar-option.selected');
-            const selectedAvatar = selectedAvatarElement.querySelector('img')?.src || '/images/avatar1.png';
+            const selectedAvatar = selectedAvatarElement.dataset.avatar;
+            const selectedAvatarImg = selectedAvatarElement.querySelector('img');
+            const avatarUrl = selectedAvatarImg ? selectedAvatarImg.src : `/assets/profile-avatars/${selectedAvatar}.png`;
+
+            console.log('Adding profile:', profileName, 'with avatar:', avatarUrl); // Debug log
 
             // Clear previous error styling
             profileNameInput.classList.remove('error');
 
             if (!profileName) {
+                console.log('Profile name is empty'); // Debug log
+                
                 // Remove error class first to allow animation to restart
                 profileNameInput.classList.remove('error');
                 
@@ -213,11 +254,13 @@
                     navigator.vibrate([200, 100, 200]);
                 }
                 
-                return;
+                return false;
             }
 
             // Check if profile name already exists
             if (profiles.some(profile => profile.name.toLowerCase() === profileName.toLowerCase())) {
+                console.log('Duplicate profile name'); // Debug log
+                
                 profileNameInput.classList.remove('error');
                 void profileNameInput.offsetWidth;
                 profileNameInput.classList.add('error');
@@ -237,33 +280,71 @@
                 }
                 
                 alert('A profile with this name already exists.');
-                return;
+                return false;
             }
 
-            // Add new profile via API
+            console.log('Creating new profile...'); // Debug log
+
+            // Try API first, fallback to localStorage
             try {
                 const response = await api.post('/profiles', {
                     name: profileName,
-                    avatarUrl: selectedAvatar
+                    avatarUrl: avatarUrl
                 });
-                const data = await response.json();
                 
-                // Reload profiles from API
-                await loadProfilesFromAPI();
-                closeAddProfileModal();
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Profile created via API'); // Debug log
+                    // Reload profiles from API
+                    await loadProfilesFromAPI();
+                } else {
+                    throw new Error('API request failed');
+                }
             } catch (error) {
-                console.error('Failed to add profile:', error);
-                alert('Failed to create profile. Please try again.');
+                console.log('API not available, using localStorage fallback:', error);
+                
+                // Fallback to localStorage
+                const newProfile = {
+                    id: Date.now(),
+                    name: profileName,
+                    avatarUrl: avatarUrl
+                };
+                
+                profiles.push(newProfile);
+                console.log('Profile added to array:', profiles); // Debug log
+                
+                // Save to localStorage
+                localStorage.setItem('profiles', JSON.stringify(profiles));
+                
+                // Re-render profiles
+                renderProfiles();
+                console.log('Profiles rendered'); // Debug log
             }
+            
+            closeAddProfileModal();
+            return false;
         }
 
         async function deleteProfile(profileId) {
             try {
-                await api.delete('/profiles/' + profileId);
-                await loadProfilesFromAPI();
+                const response = await api.delete('/profiles/' + profileId);
+                
+                if (response.ok) {
+                    await loadProfilesFromAPI();
+                } else {
+                    throw new Error('API request failed');
+                }
             } catch (error) {
-                console.error('Failed to delete profile:', error);
-                alert('Failed to delete profile. Please try again.');
+                console.log('API not available, using localStorage fallback:', error);
+                
+                // Fallback to localStorage
+                profiles = profiles.filter(p => p.id !== profileId);
+                
+                // Save to localStorage
+                localStorage.setItem('profiles', JSON.stringify(profiles));
+                
+                // Re-render profiles
+                renderProfiles();
             }
         }
 
@@ -271,15 +352,18 @@
             manageMode = !manageMode;
             const btn = document.querySelector('.manage-profiles-btn');
             const profileCards = document.querySelectorAll('.profile-card:not(.add-profile-card)');
+            const deleteButtons = document.querySelectorAll('.delete-profile-btn');
             
             if (manageMode) {
                 btn.textContent = 'Done';
                 btn.classList.add('manage-active');
                 profileCards.forEach(card => card.classList.add('manage-mode'));
+                deleteButtons.forEach(btn => btn.style.display = 'block');
             } else {
                 btn.textContent = 'Manage Profiles';
                 btn.classList.remove('manage-active');
                 profileCards.forEach(card => card.classList.remove('manage-mode'));
+                deleteButtons.forEach(btn => btn.style.display = 'none');
             }
         }
 
@@ -291,7 +375,7 @@
             profiles.forEach(profile => {
                 const profileCard = document.createElement('div');
                 profileCard.className = 'profile-card';
-                profileCard.onclick = () => selectProfile(profile.id);
+                profileCard.dataset.profileId = profile.id;
                 
                 const avatarUrl = profile.avatarUrl || '/images/avatar1.png';
                 const initials = (profile.name || 'P').charAt(0).toUpperCase();
@@ -302,7 +386,11 @@
                         <div class="avatar-fallback">${initials}</div>
                     </div>
                     <p class="profile-name">${profile.name}</p>
+                    <button class="delete-profile-btn" onclick="event.stopPropagation(); deleteProfile(${profile.id})" style="display: none;">×</button>
                 `;
+                
+                // Add click handler for selection
+                profileCard.addEventListener('click', () => selectProfile(profile.id));
                 
                 grid.appendChild(profileCard);
             });

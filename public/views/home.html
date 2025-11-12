@@ -1,0 +1,317 @@
+<!-- yaniv-berniker-213371776-yaniv-zilberson-214269292 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney+ - Home</title>
+    <meta name="description" content="Stream your favorite Disney+ movies and series">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+</head>
+<body class="home-body">
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
+                <a href="/views/home.html" class="nav-link active">Home</a>
+                <a href="/views/series.html" class="nav-link">Series</a>
+                <a href="/views/movies.html" class="nav-link">Movies</a>
+            </div>
+            
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <a href="/views/admin.html" class="nav-link">Admin</a>
+                <div class="profile-menu-container">
+                    <button class="profile-icon-btn" onclick="toggleProfileMenu()">
+                        <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-dropdown-header">Switch Profile</div>
+                        <div id="profileList" class="profile-list">
+                            <!-- Profiles will be loaded here -->
+                        </div>
+                        <div class="profile-dropdown-divider"></div>
+                        <a href="/views/profile-selection.html" class="profile-dropdown-item">Manage Profiles</a>
+                        <a href="/" class="profile-dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="home-main">
+        <!-- Continue Watching Section -->
+        <section class="content-section">
+            <h2 class="section-title">Continue Watching</h2>
+            <div class="content-grid" id="continueWatchingGrid">
+                <!-- Continue watching items will be loaded here -->
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Title" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 45%"></div>
+                        </div>
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Sample Title</h3>
+                        <p class="content-meta">S1 E3 • 45min left</p>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Title" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 70%"></div>
+                        </div>
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Another Show</h3>
+                        <p class="content-meta">S2 E5 • 30min left</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommended Movies Section -->
+        <section class="content-section">
+            <h2 class="section-title">Recommended Movies</h2>
+            <div class="content-grid" id="recommendedMoviesGrid">
+                <!-- Recommended movies will be loaded here -->
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Movie" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Movie Title 1</h3>
+                        <p class="content-meta">2024 • 2h 15min</p>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Movie" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Movie Title 2</h3>
+                        <p class="content-meta">2024 • 1h 50min</p>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Movie" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Movie Title 3</h3>
+                        <p class="content-meta">2023 • 2h 5min</p>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Movie" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Movie Title 4</h3>
+                        <p class="content-meta">2024 • 1h 45min</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommended Series Section -->
+        <section class="content-section">
+            <h2 class="section-title">Recommended Series</h2>
+            <div class="content-grid" id="recommendedSeriesGrid">
+                <!-- Recommended series will be loaded here -->
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Series" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Series Title 1</h3>
+                        <p class="content-meta">3 Seasons • Drama</p>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Series" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Series Title 2</h3>
+                        <p class="content-meta">2 Seasons • Comedy</p>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Series" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Series Title 3</h3>
+                        <p class="content-meta">4 Seasons • Action</p>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <div class="content-thumbnail">
+                        <img src="/images/poster-placeholder.jpg" alt="Series" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <div class="play-overlay">
+                            <span class="play-icon">▶</span>
+                        </div>
+                    </div>
+                    <div class="content-info">
+                        <h3 class="content-title">Series Title 4</h3>
+                        <p class="content-meta">1 Season • Sci-Fi</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/scripts/api.js"></script>
+    <script>
+        let profiles = [];
+        let currentProfile = null;
+
+        // Load profiles and current profile on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfiles();
+            loadCurrentProfile();
+            setupSearch();
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('profileDropdown');
+                const profileBtn = document.querySelector('.profile-icon-btn');
+                
+                if (!dropdown.contains(event.target) && !profileBtn.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        });
+
+        function loadProfiles() {
+            // Load from localStorage
+            const savedProfiles = localStorage.getItem('profiles');
+            if (savedProfiles) {
+                profiles = JSON.parse(savedProfiles);
+                renderProfileList();
+            }
+        }
+
+        function loadCurrentProfile() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            if (selectedProfileId && profiles.length > 0) {
+                currentProfile = profiles.find(p => p.id == selectedProfileId);
+                if (currentProfile) {
+                    // Update profile avatar in nav
+                    const avatarImg = document.getElementById('currentProfileAvatar');
+                    if (avatarImg && currentProfile.avatarUrl) {
+                        avatarImg.src = currentProfile.avatarUrl;
+                    }
+                }
+            }
+        }
+
+        function renderProfileList() {
+            const profileList = document.getElementById('profileList');
+            if (!profileList) return;
+            
+            profileList.innerHTML = '';
+            
+            profiles.forEach(profile => {
+                const profileItem = document.createElement('div');
+                profileItem.className = 'profile-dropdown-profile';
+                profileItem.onclick = () => switchProfile(profile.id);
+                
+                const initials = (profile.name || 'P').charAt(0).toUpperCase();
+                
+                profileItem.innerHTML = `
+                    <img src="${profile.avatarUrl || '/images/avatar1.png'}" alt="${profile.name}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="avatar-fallback-small">${initials}</div>
+                    <span>${profile.name}</span>
+                `;
+                
+                profileList.appendChild(profileItem);
+            });
+        }
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function switchProfile(profileId) {
+            localStorage.setItem('selectedProfileId', profileId);
+            window.location.reload();
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.querySelector('.search-btn');
+            
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+
+        function performSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput.value.trim();
+            
+            if (query) {
+                // Redirect to search results page or filter content
+                console.log('Searching for:', query);
+                // window.location.href = `/views/search.html?q=${encodeURIComponent(query)}`;
+            }
+        }
+
+        // Load content from API (placeholder for now)
+        async function loadContent() {
+            try {
+                // Load continue watching
+                // Load recommended movies
+                // Load recommended series
+                console.log('Loading content from API...');
+            } catch (error) {
+                console.error('Failed to load content:', error);
+            }
+        }
+
+        // Initialize content loading
+        loadContent();
+    </script>
+</body>
+</html>
