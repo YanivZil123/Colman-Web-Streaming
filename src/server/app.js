@@ -31,9 +31,18 @@ app.use(express.static(path.join(__dirname, '../../public')));
 // API Routes
 registerRoutes(app);
 
-// View routing - catch-all for SPA
-app.get('*', (req, res) => {
+// View routing - catch-all for SPA (skip static assets)
+app.get('*', (req, res, next) => {
   const p = req.path;
+  
+  // Skip static assets - let static middleware handle them
+  if (p.startsWith('/styles/') || 
+      p.startsWith('/scripts/') || 
+      p.startsWith('/images/') || 
+      p.startsWith('/assets/') ||
+      !p.endsWith('.html')) {
+    return next();
+  }
   
   // Redirect old root-level pages to new locations
   if (p === '/signin-page.html') return res.redirect('/login.html');

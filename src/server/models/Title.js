@@ -59,6 +59,11 @@ class Title {
       arr = arr.filter(t => (t.genres || []).includes(filters.genre));
     }
 
+    // MongoDB ready: filter by type (series/movie)
+    if (filters.type) {
+      arr = arr.filter(t => t.type === filters.type);
+    }
+
     return arr;
   }
 

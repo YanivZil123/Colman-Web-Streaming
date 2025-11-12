@@ -2,9 +2,10 @@ import Title from '../models/Title.js';
 
 export const getTitles = (req, res) => {
   try {
-    const { page = '1', genre, sort = 'popularity', q } = req.query;
+    const { page = '1', genre, sort = 'popularity', q, type } = req.query;
     
-    let titles = Title.findAll({ genre, q });
+    // MongoDB ready: filter by type (series/movie)
+    let titles = Title.findAll({ genre, q, type });
     
     const limit = 12;
     const p = parseInt(page);

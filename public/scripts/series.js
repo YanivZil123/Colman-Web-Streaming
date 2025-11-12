@@ -1,16 +1,17 @@
 (async()=>{
-    // Check authentication
+    // Check authentication (server already handles redirects)
     let me;
     try {
       me = await (await api.get('/me')).json();
       if(!me?.email){ 
-        location.href='/login.html'; 
+        // Server should have redirected already, just return
         return; 
       }
     } catch (error) {
-      location.href='/login.html';
+      // Server should have redirected already, just return
       return;
     }
+    
     
     // Genre to grid ID mapping
     const genreGrids = {
@@ -41,24 +42,25 @@
         card.onclick = () => window.location.href = `/title.html?id=${t.id}`;
         card.innerHTML = `
           <div class="content-thumbnail">
-            <img src="${t.posterUrl || '/images/poster-placeholder.jpg'}" alt="${t.name}" onerror="this.src='/images/poster-placeholder.jpg'">
+            <img src="${t.posterUrl || '/images/poster-placeholder.jpg'}" alt="${t.name || 'Series'}" onerror="this.src='/images/poster-placeholder.jpg'">
             <div class="play-overlay">
               <span class="play-icon">▶</span>
             </div>
           </div>
           <div class="content-info">
-            <h3 class="content-title">${t.name}</h3>
-            <p class="content-meta">${t.year} • ${t.type}</p>
+            <h3 class="content-title">${t.name || 'Series Title'}</h3>
+            <p class="content-meta">${t.year || '2024'} • ${t.type === 'series' ? 'Series' : 'Movie'}</p>
           </div>
         `;
         grid.appendChild(card);
       });
     }
     
-    // Load content for each genre
+    // Load content for each genre (MongoDB ready - will pull from DB)
     async function loadGenreContent(genreSlug) {
       try {
-        const response = await api.get(`/titles?genre=${genreSlug}`);
+        // Filter by genre and type=series for series page
+        const response = await api.get(`/titles?genre=${genreSlug}&type=series`);
         const data = await response.json();
         const gridId = genreGrids[genreSlug];
         if (gridId) {
@@ -66,13 +68,6 @@
         }
       } catch (error) {
         console.error(`Failed to load ${genreSlug} content:`, error);
-        const gridId = genreGrids[genreSlug];
-        if (gridId) {
-          const grid = document.getElementById(gridId);
-          if (grid) {
-            grid.innerHTML = '<p style="color: hsl(var(--disney-muted)); padding: 20px;">Failed to load content.</p>';
-          }
-        }
       }
     }
     
