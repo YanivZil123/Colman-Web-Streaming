@@ -74,5 +74,57 @@
     // Load all genres
     const genres = ['action', 'drama', 'comedy', 'horror', 'cartoon', 'kids', 'sci-fi', 'thriller'];
     await Promise.all(genres.map(genre => loadGenreContent(genre)));
+
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.querySelector('.search-btn');
+    let searchTimeout;
+
+    async function performSearch(query) {
+      if (!query || query.trim().length === 0) {
+        await Promise.all(genres.map(genre => loadGenreContent(genre)));
+        return;
+      }
+
+      const trimmedQuery = query.trim();
+      try {
+        const response = await api.get(`/api/titles?q=${encodeURIComponent(trimmedQuery)}&type=movie`);
+        const data = await response.json();
+        
+        Object.values(genreGrids).forEach(gridId => {
+          const grid = document.getElementById(gridId);
+          if (grid) grid.innerHTML = '';
+        });
+
+        const firstGridId = Object.values(genreGrids)[0];
+        renderGenreGrid(firstGridId, data.items || []);
+        
+        const firstSection = document.querySelector('.content-section');
+        if (firstSection) {
+          const heading = firstSection.querySelector('h2');
+          if (heading) heading.textContent = `Search Results for "${trimmedQuery}"`;
+        }
+      } catch (error) {
+        console.error('Search failed:', error);
+      }
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        performSearch(e.target.value);
+      }, 300);
+    });
+
+    searchBtn.addEventListener('click', () => {
+      performSearch(searchInput.value);
+    });
+
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performSearch(searchInput.value);
+      }
+    });
   })();
 
