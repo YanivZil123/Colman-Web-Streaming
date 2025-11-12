@@ -902,6 +902,45 @@ body.screen-shake {
 
 .content-section {
     margin-bottom: 148px;
+    position: relative;
+}
+
+.scroll-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: background 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.content-section:hover .scroll-arrow {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.scroll-arrow:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.scroll-arrow-left {
+    left: 10px;
+}
+
+.scroll-arrow-right {
+    right: 10px;
 }
 
 .section-title {
@@ -913,14 +952,24 @@ body.screen-shake {
 }
 
 .content-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    display: flex;
     gap: 24px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    padding: 10px 0;
+    position: relative;
+}
+
+.content-grid::-webkit-scrollbar {
+    display: none;
 }
 
 .content-card {
     cursor: pointer;
     transition: transform 0.3s ease;
+    flex: 0 0 240px;
+    min-width: 240px;
 }
 
 .content-card:hover {
@@ -1011,9 +1060,9 @@ body.screen-shake {
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .content-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 20px;
+    .content-card {
+        flex: 0 0 200px;
+        min-width: 200px;
     }
 }
 
@@ -1052,9 +1101,15 @@ body.screen-shake {
         font-size: 20px;
     }
     
-    .content-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 16px;
+    .content-card {
+        flex: 0 0 160px;
+        min-width: 160px;
+    }
+    
+    .scroll-arrow {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
     }
 }
 
@@ -1067,9 +1122,23 @@ body.screen-shake {
         display: none;
     }
     
-    .content-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+    .content-card {
+        flex: 0 0 140px;
+        min-width: 140px;
+    }
+    
+    .scroll-arrow {
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+    }
+    
+    .scroll-arrow-left {
+        left: 5px;
+    }
+    
+    .scroll-arrow-right {
+        right: 5px;
     }
     
     .section-title {

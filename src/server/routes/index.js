@@ -10,6 +10,7 @@ import likeRoutes from './likeRoutes.js';
 import catalogueRoutes from './catalogueRoutes.js';
 import watchHabitsRoutes from './watchHabitsRoutes.js';
 import imdbRoutes from './imdbRoutes.js';
+import config from '../config/config.js';
 
 export default function registerRoutes(app) {
   app.use('/api/auth', authRoutes);
@@ -24,4 +25,7 @@ export default function registerRoutes(app) {
   app.use('/api/catalogues', catalogueRoutes);
   app.use('/api/watch-habits', watchHabitsRoutes);
   app.use('/api/imdb', imdbRoutes);
+  app.get('/api/config/content-limit', (req, res) => {
+    res.json({ limit: config.contentItemsPerSection });
+  });
 }
