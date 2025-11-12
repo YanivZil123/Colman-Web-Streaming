@@ -28,6 +28,9 @@
                 <div class="profile-menu-container">
                     <button class="profile-icon-btn" onclick="toggleProfileMenu()">
                         <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                        <script>
+                            (function(){try{const s=sessionStorage.getItem('cachedProfiles'),p=localStorage.getItem('selectedProfileId');if(s&&p){const ps=JSON.parse(s),cp=ps.find(pr=>pr.id==p||pr.id.toString()===p.toString()||String(pr.id)===String(p));if(cp&&cp.avatarUrl){const img=document.getElementById('currentProfileAvatar');if(img)img.src=cp.avatarUrl;}}}catch(e){}})();
+                        </script>
                     </button>
                     <div class="profile-dropdown" id="profileDropdown">
                         <div class="profile-dropdown-header">Switch Profile</div>
@@ -124,6 +127,9 @@
 
         // Load profiles and current profile on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Set avatar immediately from cached data if available (prevents flash of default)
+            setAvatarFromCache();
+            
             loadProfiles();
             setupSearch();
             
@@ -138,10 +144,37 @@
             });
         });
 
+        // Set avatar immediately from cached profile data to prevent flash
+        function setAvatarFromCache() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
+            if (selectedProfileId && avatarImg) {
+                // Try to get cached profile data from a previous load
+                try {
+                    const cachedProfiles = sessionStorage.getItem('cachedProfiles');
+                    if (cachedProfiles) {
+                        const profiles = JSON.parse(cachedProfiles);
+                        const cachedProfile = profiles.find(p => {
+                            return p.id == selectedProfileId || 
+                                   p.id.toString() === selectedProfileId.toString() ||
+                                   String(p.id) === String(selectedProfileId);
+                        });
+                        if (cachedProfile && cachedProfile.avatarUrl) {
+                            avatarImg.src = cachedProfile.avatarUrl;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore cache errors
+                }
+            }
+        }
+
         // Load profiles from MongoDB API
         async function loadProfiles() {
             try {
-                const response = await api.get('/profiles');
+                const response = await api.get('/api/profiles');
                 
                 if (!response.ok) {
                     throw new Error('Failed to load profiles');
@@ -153,6 +186,13 @@
                     name: p.name,
                     avatarUrl: p.avatarUrl
                 }));
+                
+                // Cache profiles in sessionStorage for instant loading on next page
+                try {
+                    sessionStorage.setItem('cachedProfiles', JSON.stringify(profiles));
+                } catch (e) {
+                    // Ignore storage errors
+                }
                 
                 renderProfileList();
                 loadCurrentProfile();
@@ -166,15 +206,32 @@
 
         function loadCurrentProfile() {
             const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
             if (selectedProfileId && profiles.length > 0) {
-                currentProfile = profiles.find(p => p.id == selectedProfileId);
-                if (currentProfile) {
-                    // Update profile avatar in nav
-                    const avatarImg = document.getElementById('currentProfileAvatar');
-                    if (avatarImg && currentProfile.avatarUrl) {
-                        avatarImg.src = currentProfile.avatarUrl;
-                    }
+                // Find profile by ID (handle string/ObjectId comparison)
+                currentProfile = profiles.find(p => {
+                    return p.id == selectedProfileId || 
+                           p.id.toString() === selectedProfileId.toString() ||
+                           String(p.id) === String(selectedProfileId);
+                });
+                
+                if (currentProfile && avatarImg) {
+                    // Update profile avatar in nav - always set it, use fallback if needed
+                    const avatarUrl = currentProfile.avatarUrl || '/images/avatar1.png';
+                    avatarImg.src = avatarUrl;
+                    
+                    // Handle image load errors
+                    avatarImg.onerror = function() {
+                        this.src = '/images/avatar1.png';
+                    };
+                } else if (avatarImg) {
+                    // Profile not found, use default
+                    avatarImg.src = '/images/avatar1.png';
                 }
+            } else if (avatarImg) {
+                // No profile selected, use default
+                avatarImg.src = '/images/avatar1.png';
             }
         }
 
@@ -209,7 +266,10 @@
 
         function switchProfile(profileId) {
             localStorage.setItem('selectedProfileId', profileId);
-            window.location.reload();
+            // Update avatar immediately without reload
+            loadCurrentProfile();
+            // Close dropdown
+            toggleProfileMenu();
         }
 
         function setupSearch() {
