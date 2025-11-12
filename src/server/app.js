@@ -50,7 +50,13 @@ app.get('*', (req, res) => {
     return res.redirect('/login.html');
   }
   
-  // Serve main app for authenticated users
+  // Check if requesting a specific view file
+  if (p.startsWith('/views/') && p.endsWith('.html')) {
+    const fileName = p.replace('/views/', '');
+    return res.sendFile(path.join(__dirname, '../../public/views', fileName));
+  }
+  
+  // Serve main app for authenticated users (fallback)
   res.sendFile(path.join(__dirname, '../../public/views', 'index.html'));
 });
 
