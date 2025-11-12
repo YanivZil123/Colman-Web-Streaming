@@ -10,8 +10,18 @@ router.post(
   '/titles',
   requireAuth,
   requireAdmin,
-  upload.fields([{ name: 'poster' }, { name: 'video' }]),
+  upload.fields([{ name: 'poster' }, { name: 'thumbnail' }, { name: 'video' }]),
   adminController.createTitle
 );
+
+router.post(
+  '/titles/:id/episodes',
+  requireAuth,
+  requireAdmin,
+  upload.single('video'),
+  adminController.addEpisode
+);
+
+router.get('/debug/titles', requireAuth, requireAdmin, adminController.listDbTitles);
 
 export default router;

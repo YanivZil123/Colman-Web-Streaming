@@ -90,7 +90,8 @@ class Title {
       year: Number(titleData.year),
       genres: titleData.genres || [],
       description: titleData.description,
-      posterUrl: titleData.posterUrl || '/images/mainscreen.jpeg'
+      posterUrl: titleData.posterUrl || '/images/mainscreen.jpeg',
+      thumbnailUrl: titleData.thumbnailUrl || null
     };
 
     if (titleData.type === 'movie') {
