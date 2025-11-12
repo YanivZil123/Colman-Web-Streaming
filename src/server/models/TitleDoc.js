@@ -6,6 +6,7 @@ const episodeSchema = new mongoose.Schema({
   episodeNumber: Number,
   name: String,
   videoUrl: String,
+  thumbnailUrl: String,
   rating: String
 }, { _id: false });
 
