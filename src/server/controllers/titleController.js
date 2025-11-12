@@ -10,7 +10,7 @@ export const getTitles = (req, res) => {
     (async () => {
       try {
         const query = {};
-        if (genre) query.genres = genre;
+        if (genre) query.genres = { $in: [genre] };
         if (q) query.name = { $regex: String(q), $options: 'i' };
 
         let sortObj = { createdAt: -1 };
