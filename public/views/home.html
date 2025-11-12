@@ -489,9 +489,116 @@
                 `;
                 grid.appendChild(card);
             });
+            
+            initHorizontalScroll(grid);
+        }
+
+        function initHorizontalScroll(grid) {
+            let scrollInterval = null;
+            const section = grid.closest('.content-section');
+            
+            const leftArrow = document.createElement('button');
+            leftArrow.className = 'scroll-arrow scroll-arrow-left';
+            leftArrow.innerHTML = '◀';
+            leftArrow.onclick = () => scrollGrid(-1);
+            
+            const rightArrow = document.createElement('button');
+            rightArrow.className = 'scroll-arrow scroll-arrow-right';
+            rightArrow.innerHTML = '▶';
+            rightArrow.onclick = () => scrollGrid(1);
+            
+            if (section) {
+                section.appendChild(leftArrow);
+                section.appendChild(rightArrow);
+            }
+            
+            function scrollGrid(direction) {
+                const scrollAmount = grid.clientWidth * 0.8;
+                grid.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+            }
+            
+            grid.addEventListener('scroll', () => {
+                const scrollLeft = grid.scrollLeft;
+                const scrollWidth = grid.scrollWidth;
+                const clientWidth = grid.clientWidth;
+                
+                if (scrollLeft + clientWidth >= scrollWidth - 10) {
+                    duplicateContentForInfiniteScroll();
+                }
+                
+                if (scrollLeft <= 10) {
+                    resetScrollPosition();
+                }
+            });
+            
+            function duplicateContentForInfiniteScroll() {
+                const cards = Array.from(grid.children).slice(0, 10);
+                cards.forEach(card => {
+                    const clone = card.cloneNode(true);
+                    clone.onclick = card.onclick;
+                    grid.appendChild(clone);
+                });
+            }
+            
+            function resetScrollPosition() {
+                const totalCards = grid.children.length;
+                if (totalCards > 20) {
+                    const middlePosition = (grid.scrollWidth / 2);
+                    grid.scrollLeft = middlePosition;
+                }
+            }
+            
+            grid.addEventListener('mouseenter', (e) => {
+                grid.addEventListener('mousemove', handleMouseMove);
+            });
+            
+            grid.addEventListener('mouseleave', () => {
+                grid.removeEventListener('mousemove', handleMouseMove);
+                stopScroll();
+            });
+            
+            function handleMouseMove(e) {
+                const rect = grid.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const width = rect.width;
+                const edgeThreshold = 150;
+                
+                if (x < edgeThreshold) {
+                    const speed = (edgeThreshold - x) / edgeThreshold * 10;
+                    startScroll(-speed);
+                } else if (x > width - edgeThreshold) {
+                    const speed = (x - (width - edgeThreshold)) / edgeThreshold * 10;
+                    startScroll(speed);
+                } else {
+                    stopScroll();
+                }
+            }
+            
+            function startScroll(speed) {
+                stopScroll();
+                scrollInterval = setInterval(() => {
+                    grid.scrollLeft += speed;
+                }, 16);
+            }
+            
+            function stopScroll() {
+                if (scrollInterval) {
+                    clearInterval(scrollInterval);
+                    scrollInterval = null;
+                }
+            }
         }
 
         async function loadContent() {
+            let contentLimit = 20;
+            try {
+                const configRes = await api.get('/api/config/content-limit');
+                const configData = await configRes.json();
+                contentLimit = configData.limit || 20;
+            } catch (error) {
+                console.error('Failed to load content limit config:', error);
+            }
+
             try {
                 const continueGrid = document.getElementById('continueWatchingGrid');
                 const moviesGrid = document.getElementById('recommendedMoviesGrid');
@@ -505,8 +612,8 @@
                 
                 const [continueResp, moviesResp, seriesResp] = await Promise.all([
                     api.get('/api/home/continue'),
-                    api.get('/api/titles?type=movie&limit=8'),
-                    api.get('/api/titles?type=series&limit=8')
+                    api.get(`/api/titles?type=movie&limit=${contentLimit}`),
+                    api.get(`/api/titles?type=series&limit=${contentLimit}`)
                 ]);
                 
                 const continueData = await continueResp.json();
@@ -517,13 +624,13 @@
                 if (moviesGrid) renderGrid(moviesGrid, moviesData.items || []);
                 if (seriesGrid) renderGrid(seriesGrid, seriesData.items || []);
 
-                await loadLatestByGenre();
+                await loadLatestByGenre(contentLimit);
             } catch (error) {
                 console.error('Failed to load content:', error);
             }
         }
 
-        async function loadLatestByGenre() {
+        async function loadLatestByGenre(contentLimit = 20) {
             const genres = [
                 { name: 'action', gridId: 'latestActionGrid' },
                 { name: 'drama', gridId: 'latestDramaGrid' },
@@ -537,7 +644,7 @@
 
             for (const genre of genres) {
                 try {
-                    const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre.name)}&sort=createdAt&limit=10`);
+                    const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre.name)}&sort=createdAt&limit=${contentLimit}`);
                     const data = await response.json();
                     const grid = document.getElementById(genre.gridId);
                     if (grid) renderGrid(grid, data.items || []);

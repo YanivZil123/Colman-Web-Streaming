@@ -3,5 +3,6 @@ export default {
   sessionSecret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   env: process.env.NODE_ENV || 'development',
   mongoUrl: process.env.MONGO_URL || 'mongodb://localhost:27017/colman-web-streaming',
-  omdbApiKey: process.env.OMDB_API_KEY || 'sheker'
+  omdbApiKey: process.env.OMDB_API_KEY || 'sheker',
+  contentItemsPerSection: parseInt(process.env.CONTENT_ITEMS_PER_SECTION || '20', 10)
 };
