@@ -60,7 +60,7 @@
     async function loadGenreContent(genreSlug) {
       try {
         // Filter by genre and type=movie for movies page
-        const response = await api.get(`/titles?genre=${genreSlug}&type=movie`);
+  const response = await api.get(`/api/titles?genre=${encodeURIComponent(genreSlug)}&type=movie`);
         const data = await response.json();
         const gridId = genreGrids[genreSlug];
         if (gridId) {

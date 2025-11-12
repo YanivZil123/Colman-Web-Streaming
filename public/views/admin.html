@@ -181,6 +181,17 @@
                     placeholder="Enter title name"
                     required
                 >
+                <span class="error-message" id="name-error"></span>
+            </div>
+
+            <div class="form-group">
+                <button type="button" class="signin-button" id="verifyBtn" onclick="verifyTitle(event)" style="background: linear-gradient(135deg, #00cc66 0%, #009933 100%); margin-bottom: 10px;">
+                    🔍 Verify on IMDB
+                </button>
+                <div id="verifyResult" style="display:none; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid hsl(206 100% 50%); background: rgba(0, 102, 255, 0.1);">
+                    <p id="verifyResultText" style="margin: 0; color: hsl(var(--disney-text));"></p>
+                    <p id="verifyRating" style="margin: 5px 0 0 0; font-weight: 600; color: gold;"></p>
+                </div>
             </div>
 
             <div class="form-group">
@@ -293,6 +304,158 @@
             });
         });
 
+        let imdbVerified = false;
+
+        async function verifyTitle(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('name');
+            const name = nameInput.value.trim();
+            const type = document.getElementById('type').value;
+
+            if (!name) {
+                nameInput.classList.add('error');
+                document.getElementById('name-error').textContent = 'Enter a title name first';
+                return;
+            }
+
+            const verifyBtn = document.getElementById('verifyBtn');
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = '⏳ Searching...';
+
+            try {
+                const res = await fetch(`/api/imdb/search?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`);
+                const data = await res.json();
+
+                console.log('IMDB response:', data, 'status:', res.status);
+
+                const resultDiv = document.getElementById('verifyResult');
+                const resultText = document.getElementById('verifyResultText');
+                const ratingText = document.getElementById('verifyRating');
+
+                if (res.ok && data.found) {
+                    imdbVerified = true;
+                    nameInput.classList.remove('error');
+                    document.getElementById('name-error').textContent = '';
+                    resultText.textContent = `✓ Found: ${data.title} (${data.year})`;
+                    ratingText.textContent = `Rating: ${data.rating}/10 (IMDB)`;
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.borderColor = 'hsl(120 100% 50%)';
+                    resultDiv.style.background = 'rgba(0, 255, 0, 0.05)';
+
+                    // Autofill genres
+                    if (data.genre) {
+                        document.getElementById('genres').value = data.genre.toLowerCase();
+                    }
+
+                    // Autofill description/plot
+                    if (data.plot) {
+                        document.getElementById('desc').value = data.plot;
+                    }
+
+                    // Autofill year (handle ranges like "1999–2003")
+                    if (data.year) {
+                        const yearSelect = document.getElementById('year');
+                        const yearVal = ('' + data.year).split(/[^0-9]/)[0];
+                        for (let i = 0; i < yearSelect.options.length; i++) {
+                            if (yearSelect.options[i].value === yearVal) {
+                                yearSelect.value = yearVal;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Show poster preview if available
+                    if (data.poster && data.poster !== 'N/A') {
+                        const posterName = document.getElementById('posterName');
+                        posterName.textContent = 'Poster will be fetched from IMDB (you can replace it)';
+                        // create a small preview under the poster label
+                        let preview = document.getElementById('posterPreview');
+                        if (!preview) {
+                            preview = document.createElement('img');
+                            preview.id = 'posterPreview';
+                            preview.style.maxWidth = '120px';
+                            preview.style.display = 'block';
+                            preview.style.marginTop = '8px';
+                            document.getElementById('poster').parentNode.appendChild(preview);
+                        }
+                        preview.src = data.poster;
+                    }
+
+                    // Attach hidden imdb metadata fields to the form if needed
+                    const metaFields = {
+                        imdbId: data.imdbId || '',
+                        runtime: data.runtime || '',
+                        director: data.director || '',
+                        actors: data.actors || '',
+                        rated: data.rated || '',
+                        language: data.language || '',
+                        country: data.country || ''
+                    };
+                    for (const key in metaFields) {
+                        let el = document.getElementById('meta-' + key);
+                        if (!el) {
+                            el = document.createElement('input');
+                            el.type = 'hidden';
+                            el.id = 'meta-' + key;
+                            el.name = key;
+                            document.getElementById('titleForm').appendChild(el);
+                        }
+                        el.value = metaFields[key];
+                    }
+
+                    // store poster url as a hidden field so server can download it if admin didn't upload one
+                    if (data.poster && data.poster !== 'N/A') {
+                        let p = document.getElementById('meta-imdbPoster');
+                        if (!p) {
+                            p = document.createElement('input');
+                            p.type = 'hidden';
+                            p.id = 'meta-imdbPoster';
+                            p.name = 'imdbPoster';
+                            document.getElementById('titleForm').appendChild(p);
+                        }
+                        p.value = data.poster;
+                    }
+                } else {
+                    imdbVerified = false;
+                    nameInput.classList.add('error');
+                    const errorMsg = data.error || 'Title not found on IMDB';
+                    document.getElementById('name-error').textContent = errorMsg;
+                    resultDiv.style.display = 'block';
+                    resultDiv.style.borderColor = 'hsl(0 100% 50%)';
+                    resultDiv.style.background = 'rgba(255, 0, 0, 0.05)';
+                    resultText.textContent = `✗ ${errorMsg}`;
+                    ratingText.textContent = '';
+                }
+            } catch (err) {
+                imdbVerified = false;
+                nameInput.classList.add('error');
+                document.getElementById('name-error').textContent = 'Error connecting to IMDB: ' + err.message;
+                console.error('Verify error:', err);
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = '🔍 Verify on IMDB';
+            }
+        }
+
+        // Clear error styling when user starts typing
+        document.addEventListener('DOMContentLoaded', function() {
+            populateYears();
+            
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('error');
+                    if (this.id === 'name') {
+                        imdbVerified = false;
+                        document.getElementById('verifyResult').style.display = 'none';
+                    }
+                });
+                input.addEventListener('change', function() {
+                    this.classList.remove('error');
+                });
+            });
+        });
+
         async function handleSubmit(event) {
             event.preventDefault();
             
@@ -304,6 +467,14 @@
             // Clear previous error styling
             nameInput.classList.remove('error');
             yearSelect.classList.remove('error');
+
+            // Validate IMDB verification
+            if (!imdbVerified) {
+                nameInput.classList.add('error');
+                document.getElementById('name-error').textContent = 'Please verify title on IMDB first';
+                if (!firstErrorField) firstErrorField = nameInput;
+                isValid = false;
+            }
 
             // Validate title name
             if (!nameInput.value.trim()) {
@@ -355,17 +526,24 @@
             if (videoInput.files[0]) fd.append('video', videoInput.files[0]);
 
             try {
-                const res = await fetch('/admin/titles', { 
+                const res = await fetch('/api/admin/titles', { 
                     method: 'POST', 
                     body: fd, 
                     credentials: 'include' 
                 });
                 
                 if (res.ok) {
-                    alert('✓ Created successfully!');
+                    const json = await res.json().catch(() => ({}));
+                    if (json.dbSaved === false) {
+                        alert('✓ Created locally but failed to save to database (check server logs).');
+                    } else {
+                        alert('✓ Created successfully!');
+                    }
                     document.getElementById('titleForm').reset();
                     document.getElementById('posterName').textContent = 'Choose image...';
                     document.getElementById('videoName').textContent = 'Choose video...';
+                    document.getElementById('verifyResult').style.display = 'none';
+                    imdbVerified = false;
                     yearSelect.value = '';
                 } else {
                     const json = await res.json().catch(() => ({}));

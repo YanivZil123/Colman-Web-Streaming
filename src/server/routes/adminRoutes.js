@@ -14,4 +14,6 @@ router.post(
   adminController.createTitle
 );
 
+router.get('/debug/titles', requireAuth, requireAdmin, adminController.listDbTitles);
+
 export default router;
