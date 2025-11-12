@@ -204,7 +204,6 @@
         // Load profiles and current profile on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadProfiles();
-            loadCurrentProfile();
             setupSearch();
             
             // Close dropdown when clicking outside
@@ -218,12 +217,29 @@
             });
         });
 
-        function loadProfiles() {
-            // Load from localStorage
-            const savedProfiles = localStorage.getItem('profiles');
-            if (savedProfiles) {
-                profiles = JSON.parse(savedProfiles);
+        // Load profiles from MongoDB API
+        async function loadProfiles() {
+            try {
+                const response = await api.get('/profiles');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load profiles');
+                }
+                
+                const data = await response.json();
+                profiles = (data.items || []).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    avatarUrl: p.avatarUrl
+                }));
+                
                 renderProfileList();
+                loadCurrentProfile();
+            } catch (error) {
+                console.error('Failed to load profiles:', error);
+                profiles = [];
+                renderProfileList();
+                loadCurrentProfile();
             }
         }
 

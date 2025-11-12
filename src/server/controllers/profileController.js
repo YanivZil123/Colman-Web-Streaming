@@ -34,7 +34,10 @@ export const createProfile = async (req, res) => {
     }
 
     await user.save();
-    res.json({ id: profile._id.toString() });
+    
+    // Get the last profile from the array (the one we just added) which now has _id
+    const savedProfile = user.profiles[user.profiles.length - 1];
+    res.json({ id: savedProfile._id.toString() });
   } catch (error) {
     console.error('Create profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
