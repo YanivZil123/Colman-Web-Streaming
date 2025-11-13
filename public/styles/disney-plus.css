@@ -1654,6 +1654,37 @@ body.screen-shake {
     display: none;
 }
 
+.continue-watching-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.continue-watching-progress-bar {
+    height: 100%;
+    background: #00D6E8;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(0, 214, 232, 0.7);
+}
+
+.continue-watching-card .content-thumbnail {
+    position: relative;
+}
+
+.continue-watching-card .content-title {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.continue-watching-card .content-meta {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
 @media (max-width: 968px) {
     .episode-thumbnail {
         width: 200px;
