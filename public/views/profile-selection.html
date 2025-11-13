@@ -469,6 +469,12 @@
             
             // Normal selection - store profile and redirect to the standalone home view (keeps navbar and body)
             localStorage.setItem('selectedProfileId', profileId);
+            
+            // Dispatch profile switch event to clear home page cache
+            window.dispatchEvent(new CustomEvent('profile-switched', { 
+                detail: { profileId } 
+            }));
+            
             window.location.href = '/views/home.html';
         }
 

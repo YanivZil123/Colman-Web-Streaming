@@ -78,6 +78,8 @@
     </main>
 
     <script src="/scripts/api.js"></script>
+    <script src="/scripts/cacheInvalidator.js"></script>
+    <script src="/scripts/seriesDataCache.js"></script>
     <script src="/scripts/series.js"></script>
     <script>
         let profiles = [];
@@ -112,6 +114,7 @@
             
             loadProfiles();
             setupSearch();
+            setupSignOutHandler();
             
             // Close dropdown when clicking outside
             document.addEventListener('click', function(event) {
@@ -123,6 +126,20 @@
                 }
             });
         });
+
+        // Setup sign out handler to clear caches
+        function setupSignOutHandler() {
+            const signOutLinks = document.querySelectorAll('a[href="/"]');
+            signOutLinks.forEach(link => {
+                if (link.textContent.includes('Sign Out')) {
+                    link.addEventListener('click', function(e) {
+                        console.log('[Logout] Dispatching user-logout event to clear all caches');
+                        window.dispatchEvent(new CustomEvent('user-logout'));
+                        // Let the default navigation happen after event
+                    });
+                }
+            });
+        }
 
         // Set avatar immediately from cached profile data to prevent flash
         function setAvatarFromCache() {
@@ -245,11 +262,17 @@
         }
 
         function switchProfile(profileId) {
+            // Dispatch event for cache modules to reload for new profile
+            console.log('[Profile Switch] Switching to profile:', profileId);
+            window.dispatchEvent(new CustomEvent('profile-switched', { 
+                detail: { profileId } 
+            }));
+            
             localStorage.setItem('selectedProfileId', profileId);
-            // Update avatar immediately without reload
-            loadCurrentProfile();
-            // Close dropdown
-            toggleProfileMenu();
+            
+            // Reload page to fetch data for new profile
+            // This allows cache system to load the new profile's cached data
+            window.location.reload();
         }
 
         function setupSearch() {

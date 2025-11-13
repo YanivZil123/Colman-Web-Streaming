@@ -1,4 +1,8 @@
 (async()=>{
+    const startTime = performance.now();
+    console.log('[Series] Loading content...');
+    console.log('[Series] Cache status:', window.SeriesDataCache ? SeriesDataCache.getInfo() : 'Cache not available');
+    
     let me;
     try {
       me = await (await api.get('/api/auth/me')).json();
@@ -31,6 +35,10 @@
     const genreSections = {};
     const excludedGenreSlugs = new Set(['short', 'animation', 'music', 'war']);
     const container = document.getElementById('seriesGenreContainer');
+    
+    // Store loaded data for caching (raw API responses)
+    const loadedGenreData = {};
+    let loadedAlreadyWatched = [];
 
     function renderGenreSections(genres) {
       if (!container) return;
@@ -205,6 +213,7 @@
     function createContentCard(t) {
       const card = document.createElement('div');
       card.className = 'content-card';
+      card.dataset.id = t.id; // Store ID for reference
       card.onclick = () => window.location.href = `/title.html?id=${t.id}`;
       card.innerHTML = `
         <div class="content-thumbnail">
@@ -255,12 +264,74 @@
         const data = await response.json();
         const section = genreSections[genreSlug];
         if (section) {
-          renderGenreGrid(section.gridId, data.items || [], genreSlug);
+          const items = data.items || [];
+          loadedGenreData[genreSlug] = items; // Store for caching
+          renderGenreGrid(section.gridId, items, genreSlug);
         }
       } catch (error) {
         console.error(`Failed to load ${genreSlug} content:`, error);
       }
     }
+    
+    // ========== WARM LOAD CHECK ==========
+    // Check if we have cached data (WARM LOAD)
+    const hasCachedData = window.SeriesDataCache && SeriesDataCache.hasValidCache();
+    
+    if (hasCachedData) {
+        // WARM LOAD - Instant render with cached data
+        console.log('[Series] WARM LOAD - Using cached data (no loading screen)');
+        
+        // CRITICAL: Remove loading immediately to show content
+        document.body.classList.remove('loading');
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            loadingScreen.style.display = 'none';
+        }
+        
+        const cachedData = SeriesDataCache.getAll();
+        
+        // Render genre sections structure
+        if (cachedData.genres && cachedData.genres.length > 0) {
+            renderGenreSections(cachedData.genres);
+        }
+        
+        // Render cached genre data
+        if (cachedData.genreData) {
+            Object.keys(cachedData.genreData).forEach(slug => {
+                const section = genreSections[slug];
+                if (section && cachedData.genreData[slug]) {
+                    const grid = document.getElementById(section.gridId);
+                    if (grid) {
+                        grid.innerHTML = '';
+                        cachedData.genreData[slug].forEach(item => {
+                            grid.appendChild(createContentCard(item));
+                        });
+                        initHorizontalScroll(grid, cachedData.genreData[slug], slug);
+                    }
+                }
+            });
+        }
+        
+        // Render already watched series
+        if (cachedData.alreadyWatched && cachedData.alreadyWatched.length > 0) {
+            const alreadyWatchedGrid = document.getElementById('alreadyWatchedSeriesGrid');
+            if (alreadyWatchedGrid) {
+                alreadyWatchedGrid.innerHTML = '';
+                cachedData.alreadyWatched.forEach(item => {
+                    alreadyWatchedGrid.appendChild(createContentCard(item));
+                });
+                initHorizontalScroll(alreadyWatchedGrid, cachedData.alreadyWatched, 'already-watched');
+            }
+        }
+        
+        const endTime = performance.now();
+        console.log(`[Series] Warm load completed in ${endTime - startTime}ms`);
+        return; // Exit early, skip cold load
+    }
+    
+    // ========== COLD LOAD ==========
+    console.log('[Series] COLD LOAD - Fetching from API (showing loading screen)');
+    document.body.classList.add('loading');
     
     await loadGenreList();
     const genreSlugs = Object.keys(genreSections);
@@ -271,13 +342,28 @@
       try {
         const alreadyWatchedResp = await api.get(`/api/home/already-watched-series${profileId ? '?profileId=' + encodeURIComponent(profileId) : ''}`);
         const alreadyWatchedData = await alreadyWatchedResp.json();
-        renderGenreGrid('alreadyWatchedSeriesGrid', alreadyWatchedData.items || [], 'already-watched');
+        const items = alreadyWatchedData.items || [];
+        loadedAlreadyWatched = items; // Store for caching
+        renderGenreGrid('alreadyWatchedSeriesGrid', items, 'already-watched');
       } catch (error) {
         console.error('Failed to load already watched series:', error);
       }
     }
 
     await Promise.all(genreSlugs.map(genre => loadGenreContent(genre)));
+
+    // Cache the data after loading - use actual API data, not DOM extraction
+    if (window.SeriesDataCache) {
+        SeriesDataCache.setMultiple({
+            genres: Object.values(genreSections).map(s => ({ 
+                name: s.name, 
+                slug: Object.keys(genreSections).find(k => genreSections[k] === s) 
+            })),
+            genreData: loadedGenreData, // Use the raw API data
+            alreadyWatched: loadedAlreadyWatched // Use the raw API data
+        });
+        console.log('[Series] Data cached successfully');
+    }
 
     // Hide loading screen after content is loaded
     if (typeof hideLoadingScreen === 'function') {
