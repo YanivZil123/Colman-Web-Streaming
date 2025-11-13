@@ -49,21 +49,21 @@
         const slug = (genre.slug || slugify(genre.name)).toLowerCase();
         if (excludedGenreSlugs.has(slug)) return;
         const gridId = `series-${slug}-grid`;
-        const section = document.createElement('section');
-        section.className = 'content-section';
-        section.dataset.genre = slug;
-        section.innerHTML = `
+        const article = document.createElement('article');
+        article.className = 'content-section';
+        article.dataset.genre = slug;
+        article.innerHTML = `
           <h2 class="section-title">${genre.name || slug}</h2>
           <div class="content-grid" id="${gridId}"></div>
         `;
         genreSections[slug] = { gridId, name: genre.name || slug };
-        container.appendChild(section);
+        container.appendChild(article);
       });
     }
 
     function resetSectionHeadings() {
       Object.entries(genreSections).forEach(([slug, info]) => {
-        const sectionEl = document.querySelector(`section[data-genre="${slug}"]`);
+        const sectionEl = document.querySelector(`article[data-genre="${slug}"]`);
         if (sectionEl) {
           const heading = sectionEl.querySelector('h2');
           if (heading) heading.textContent = info.name;
