@@ -48,7 +48,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/YanivZil123/Colman-Web-Streaming.git
 cd Colman-Web-Streaming
 ```
 
@@ -78,6 +78,9 @@ MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/database-name
 
 # Session Secret (generate a random string for production)
 SESSION_SECRET=your-secret-key-here
+
+# OMDB API Key (optional, for fetching movie metadata)
+OMDB_API_KEY=your-omdb-api-key
 ```
 
 **Note**: For production, use a strong, randomly generated `SESSION_SECRET`.
@@ -101,7 +104,7 @@ Start the development server with auto-reload:
 npm run dev
 ```
 
-The server will start at `http://localhost:3000`
+The server will start at `http://localhost:3000`. Database auto-seeds on first run with admin user and sample genres.
 
 ### Production Mode
 
@@ -114,20 +117,20 @@ NODE_ENV=production npm run dev
 ```
 Colman-Web-Streaming/
 ├── public/                 # Static files
-│   ├── views/            # HTML pages
-│   ├── scripts/         # Client-side JavaScript
-│   ├── styles/           # CSS stylesheets
+│   ├── views/            # HTML pages (home, movies, series, player, admin, etc.)
+│   ├── scripts/         # Client-side JavaScript (api.js, home.js, player.js, etc.)
+│   ├── styles/           # CSS stylesheets (disney-plus.css, etc.)
 │   ├── images/          # Image assets
 │   ├── assets/          # Additional assets
-│   └── uploads/         # User-uploaded content
+│   └── uploads/         # User-uploaded content (videos, posters, thumbnails)
 ├── src/
 │   └── server/
 │       ├── app.js       # Express app configuration
-│       ├── config/     # Configuration files
-│       ├── controllers/ # Request handlers
-│       ├── middleware/  # Custom middleware
-│       ├── models/      # Database models
-│       └── routes/      # API routes
+│       ├── config/     # Configuration files (environment & database seeding)
+│       ├── controllers/ # Request handlers (auth, profiles, titles, watch, likes)
+│       ├── middleware/  # Custom middleware (authentication)
+│       ├── models/      # Database models (User, Title, WatchHabits, Genre)
+│       └── routes/      # API endpoints
 ├── server.js            # Application entry point
 ├── package.json        # Dependencies and scripts
 └── README.md           # This file
@@ -162,14 +165,21 @@ After seeding the database, you can login with:
 - `GET /api/home/recommended` - Get personalized recommendations
 - `GET /api/home/most-liked-movies` - Get most popular movies
 - `GET /api/home/most-liked-series` - Get most popular series
+- `GET /api/home/already-watched` - Get already watched content
+- `POST /api/admin/titles` - Create new title (admin only)
 
 ### Watch Progress
 - `GET /api/watch/progress` - Get watch progress
 - `POST /api/watch/progress` - Update watch progress
 - `POST /api/watch/finish` - Mark content as finished
 
-### Admin
-- `POST /api/admin/titles` - Create new title (admin only)
+### Likes
+- `POST /api/likes` - Like a title
+- `DELETE /api/likes/:titleId` - Unlike a title
+
+### Watch Habits
+- `GET /api/watchhabits/profile/:profileId/habits` - Get profile watch habits
+- `GET /api/watchhabits/user/stats` - Get user statistics
 
 ## 🗄️ Database Schema
 
@@ -219,6 +229,7 @@ After seeding the database, you can login with:
 | `NODE_ENV` | Environment mode | `development` |
 | `SESSION_SECRET` | Secret key for session encryption | Required |
 | `MONGO_URL` | MongoDB connection string | Required |
+| `OMDB_API_KEY` | OMDB API key for metadata fetching | Optional |
 
 ## 📝 Scripts
 
@@ -276,3 +287,5 @@ This project is part of a course assignment and is for educational purposes.
 ---
 
 **Note**: This is an educational project. Ensure all sensitive data is properly secured before deploying to production.
+
+**Happy Streaming! 🎬🍿**
