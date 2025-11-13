@@ -19,7 +19,40 @@
     <main class="home-main" style="padding-top: 120px;">
         <section class="content-section" style="margin-bottom: 80px;">
             <h2 class="section-title">Statistics</h2>
+            <div style="margin-top:24px">
+                <h3 class="section-subtitle" style="margin-bottom:12px;">Daily Views per Profile</h3>
+                <div style="height:320px">
+                    <canvas id="profileViewsChart"></canvas>
+                </div>
+            </div>
         </section>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('profileViewsChart');
+            if (!ctx) return;
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 50 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
