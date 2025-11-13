@@ -189,7 +189,19 @@ export const markFinished = async (req, res) => {
         existing.watchHistory = [];
       }
       
-      if (gapMinutes > SESSION_GAP_MINUTES) {
+      // Check if session with same startedAt already exists (prevent duplicates)
+      const existingSession = existing.watchHistory.find(s => 
+        s.startedAt && watchStartTime && 
+        Math.abs(new Date(s.startedAt).getTime() - watchStartTime.getTime()) < 1000
+      );
+      
+      if (existingSession) {
+        // Update existing session
+        existingSession.watchedAt = now;
+        existingSession.duration = targetDuration;
+        existingSession.completed = true;
+      } else if (gapMinutes > SESSION_GAP_MINUTES) {
+        // New session after gap
         existing.watchHistory.push({
           watchedAt: now,
           duration: targetDuration,
@@ -198,11 +210,28 @@ export const markFinished = async (req, res) => {
         });
         existing.watchCount = existing.watchHistory.length;
       } else if (existing.watchHistory.length > 0) {
+        // Check if last session has different startedAt - if so, add new entry
         const lastSession = existing.watchHistory[existing.watchHistory.length - 1];
-        lastSession.watchedAt = now;
-        lastSession.duration = targetDuration;
-        lastSession.completed = true;
+        const lastStartedAt = lastSession.startedAt ? new Date(lastSession.startedAt).getTime() : 0;
+        const currentStartedAt = watchStartTime.getTime();
+        
+        if (Math.abs(lastStartedAt - currentStartedAt) >= 1000) {
+          // Different session - add new entry
+          existing.watchHistory.push({
+            watchedAt: now,
+            duration: targetDuration,
+            completed: true,
+            startedAt: watchStartTime
+          });
+          existing.watchCount = existing.watchHistory.length;
+        } else {
+          // Same session - update last entry
+          lastSession.watchedAt = now;
+          lastSession.duration = targetDuration;
+          lastSession.completed = true;
+        }
       } else {
+        // First session
         existing.watchHistory.push({
           watchedAt: now,
           duration: targetDuration,
@@ -276,7 +305,18 @@ export const endWatchSession = async (req, res) => {
         existing.watchHistory = [];
       }
       
-      if (gapMinutes > SESSION_GAP_MINUTES) {
+      // Check if session with same startedAt already exists (prevent duplicates)
+      const existingSession = existing.watchHistory.find(s => 
+        s.startedAt && watchStartTime && 
+        Math.abs(new Date(s.startedAt).getTime() - watchStartTime.getTime()) < 1000
+      );
+      
+      if (existingSession) {
+        // Update existing session
+        existingSession.watchedAt = now;
+        existingSession.duration = watchedDuration;
+      } else if (gapMinutes > SESSION_GAP_MINUTES) {
+        // New session after gap
         existing.watchHistory.push({
           watchedAt: now,
           duration: watchedDuration,
@@ -285,10 +325,27 @@ export const endWatchSession = async (req, res) => {
         });
         existing.watchCount = existing.watchHistory.length;
       } else if (existing.watchHistory.length > 0) {
+        // Check if last session has different startedAt - if so, add new entry
         const lastSession = existing.watchHistory[existing.watchHistory.length - 1];
-        lastSession.watchedAt = now;
-        lastSession.duration = watchedDuration;
+        const lastStartedAt = lastSession.startedAt ? new Date(lastSession.startedAt).getTime() : 0;
+        const currentStartedAt = watchStartTime.getTime();
+        
+        if (Math.abs(lastStartedAt - currentStartedAt) >= 1000) {
+          // Different session - add new entry
+          existing.watchHistory.push({
+            watchedAt: now,
+            duration: watchedDuration,
+            completed: false,
+            startedAt: watchStartTime
+          });
+          existing.watchCount = existing.watchHistory.length;
+        } else {
+          // Same session - update last entry
+          lastSession.watchedAt = now;
+          lastSession.duration = watchedDuration;
+        }
       } else {
+        // First session
         existing.watchHistory.push({
           watchedAt: now,
           duration: watchedDuration,
