@@ -23,6 +23,13 @@ class WatchHabits {
       completed: habitData.completed || false,
       lastWatchedAt: habitData.lastWatchedAt || new Date().toISOString(),
       watchCount: habitData.watchCount || 1,
+      watchHistory: habitData.watchHistory || [{
+        watchedAt: new Date().toISOString(),
+        duration: habitData.watchedDuration || 0,
+        completed: habitData.completed || false,
+        startedAt: new Date().toISOString()
+      }],
+      liked: habitData.liked || false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -119,6 +126,8 @@ class WatchHabits {
     if (updateData.watchCount !== undefined) habit.watchCount = updateData.watchCount;
     if (updateData.episodeId !== undefined) habit.episodeId = updateData.episodeId;
     if (updateData.profileId !== undefined) habit.profileId = updateData.profileId ? String(updateData.profileId) : null;
+    if (updateData.liked !== undefined) habit.liked = updateData.liked;
+    if (updateData.watchHistory !== undefined) habit.watchHistory = updateData.watchHistory;
 
     habit.updatedAt = new Date().toISOString();
 
@@ -148,17 +157,24 @@ class WatchHabits {
     const existing = this.findByUserAndTitle(data.userId, data.titleId, data.episodeId, prof);
 
     if (existing) {
-      // Update existing habit
+      if (!existing.watchHistory) {
+        existing.watchHistory = [];
+      }
+      existing.watchHistory.push({
+        watchedAt: new Date().toISOString(),
+        duration: data.watchedDuration,
+        completed: data.completed || false,
+        startedAt: new Date().toISOString()
+      });
       existing.watchedDuration = data.watchedDuration;
       existing.totalDuration = data.totalDuration || existing.totalDuration;
       existing.completed = data.completed || false;
       existing.lastWatchedAt = new Date().toISOString();
-      existing.watchCount += 1;
+      existing.watchCount = existing.watchHistory.length;
       existing.profileId = prof;
       existing.updatedAt = new Date().toISOString();
       return existing;
     } else {
-      // Create new habit
       return this.create({ ...data, profileId: prof });
     }
   }

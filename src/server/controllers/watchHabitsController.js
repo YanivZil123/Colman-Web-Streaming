@@ -9,21 +9,6 @@ export const getWatchHabits = async (req, res) => {
   try {
     const { userId, titleId, completed, search, page = '1', limit = '20', profileId } = req.query;
     
-    const query = {};
-    if (userId) query.userId = userId;
-    if (titleId) query.titleId = titleId;
-    if (completed !== undefined) query.completed = completed === 'true';
-    if (profileId !== undefined) query.profileId = profileId || null;
-    
-    // Search functionality
-    if (search) {
-      query.$or = [
-        { userId: { $regex: search, $options: 'i' } },
-        { titleId: { $regex: search, $options: 'i' } }
-      ];
-    }
-    const { userId, profileId, titleId, completed, search, page = '1', limit = '20' } = req.query;
-    
     const filters = {};
     if (userId) filters.userId = userId;
     if (profileId) filters.profileId = profileId;
@@ -37,19 +22,13 @@ export const getWatchHabits = async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
     
-    const habits = await WatchHabitDoc.find(query)
-      .sort({ lastWatchedAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
-    
-    const total = await WatchHabitDoc.countDocuments(query);
+    const paginatedHabits = habits.slice(skip, skip + limitNum);
     
     res.json({
-      items: habits,
-      total,
+      items: paginatedHabits,
+      total: habits.length,
       page: pageNum,
-      totalPages: Math.ceil(total / limitNum)
+      totalPages: Math.ceil(habits.length / limitNum)
     });
   } catch (error) {
     console.error('getWatchHabits error:', error);

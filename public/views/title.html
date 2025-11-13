@@ -387,6 +387,12 @@
             
             try {
                 const response = await api.get(`/api/likes/check?titleId=${titleId}&profileId=${profileId}`);
+                
+                if (!response.ok) {
+                    console.error('Failed to check like status');
+                    return;
+                }
+                
                 const data = await response.json();
                 
                 const likeBtn = document.getElementById('likeBtn');
@@ -507,31 +513,29 @@
                     }
                     
                     try {
-                        // Toggle the liked state immediately for instant feedback
                         const wasLiked = likeBtn.classList.contains('liked');
                         
                         if (!wasLiked) {
-                            // Animate to liked state
                             likeBtn.classList.add('liked', 'animating');
                             
-                            // Remove animation class after animation completes
                             setTimeout(() => {
                                 likeBtn.classList.remove('animating');
                             }, 600);
                         } else {
-                            // Animate to unliked state (simpler, no sparkles)
                             likeBtn.classList.remove('liked');
                         }
                         
-                        // Send request to server
                         const response = await api.post('/api/likes/toggle', { 
                             titleId: t.id,
                             profileId: profileId
                         });
                         
+                        if (!response.ok) {
+                            throw new Error('Failed to toggle like');
+                        }
+                        
                         const data = await response.json();
                         
-                        // Sync with server response (in case of discrepancy)
                         if (data.liked !== undefined) {
                             if (data.liked) {
                                 likeBtn.classList.add('liked');
@@ -541,7 +545,6 @@
                         }
                     } catch (error) {
                         console.error('Failed to toggle like:', error);
-                        // Revert on error
                         likeBtn.classList.toggle('liked');
                     }
                 };

@@ -13,12 +13,13 @@ const watchHabitSchema = new mongoose.Schema({
   titleId: { type: String, required: true, index: true },
   episodeId: { type: String, default: null, index: true },
   profileId: { type: String, default: null, index: true },
-  watchedDuration: { type: Number, default: 0 }, // Current progress position
-  totalDuration: { type: Number, default: 0 }, // Total duration of title/episode
-  completed: { type: Boolean, default: false }, // Current completion status
+  watchedDuration: { type: Number, default: 0 },
+  totalDuration: { type: Number, default: 0 },
+  completed: { type: Boolean, default: false },
   lastWatchedAt: { type: Date, default: Date.now },
-  watchCount: { type: Number, default: 0 }, // Total number of watch sessions (derived from watchHistory.length)
-  watchHistory: [watchEventSchema], // Array of individual watch events for daily statistics
+  watchCount: { type: Number, default: 0 },
+  watchHistory: [watchEventSchema],
+  liked: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 }, {

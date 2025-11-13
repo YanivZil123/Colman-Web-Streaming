@@ -1,4 +1,5 @@
 import Like from '../models/Like.js';
+import WatchHabits from '../models/WatchHabits.js';
 
 export const toggleLike = (req, res) => {
   try {
@@ -10,6 +11,11 @@ export const toggleLike = (req, res) => {
 
     const userId = req.session.user.id;
     const result = Like.toggle({ userId, profileId, titleId });
+    
+    const watchHabit = WatchHabits.findByUserAndTitle(userId, titleId, null, profileId);
+    if (watchHabit) {
+      WatchHabits.update(watchHabit.id, { liked: result.liked });
+    }
     
     res.json({ 
       ok: true, 
