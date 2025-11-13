@@ -64,7 +64,8 @@ export const getProgress = async (req, res) => {
       return res.json({ 
         positionSec: habit.watchedDuration || 0, 
         totalDurationSec: habit.totalDuration || 0, 
-        episodeId: habit.episodeId || null 
+        episodeId: habit.episodeId || null,
+        completed: habit.completed || false
       });
     }
     
@@ -78,7 +79,8 @@ export const getProgress = async (req, res) => {
     res.json({ 
       positionSec: habit.watchedDuration || 0, 
       totalDurationSec: habit.totalDuration || 0, 
-      episodeId: habit.episodeId || null 
+      episodeId: habit.episodeId || null,
+      completed: habit.completed || false
     });
   } catch (error) {
     console.error('getProgress error:', error);
