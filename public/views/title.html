@@ -204,9 +204,9 @@
             loadCurrentProfile();
             toggleProfileMenu();
             if (window.profileTransition) {
-                profileTransition.play(() => window.location.reload());
+                profileTransition.play(() => window.location.href = '/views/home.html');
             } else {
-                window.location.reload();
+                window.location.href = '/views/home.html';
             }
         }
 
