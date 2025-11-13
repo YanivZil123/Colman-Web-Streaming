@@ -161,31 +161,19 @@
         <a href="/views/admin.html" class="back-button">← Back to Admin Panel</a>
 
         <div class="stats-header">
-            <h1>Daily Views Per Profile</h1>
-            <p>View daily watch statistics aggregated by profile across all users</p>
+            <h1>Daily Views Per Profile - Bar Chart</h1>
+            <p>Watch statistics by profile and date</p>
         </div>
 
         <div class="error-message" id="errorMessage"></div>
 
-        <div class="stats-info" id="statsInfo" style="display: none;">
-            <div class="info-item">
-                <span class="info-label">Total Records:</span>
-                <span class="info-value" id="totalRecords">-</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Data Loaded:</span>
-                <span class="info-value" id="loadedTime">-</span>
-            </div>
-        </div>
-
         <div class="chart-container">
-            <div class="chart-title">Daily Views Per Profile - Bar Chart</div>
             <div class="loading-spinner" id="loadingSpinner">
                 Loading data...
             </div>
             <canvas id="dailyWatchChart" style="display: none;"></canvas>
             <div class="no-data-message" id="noDataMessage" style="display: none;">
-                No watch data available yet.
+                No watch data available yet. Users need to watch content first.
             </div>
         </div>
     </main>

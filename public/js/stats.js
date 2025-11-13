@@ -14,7 +14,6 @@ async function fetchAndDrawChart() {
     const errorMessage = document.getElementById('errorMessage');
     const canvasContainer = document.getElementById('dailyWatchChart');
     const noDataMessage = document.getElementById('noDataMessage');
-    const statsInfo = document.getElementById('statsInfo');
 
     try {
         console.log('Fetching daily watch data from API...');
@@ -24,7 +23,6 @@ async function fetchAndDrawChart() {
         errorMessage.classList.remove('show');
         canvasContainer.style.display = 'none';
         noDataMessage.style.display = 'none';
-        statsInfo.style.display = 'none';
 
         // Fetch data from API
         const response = await fetch('/api/stats/daily-watch', {
@@ -67,14 +65,9 @@ async function fetchAndDrawChart() {
         const chartData = transformDataForChart(data);
         console.log('Transformed chart data:', chartData);
 
-        // Hide loading spinner
+        // Hide loading spinner and show chart
         loadingSpinner.style.display = 'none';
         canvasContainer.style.display = 'block';
-        statsInfo.style.display = 'block';
-
-        // Update stats info
-        document.getElementById('totalRecords').textContent = data.length;
-        document.getElementById('loadedTime').textContent = new Date().toLocaleString();
 
         // Initialize or update chart
         initializeChart(chartData);

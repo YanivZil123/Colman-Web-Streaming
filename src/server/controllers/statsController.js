@@ -33,118 +33,105 @@ export const getPopularByGenre = (req, res) => {
  */
 export const getDailyWatchData = async (req, res, next) => {
   try {
-    console.log('Fetching daily watch data...');
+    console.log('=== Fetching daily watch data ===');
     
-    // First, check if we have any watch habits data
-    const totalCount = await WatchHabitDoc.countDocuments();
-    console.log(`Total watch habits records: ${totalCount}`);
-    
-    const withProfileCount = await WatchHabitDoc.countDocuments({ 
+    // First, get all watch habits with profileId
+    const allHabits = await WatchHabitDoc.find({ 
       profileId: { $ne: null, $exists: true } 
-    });
-    console.log(`Records with profileId: ${withProfileCount}`);
+    }).lean();
+    
+    console.log(`Found ${allHabits.length} watch habits with profileId`);
+    
+    if (allHabits.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        count: 0,
+        message: 'No watch data available. Users need to watch content first.'
+      });
+    }
 
-    const data = await WatchHabitDoc.aggregate([
-      // Filter out records without profileId
-      {
-        $match: {
-          profileId: { $ne: null, $exists: true }
-        }
-      },
-      // Unwind watch history to process each watch event (or use main record if no history)
-      {
-        $unwind: {
-          path: '$watchHistory',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      // Add a computed field for the date and duration
-      {
-        $addFields: {
-          eventDate: {
-            $ifNull: ['$watchHistory.watchedAt', '$lastWatchedAt']
-          },
-          eventDuration: {
-            $ifNull: ['$watchHistory.duration', '$watchedDuration']
-          }
-        }
-      },
-      // Group by profileId and date
-      {
-        $group: {
-          _id: {
-            profileId: '$profileId',
-            userId: '$userId',
-            date: {
-              $dateToString: {
-                format: '%Y-%m-%d',
-                date: '$eventDate'
-              }
-            }
-          },
-          totalWatchedDuration: {
-            $sum: '$eventDuration'
-          },
-          watchCount: { $sum: 1 }
-        }
-      },
-      // Sort by date ascending
-      {
-        $sort: { '_id.date': 1 }
-      },
-      // Lookup to get user and profile details
-      {
-        $lookup: {
-          from: 'users',
-          let: { userId: '$_id.userId', profileId: '$_id.profileId' },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: [{ $toString: '$_id' }, '$$userId'] }
-              }
-            },
-            {
-              $unwind: '$profiles'
-            },
-            {
-              $match: {
-                $expr: { $eq: [{ $toString: '$profiles._id' }, '$$profileId'] }
-              }
-            },
-            {
-              $project: { 
-                username: 1, 
-                profileName: '$profiles.name',
-                profileAvatar: '$profiles.avatarUrl'
-              }
-            }
-          ],
-          as: 'profileData'
-        }
-      },
-      // Unwind profile data
-      {
-        $unwind: {
-          path: '$profileData',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      // Reshape output
-      {
-        $project: {
-          _id: 0,
-          profileId: '$_id.profileId',
-          userId: '$_id.userId',
-          date: '$_id.date',
-          totalWatchedDuration: 1,
-          watchCount: 1,
-          username: { $ifNull: ['$profileData.username', 'Unknown'] },
-          profileName: { $ifNull: ['$profileData.profileName', 'Unknown Profile'] }
-        }
+    // Get all users with their profiles
+    const User = (await import('../models/User.js')).default;
+    const users = await User.find({}).lean();
+    
+    // Create a map of profileId -> profile info
+    const profileMap = {};
+    users.forEach(user => {
+      if (user.profiles && user.profiles.length > 0) {
+        user.profiles.forEach(profile => {
+          profileMap[profile._id.toString()] = {
+            username: user.username,
+            profileName: profile.name,
+            profileAvatar: profile.avatarUrl
+          };
+        });
       }
-    ]);
+    });
 
-    console.log(`Aggregation returned ${data.length} records`);
+    console.log(`Built profile map with ${Object.keys(profileMap).length} profiles`);
+
+    // Process each watch habit and aggregate by profile and date
+    const aggregated = {};
+    
+    allHabits.forEach(habit => {
+      const profileId = habit.profileId.toString();
+      const profileInfo = profileMap[profileId] || { 
+        username: 'Unknown', 
+        profileName: 'Unknown Profile' 
+      };
+      
+      // Process watch history events
+      if (habit.watchHistory && habit.watchHistory.length > 0) {
+        habit.watchHistory.forEach(event => {
+          const date = new Date(event.watchedAt || event.startedAt || habit.lastWatchedAt);
+          const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+          const duration = event.duration || 0;
+          
+          const key = `${profileId}-${dateStr}`;
+          
+          if (!aggregated[key]) {
+            aggregated[key] = {
+              profileId: profileId,
+              date: dateStr,
+              totalWatchedDuration: 0,
+              watchCount: 0,
+              username: profileInfo.username,
+              profileName: profileInfo.profileName
+            };
+          }
+          
+          aggregated[key].totalWatchedDuration += duration;
+          aggregated[key].watchCount += 1;
+        });
+      } else {
+        // If no watch history, use the main record
+        const date = new Date(habit.lastWatchedAt);
+        const dateStr = date.toISOString().split('T')[0];
+        const key = `${profileId}-${dateStr}`;
+        
+        if (!aggregated[key]) {
+          aggregated[key] = {
+            profileId: profileId,
+            date: dateStr,
+            totalWatchedDuration: 0,
+            watchCount: 0,
+            username: profileInfo.username,
+            profileName: profileInfo.profileName
+          };
+        }
+        
+        aggregated[key].totalWatchedDuration += habit.watchedDuration || 0;
+        aggregated[key].watchCount += 1;
+      }
+    });
+
+    // Convert to array and sort by date
+    const data = Object.values(aggregated).sort((a, b) => 
+      a.date.localeCompare(b.date)
+    );
+
+    console.log(`Aggregated into ${data.length} records`);
     if (data.length > 0) {
       console.log('Sample record:', JSON.stringify(data[0], null, 2));
     }
