@@ -78,6 +78,7 @@ class Title {
     return this.titles
       .filter(t =>
         t.id !== titleId &&
+        t.type === title.type &&
         (t.genres || []).some(g => (title.genres || []).includes(g))
       );
   }

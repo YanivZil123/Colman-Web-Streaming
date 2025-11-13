@@ -90,27 +90,44 @@ export const getSimilarTitles = (req, res) => {
     (async () => {
       try {
         let base = await MovieDoc.findOne({ id: req.params.id }).lean();
-        if (!base) base = await SeriesDoc.findOne({ id: req.params.id }).lean();
+        let isMovie = true;
+        
+        if (!base) {
+          base = await SeriesDoc.findOne({ id: req.params.id }).lean();
+          isMovie = false;
+        }
+        
         if (!base) throw new Error('no-base');
 
-        const movieItems = await MovieDoc.find({
-          id: { $ne: req.params.id },
-          genres: { $in: (base.genres || []) }
-        }).limit(8).lean();
+        let items = [];
+        
+        if (isMovie) {
+          items = await MovieDoc.find({
+            id: { $ne: req.params.id },
+            genres: { $in: (base.genres || []) }
+          }).limit(12).lean();
+        } else {
+          items = await SeriesDoc.find({
+            id: { $ne: req.params.id },
+            genres: { $in: (base.genres || []) }
+          }).limit(12).lean();
+        }
 
-        const seriesItems = await SeriesDoc.find({
-          id: { $ne: req.params.id },
-          genres: { $in: (base.genres || []) }
-        }).limit(8).lean();
-
-        const items = [...movieItems, ...seriesItems].slice(0, 8);
-
-        return res.json({ items: items.map(t => ({ id: t.id, name: t.name, posterUrl: normalizeAsset(t.posterUrl), thumbnailUrl: normalizeAsset(t.thumbnailUrl) })) });
+        return res.json({ 
+          items: items.map(t => ({ 
+            id: t.id, 
+            name: t.name, 
+            type: isMovie ? 'movie' : 'series',
+            posterUrl: normalizeAsset(t.posterUrl), 
+            thumbnailUrl: normalizeAsset(t.thumbnailUrl) 
+          })),
+          sourceType: isMovie ? 'movie' : 'series'
+        });
       } catch (err) {
         const title = Title.findById(req.params.id);
-        if (!title) return res.json({ items: [] });
+        if (!title) return res.json({ items: [], sourceType: 'unknown' });
         const items = Title.findSimilar(req.params.id).map(t => ({ id: t.id, name: t.name, posterUrl: normalizeAsset(t.posterUrl), thumbnailUrl: normalizeAsset(t.thumbnailUrl) }));
-        return res.json({ items });
+        return res.json({ items, sourceType: title.type || 'unknown' });
       }
     })();
   } catch (error) {
