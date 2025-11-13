@@ -330,3 +330,163 @@ function applyResumeIfReady(){
   });
   showOverlay();
 })();
+
+// ======================================
+// Next Episode / Up Next Card Logic
+// ======================================
+(async function initNextEpisodeFlow() {
+  const overlayNextEp = document.getElementById('overlayNextEp');
+  const upNextCard = document.getElementById('upNextCard');
+  const upNextClose = document.getElementById('upNextClose');
+  const upNextContent = document.getElementById('upNextContent');
+  const upNextThumbnail = document.getElementById('upNextThumbnail');
+  const upNextTitle = document.getElementById('upNextTitle');
+  const upNextEpisode = document.getElementById('upNextEpisode');
+  const countdownText = document.getElementById('countdownText');
+  const countdownRing = document.getElementById('countdownRing');
+
+  let nextEpisode = null;
+  let upNextTimer = null;
+  let countdownInterval = null;
+  let countdownSeconds = 10;
+  const UP_NEXT_TRIGGER_TIME = 5; // Show card 5 seconds before end
+  const COUNTDOWN_DURATION = 10; // 10-second countdown
+
+  // Find next episode
+  async function findNextEpisode() {
+    if (!titleData || !titleData.episodes || !episodeId) return null;
+    
+    const currentIndex = titleData.episodes.findIndex(ep => ep.id === episodeId);
+    if (currentIndex === -1 || currentIndex === titleData.episodes.length - 1) {
+      return null; // No next episode (last episode or not found)
+    }
+    
+    return titleData.episodes[currentIndex + 1];
+  }
+
+  // Load next episode in player
+  function loadNextEpisode() {
+    if (!nextEpisode) return;
+    
+    hideUpNextCard();
+    
+    const newUrl = `/views/player.html?titleId=${encodeURIComponent(titleId)}&episodeId=${encodeURIComponent(nextEpisode.id)}${profileId ? '&profileId=' + encodeURIComponent(profileId) : ''}`;
+    window.location.href = newUrl;
+  }
+
+  // Show Up Next card
+  function showUpNextCard() {
+    if (!nextEpisode || !upNextCard) return;
+    
+    // Set episode info
+    if (upNextTitle) upNextTitle.textContent = nextEpisode.title || 'Untitled Episode';
+    if (upNextEpisode) upNextEpisode.textContent = `S${nextEpisode.season} E${nextEpisode.episode}`;
+    
+    // Set thumbnail
+    if (upNextThumbnail) {
+      const thumbnailUrl = nextEpisode.thumbnailUrl || nextEpisode.thumbnail || '/images/default-thumbnail.jpg';
+      upNextThumbnail.innerHTML = `<img src="${thumbnailUrl}" alt="${nextEpisode.title}" />`;
+    }
+    
+    // Reset countdown
+    countdownSeconds = COUNTDOWN_DURATION;
+    if (countdownText) countdownText.textContent = countdownSeconds;
+    if (countdownRing) {
+      countdownRing.style.strokeDashoffset = '0';
+    }
+    
+    // Show card
+    upNextCard.classList.add('show');
+    
+    // Start countdown
+    startCountdown();
+  }
+
+  // Hide Up Next card
+  function hideUpNextCard() {
+    if (!upNextCard) return;
+    
+    upNextCard.classList.remove('show');
+    clearTimeout(upNextTimer);
+    clearInterval(countdownInterval);
+    upNextTimer = null;
+    countdownInterval = null;
+  }
+
+  // Start countdown timer
+  function startCountdown() {
+    clearInterval(countdownInterval);
+    
+    countdownInterval = setInterval(() => {
+      countdownSeconds--;
+      
+      if (countdownText) countdownText.textContent = countdownSeconds;
+      
+      // Update ring progress (circumference = 2 * PI * r = 283)
+      if (countdownRing) {
+        const progress = countdownSeconds / COUNTDOWN_DURATION;
+        const offset = 283 * (1 - progress);
+        countdownRing.style.strokeDashoffset = offset;
+      }
+      
+      // Auto-load when countdown reaches 0
+      if (countdownSeconds <= 0) {
+        clearInterval(countdownInterval);
+        loadNextEpisode();
+      }
+    }, 1000);
+  }
+
+  // Check if we should show Up Next card
+  function checkUpNextTrigger() {
+    if (!v || !nextEpisode || upNextCard.classList.contains('show')) return;
+    
+    const timeRemaining = v.duration - v.currentTime;
+    
+    if (timeRemaining <= UP_NEXT_TRIGGER_TIME && timeRemaining > 0) {
+      showUpNextCard();
+    }
+  }
+
+  // Show/hide Next Episode button based on availability
+  function updateNextEpisodeButton() {
+    if (!overlayNextEp) return;
+    
+    if (nextEpisode) {
+      overlayNextEp.style.display = 'flex';
+    } else {
+      overlayNextEp.style.display = 'none';
+    }
+  }
+
+  // Event listeners
+  if (overlayNextEp) {
+    overlayNextEp.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadNextEpisode();
+    });
+  }
+
+  if (upNextClose) {
+    upNextClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideUpNextCard();
+    });
+  }
+
+  if (upNextContent) {
+    upNextContent.addEventListener('click', () => {
+      loadNextEpisode();
+    });
+  }
+
+  // Monitor video time for Up Next trigger
+  if (v) {
+    v.addEventListener('timeupdate', checkUpNextTrigger);
+  }
+
+  // Initialize
+  await loadTitleDetails();
+  nextEpisode = await findNextEpisode();
+  updateNextEpisodeButton();
+})();

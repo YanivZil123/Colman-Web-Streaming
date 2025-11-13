@@ -583,7 +583,7 @@
                             }))
                             .catch(() => null)
                     );
-                    const allProgress = (await Promise.all(progressPromises)).filter(p => p && p.positionSec > 0);
+                    const allProgress = (await Promise.all(progressPromises)).filter(p => p && (p.positionSec > 0 || p.completed));
                     if(allProgress.length === 0){
                         playLink.textContent = '▶ Play S1 E1';
                         playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(t.episodes[0].id);
@@ -593,7 +593,7 @@
                     let targetProgress = null;
                     let shouldResume = false;
                     for(const prog of allProgress){
-                        if(!prog.completed){
+                        if(!prog.completed && prog.positionSec > 0){
                             targetEpisode = prog.episode;
                             targetProgress = prog;
                             shouldResume = true;
