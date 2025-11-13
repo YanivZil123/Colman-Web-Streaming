@@ -1,17 +1,55 @@
-<!doctype html><html><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
-</head><body>
-<header><div class="nav"><img src="/images/logo.jpeg" style="height:26px"><a href="/">Home</a><a href="/genre.html">Genres</a><a href="/settings.html">Settings</a><a href="/admin.html">Admin</a><span style="margin-left:auto"></span><a id="logoutBtn" class="btn">Logout</a></div></header>
-<div class="container">
-  <div class="hero">
-    <div><h1>Welcome back<span id="who"></span></h1><p class="badge">Continue Watching · Personalized · Top by Genre</p></div>
-    <form id="searchForm" style="max-width:540px;margin:0"><input id="q" placeholder="Search titles by name"/><button class="btn primary" type="submit">Search</button></form>
-  </div>
-  <section><h2>Continue Watching</h2><div id="continueGrid" class="grid"></div></section>
-  <section><h2>Because you liked</h2><div id="personalGrid" class="grid"></div></section>
-  <section><h2>Most Popular</h2><div id="popularGrid" class="grid"></div></section>
-</div>
-<footer class="container">© Demo</footer>
-<script src="/scripts/api.js"></script><script src="/scripts/home.js"></script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Disney+ Demo</title>
+    <link rel="stylesheet" href="/styles/style.css"/>
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <img src="/images/logo.jpeg" style="height:26px" alt="Disney Plus">
+            <a href="/">Home</a>
+            <a href="/genre.html">Genres</a>
+            <a href="/settings.html">Settings</a>
+            <a href="/admin.html">Admin</a>
+            <span style="margin-left:auto"></span>
+            <a id="logoutBtn" class="btn">Logout</a>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <div class="hero">
+                <div>
+                    <h1>Welcome back<span id="who"></span></h1>
+                    <p class="badge">Continue Watching · Personalized · Top by Genre</p>
+                </div>
+                <form id="searchForm" style="max-width:540px;margin:0">
+                    <input id="q" placeholder="Search titles by name"/>
+                    <button class="btn primary" type="submit">Search</button>
+                </form>
+            </div>
+            <article>
+                <section>
+                    <h2>Continue Watching</h2>
+                    <div id="continueGrid" class="grid"></div>
+                </section>
+                <section>
+                    <h2>Because you liked</h2>
+                    <div id="personalGrid" class="grid"></div>
+                </section>
+                <section>
+                    <h2>Most Popular</h2>
+                    <div id="popularGrid" class="grid"></div>
+                </section>
+            </article>
+        </div>
+    </main>
+    <footer>
+        <div class="container">© 2024 Disney+ Streaming Platform</div>
+    </footer>
+    <script src="/scripts/api.js"></script>
+    <script src="/scripts/home.js"></script>
+</body>
+</html>
