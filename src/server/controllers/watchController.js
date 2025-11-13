@@ -136,11 +136,12 @@ export const updateProgress = async (req, res) => {
 
 export const markFinished = async (req, res) => {
   try {
-    const { titleId, episodeId, durationSec, profileId: rawProfileId } = req.body || {};
+    const { titleId, episodeId, durationSec, profileId: rawProfileId, startedAt } = req.body || {};
     if (!titleId) return res.status(400).json({ error: 'titleId is required' });
     const userId = req.session.user.id;
     const profileId = rawProfileId ? String(rawProfileId) : null;
     const targetDuration = Number(durationSec) || 0;
+    const watchStartTime = startedAt ? new Date(startedAt) : new Date();
     
     const query = {
       userId,
@@ -150,13 +151,26 @@ export const markFinished = async (req, res) => {
     };
     
     const existing = await WatchHabitDoc.findOne(query);
+    const now = new Date();
     
     if (existing) {
       existing.watchedDuration = targetDuration;
       existing.totalDuration = targetDuration || existing.totalDuration;
       existing.completed = true;
-      existing.lastWatchedAt = new Date();
-      existing.updatedAt = new Date();
+      existing.lastWatchedAt = now;
+      existing.updatedAt = now;
+      
+      // Add watch event to history for daily statistics
+      existing.watchHistory.push({
+        watchedAt: now,
+        duration: targetDuration,
+        completed: true,
+        startedAt: watchStartTime
+      });
+      
+      // Update watchCount from history length
+      existing.watchCount = existing.watchHistory.length;
+      
       await existing.save();
       return res.json({ ok: true });
     }
@@ -170,8 +184,14 @@ export const markFinished = async (req, res) => {
       watchedDuration: targetDuration,
       totalDuration: targetDuration,
       completed: true,
-      lastWatchedAt: new Date(),
-      watchCount: 1
+      lastWatchedAt: now,
+      watchCount: 1,
+      watchHistory: [{
+        watchedAt: now,
+        duration: targetDuration,
+        completed: true,
+        startedAt: watchStartTime
+      }]
     });
     
     res.json({ ok: true });
