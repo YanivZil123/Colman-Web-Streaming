@@ -1,5 +1,6 @@
 import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
 import WatchHabits from '../models/WatchHabits.js';
+import logger from '../utils/logger.js';
 
 /**
  * Get all watch habits with optional filters
@@ -34,6 +35,7 @@ export const getWatchHabits = async (req, res) => {
     });
   } catch (error) {
     console.error('getWatchHabits error:', error);
+    await logger.logError(error, req, 'getWatchHabits');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -52,6 +54,7 @@ export const getWatchHabitById = async (req, res) => {
     res.json(habit);
   } catch (error) {
     console.error('getWatchHabitById error:', error);
+    await logger.logError(error, req, 'getWatchHabitById');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -81,9 +84,12 @@ export const createWatchHabit = async (req, res) => {
       watchHistory: [] // Initialize empty array
     });
     
+    await logger.logCreate(req, 'watch-habit', habit._id.toString());
+    
     res.status(201).json(habit.toObject());
   } catch (error) {
     console.error('createWatchHabit error:', error);
+    await logger.logError(error, req, 'createWatchHabit');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -129,9 +135,12 @@ export const updateWatchHabit = async (req, res) => {
     habit.updatedAt = new Date();
     await habit.save();
     
+    await logger.logUpdate(req, 'watch-habit', req.params.id);
+    
     res.json(habit.toObject());
   } catch (error) {
     console.error('updateWatchHabit error:', error);
+    await logger.logError(error, req, 'updateWatchHabit');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -154,9 +163,12 @@ export const deleteWatchHabit = async (req, res) => {
     
     await WatchHabitDoc.findByIdAndDelete(req.params.id);
     
+    await logger.logDelete(req, 'watch-habit', req.params.id);
+    
     res.json({ ok: true, message: 'Watch habit deleted' });
   } catch (error) {
     console.error('deleteWatchHabit error:', error);
+    await logger.logError(error, req, 'deleteWatchHabit');
     res.status(500).json({ error: 'Internal server error' });
   }
 };

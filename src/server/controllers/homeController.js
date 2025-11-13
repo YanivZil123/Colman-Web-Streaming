@@ -1,6 +1,7 @@
 import Title from '../models/Title.js';
 import { MovieDoc, SeriesDoc } from '../models/TitleDoc.js';
 import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
+import logger from '../utils/logger.js';
 
 export const getContinueWatching = async (req, res) => {
   try {
@@ -127,6 +128,7 @@ export const getContinueWatching = async (req, res) => {
     return res.json({ items: enrichedItems });
   } catch (error) {
     console.error('getContinueWatching error:', error);
+    await logger.logError(error, req, 'getContinueWatching');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -259,6 +261,7 @@ export const getRecommendedForProfile = async (req, res) => {
     return res.json({ items });
   } catch (error) {
     console.error('getRecommendedForProfile error:', error);
+    await logger.logError(error, req, 'getRecommendedForProfile');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -328,6 +331,7 @@ export const getMostLikedMovies = async (req, res) => {
     return res.json({ items });
   } catch (error) {
     console.error('getMostLikedMovies error:', error);
+    await logger.logError(error, req, 'getMostLikedMovies');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -396,6 +400,7 @@ export const getMostLikedSeries = async (req, res) => {
     return res.json({ items });
   } catch (error) {
     console.error('getMostLikedSeries error:', error);
+    await logger.logError(error, req, 'getMostLikedSeries');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -465,6 +470,7 @@ export const getAlreadyWatched = async (req, res) => {
     return res.json({ items: enrichedItems });
   } catch (error) {
     console.error('getAlreadyWatched error:', error);
+    await logger.logError(error, req, 'getAlreadyWatched');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -516,6 +522,7 @@ export const getAlreadyWatchedMovies = async (req, res) => {
     return res.json({ items: enrichedItems });
   } catch (error) {
     console.error('getAlreadyWatchedMovies error:', error);
+    await logger.logError(error, req, 'getAlreadyWatchedMovies');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -567,6 +574,7 @@ export const getAlreadyWatchedSeries = async (req, res) => {
     return res.json({ items: enrichedItems });
   } catch (error) {
     console.error('getAlreadyWatchedSeries error:', error);
+    await logger.logError(error, req, 'getAlreadyWatchedSeries');
     res.status(500).json({ error: 'Internal server error' });
   }
 };

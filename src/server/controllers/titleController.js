@@ -1,5 +1,6 @@
 import Title from '../models/Title.js';
 import { MovieDoc, SeriesDoc } from '../models/TitleDoc.js';
+import logger from '../utils/logger.js';
 
 export const getTitles = (req, res) => {
   try {
