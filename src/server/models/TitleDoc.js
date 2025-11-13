@@ -21,6 +21,7 @@ const movieSchema = new mongoose.Schema({
   thumbnailUrl: String,
   videoUrl: String,
   actors: String,
+  imdbRating: Number,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -35,6 +36,7 @@ const seriesSchema = new mongoose.Schema({
   thumbnailUrl: String,
   imdbId: String,
   actors: String,
+  imdbRating: Number,
   episodes: [episodeSchema],
   createdAt: { type: Date, default: Date.now }
 });

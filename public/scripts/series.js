@@ -29,11 +29,12 @@
       'thriller': 'thrillerGrid'
     };
     
-    function initHorizontalScroll(grid) {
+    function initHorizontalScroll(grid, initialItems = []) {
       let scrollInterval = null;
       let currentPage = 1;
       let isLoading = false;
       let hasMore = true;
+      let allItemIds = new Set(initialItems.map(item => item.id));
       const genre = Object.keys(genreGrids).find(key => genreGrids[key] === grid.id);
       const section = grid.closest('.content-section');
       
@@ -62,35 +63,10 @@
         const scrollWidth = grid.scrollWidth;
         const clientWidth = grid.clientWidth;
         
-        if (scrollLeft + clientWidth >= scrollWidth - 100 && hasMore && !isLoading) {
+        if (scrollLeft + clientWidth >= scrollWidth - 100 && !isLoading) {
           loadMoreContent();
         }
-        
-        if (scrollLeft + clientWidth >= scrollWidth - 10) {
-          duplicateContentForInfiniteScroll();
-        }
-        
-        if (scrollLeft <= 10) {
-          resetScrollPosition();
-        }
       });
-      
-      function duplicateContentForInfiniteScroll() {
-        const cards = Array.from(grid.children).slice(0, 10);
-        cards.forEach(card => {
-          const clone = card.cloneNode(true);
-          clone.onclick = card.onclick;
-          grid.appendChild(clone);
-        });
-      }
-      
-      function resetScrollPosition() {
-        const totalCards = grid.children.length;
-        if (totalCards > 20) {
-          const middlePosition = (grid.scrollWidth / 2);
-          grid.scrollLeft = middlePosition;
-        }
-      }
       
       grid.addEventListener('mouseenter', (e) => {
         grid.addEventListener('mousemove', handleMouseMove);
@@ -114,7 +90,7 @@
           const speed = (x - (width - edgeThreshold)) / edgeThreshold * 10;
           startScroll(speed);
           
-          if (x > width - 100 && hasMore && !isLoading) {
+          if (x > width - 100 && !isLoading) {
             loadMoreContent();
           }
         } else {
@@ -137,22 +113,35 @@
       }
       
       async function loadMoreContent() {
-        if (!genre || isLoading || !hasMore) return;
+        if (!genre || isLoading) return;
         
         isLoading = true;
         currentPage++;
         
         try {
-          const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre)}&type=series&page=${currentPage}&limit=${contentLimit}`);
+          const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre)}&type=series&page=${currentPage}&limit=${contentLimit}&sort=popularity`);
           const data = await response.json();
           const items = data.items || [];
           
           if (items.length === 0) {
-            hasMore = false;
-          } else {
-            items.forEach(t => {
+            allItemIds.clear();
+            currentPage = 1;
+            const resetResponse = await api.get(`/api/titles?genre=${encodeURIComponent(genre)}&type=series&page=1&limit=${contentLimit}&sort=popularity`);
+            const resetData = await resetResponse.json();
+            const resetItems = resetData.items || [];
+            
+            resetItems.forEach(t => {
+              allItemIds.add(t.id);
               const card = createContentCard(t);
               grid.appendChild(card);
+            });
+          } else {
+            items.forEach(t => {
+              if (!allItemIds.has(t.id)) {
+                allItemIds.add(t.id);
+                const card = createContentCard(t);
+                grid.appendChild(card);
+              }
             });
           }
         } catch (error) {
@@ -196,12 +185,12 @@
         grid.appendChild(createContentCard(t));
       });
       
-      initHorizontalScroll(grid);
+      initHorizontalScroll(grid, items);
     }
     
     async function loadGenreContent(genreSlug) {
       try {
-  const response = await api.get(`/api/titles?genre=${encodeURIComponent(genreSlug)}&type=series&limit=${contentLimit}`);
+  const response = await api.get(`/api/titles?genre=${encodeURIComponent(genreSlug)}&type=series&limit=${contentLimit}&page=1&sort=popularity`);
         const data = await response.json();
         const gridId = genreGrids[genreSlug];
         if (gridId) {

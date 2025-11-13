@@ -15,6 +15,7 @@ const episodeSchema = new mongoose.Schema({
   episodeNumber: Number,
   name: String,
   videoUrl: String,
+  thumbnailUrl: String,
   rating: String
 }, { _id: false });
 
@@ -29,6 +30,7 @@ const movieSchema = new mongoose.Schema({
   thumbnailUrl: String,
   videoUrl: String,
   actors: String,
+  imdbRating: Number,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -43,6 +45,7 @@ const seriesSchema = new mongoose.Schema({
   thumbnailUrl: String,
   imdbId: String,
   actors: String,
+  imdbRating: Number,
   episodes: [episodeSchema],
   createdAt: { type: Date, default: Date.now }
 });
@@ -55,13 +58,23 @@ const popularMovies = [
   'Forrest Gump', 'The Matrix', 'Interstellar', 'The Lion King',
   'Gladiator', 'The Avengers', 'Spider-Man', 'Iron Man',
   'Toy Story', 'Finding Nemo', 'Frozen', 'Moana',
-  'The Conjuring', 'A Quiet Place', 'Get Out', 'It'
+  'The Conjuring', 'A Quiet Place', 'Get Out', 'It',
+  'Pulp Fiction', 'Fight Club', 'Goodfellas', 'The Silence of the Lambs',
+  'Saving Private Ryan', 'The Green Mile', 'Se7en', 'The Usual Suspects',
+  'The Prestige', 'The Departed', 'Whiplash', 'The Pianist',
+  'American History X', 'Memento', 'Casino', 'The Truman Show',
+  'Eternal Sunshine', 'Shutter Island', 'The Sixth Sense', 'Black Swan',
+  'Gone Girl', 'Prisoners', 'Nightcrawler', 'Drive',
+  'Mad Max Fury Road', 'Dunkirk', 'Blade Runner 2049', 'Arrival',
+  'The Social Network', 'Jojo Rabbit'
 ];
 
 const popularSeries = [
   'Breaking Bad', 'Game of Thrones', 'Stranger Things', 'The Office',
   'Friends', 'The Mandalorian', 'The Crown', 'Peaky Blinders',
-  'Succession', 'The Last of Us'
+  'Succession', 'The Last of Us', 'The Wire', 'Sherlock',
+  'Westworld', 'House of Cards', 'The Boys', 'Narcos',
+  'Better Call Saul', 'Dark', 'Fargo', 'True Detective'
 ];
 
 async function fetchFromOMDB(title, type) {
@@ -138,6 +151,8 @@ async function saveMovie(data, videoUrl) {
       await fs.promises.writeFile(posterFilepath, posterBuffer);
       posterUrl = `/uploads/posters/${posterFilename}`;
       
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       const thumbnailFilename = `${Date.now()}-${nanoid(6)}-thumb.jpg`;
       const thumbnailFilepath = path.join(thumbnailDir, thumbnailFilename);
       await fs.promises.writeFile(thumbnailFilepath, posterBuffer);
@@ -152,9 +167,10 @@ async function saveMovie(data, videoUrl) {
       genres: mapGenres(data.Genre),
       description: data.Plot || '',
       posterUrl: posterUrl || data.Poster,
-      thumbnailUrl: thumbnailUrl || posterUrl || data.Poster,
+      thumbnailUrl: thumbnailUrl || data.Poster,
       videoUrl: videoUrl,
       actors: data.Actors || '',
+      imdbRating: parseFloat(data.imdbRating) || 0,
       createdAt: new Date()
     });
 
@@ -165,7 +181,7 @@ async function saveMovie(data, videoUrl) {
   }
 }
 
-async function saveSeries(data, videoUrls) {
+async function saveSeries(data, videoUrls, numEpisodes = 3) {
   try {
     const posterBuffer = await downloadPoster(data.Poster);
     let posterUrl = '';
@@ -181,7 +197,6 @@ async function saveSeries(data, videoUrls) {
     }
 
     const episodes = [];
-    const numEpisodes = Math.floor(Math.random() * 4) + 1;
     
     const thumbnailDir = path.join(process.cwd(), 'public', 'uploads', 'thumbnail');
     fs.mkdirSync(thumbnailDir, { recursive: true });
@@ -221,6 +236,7 @@ async function saveSeries(data, videoUrls) {
       thumbnailUrl: '',
       imdbId: data.imdbID,
       actors: data.Actors || '',
+      imdbRating: parseFloat(data.imdbRating) || 0,
       episodes: episodes,
       createdAt: new Date()
     });
@@ -288,10 +304,28 @@ async function main() {
     }
 
     console.log('\n=== Fetching and saving series ===');
-    for (const title of popularSeries) {
+    const targetEpisodes = 70;
+    const numSeries = popularSeries.length;
+    const episodesPerSeries = [];
+    
+    let remainingEpisodes = targetEpisodes;
+    for (let i = 0; i < numSeries; i++) {
+      if (i === numSeries - 1) {
+        episodesPerSeries.push(remainingEpisodes);
+      } else {
+        const min = 2;
+        const max = Math.min(6, remainingEpisodes - (numSeries - i - 1) * 2);
+        const episodes = Math.floor(Math.random() * (max - min + 1)) + min;
+        episodesPerSeries.push(episodes);
+        remainingEpisodes -= episodes;
+      }
+    }
+    
+    for (let i = 0; i < popularSeries.length; i++) {
+      const title = popularSeries[i];
       const data = await fetchFromOMDB(title, 'series');
       if (data) {
-        await saveSeries(data, videoUrls);
+        await saveSeries(data, videoUrls, episodesPerSeries[i]);
       }
       await new Promise(resolve => setTimeout(resolve, 200));
     }
@@ -299,8 +333,11 @@ async function main() {
     console.log('\n=== Summary ===');
     const movieCount = await MovieDoc.countDocuments();
     const seriesCount = await SeriesDoc.countDocuments();
+    const allSeries = await SeriesDoc.find();
+    const totalEpisodes = allSeries.reduce((sum, s) => sum + s.episodes.length, 0);
     console.log(`Total movies: ${movieCount}`);
     console.log(`Total series: ${seriesCount}`);
+    console.log(`Total episodes: ${totalEpisodes}`);
     console.log('\nDatabase populated successfully!');
 
     await mongoose.disconnect();

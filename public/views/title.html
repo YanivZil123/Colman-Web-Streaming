@@ -223,6 +223,7 @@
     </main>
 
     <script src="/scripts/api.js"></script>
+    <script src="/scripts/profile-transition.js"></script>
     <script>
         let profiles = [];
         let currentProfile = null;
@@ -355,9 +356,15 @@
         }
 
         function switchProfile(profileId) {
+            if (!profileId) return;
             localStorage.setItem('selectedProfileId', profileId);
             loadCurrentProfile();
             toggleProfileMenu();
+            if (window.profileTransition) {
+                profileTransition.play(() => window.location.href = '/views/home.html');
+            } else {
+                window.location.href = '/views/home.html';
+            }
         }
 
         function setupSearch() {

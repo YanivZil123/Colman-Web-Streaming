@@ -18,11 +18,14 @@ export const getWatchHabits = async (req, res) => {
 
     let habits = WatchHabits.findAll(filters);
     
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
+    const MAX_LIMIT = 100;
+    const MAX_PAGE = 1000;
+    const pageNum = Math.max(1, Math.min(parseInt(page), MAX_PAGE));
+    const limitNum = Math.min(parseInt(limit), MAX_LIMIT);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
     
-    const paginatedHabits = habits.slice(skip, skip + limitNum);
+    const paginatedHabits = habits.slice(startIndex, endIndex);
     
     res.json({
       items: paginatedHabits,
@@ -226,7 +229,8 @@ export const upsertWatchProgress = async (req, res) => {
 export const getContinueWatching = async (req, res) => {
   try {
     const { limit = '10', profileId } = req.query;
-    const limitNum = parseInt(limit);
+    const MAX_LIMIT = 50;
+    const limitNum = Math.min(parseInt(limit), MAX_LIMIT);
     
     const query = {
       userId: req.session.user.id,
