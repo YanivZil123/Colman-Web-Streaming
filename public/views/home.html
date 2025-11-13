@@ -682,7 +682,7 @@
                 if (!grid) return;
 
                 try {
-                    const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre.slug)}&sort=year&limit=${contentLimit}`);
+                    const response = await api.get(`/api/content/latest-by-genre/${encodeURIComponent(genre.slug)}`);
                     const data = await response.json();
                     renderGrid(grid, data.items || []);
                 } catch (error) {
