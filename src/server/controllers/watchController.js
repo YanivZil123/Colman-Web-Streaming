@@ -1,6 +1,6 @@
 import Title from '../models/Title.js';
 import { MovieDoc, SeriesDoc } from '../models/TitleDoc.js';
-import WatchHabits from '../models/WatchHabits.js';
+import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
 
 export const getVideoSource = (req, res) => {
   try {
@@ -42,65 +42,141 @@ export const getVideoSource = (req, res) => {
   }
 };
 
-export const getProgress = (req, res) => {
+export const getProgress = async (req, res) => {
   try {
     const { titleId, episodeId } = req.query;
     if (!titleId) return res.status(400).json({ error: 'titleId is required' });
     const profileId = req.query.profileId ? String(req.query.profileId) : null;
     const userId = req.session.user.id;
-    let habit = null;
+    
+    // Build query: always filter by userId, titleId, and profileId
+    const query = {
+      userId,
+      titleId,
+      profileId: profileId || null
+    };
+    
+    // If episodeId is provided, find specific episode progress
     if (episodeId) {
-      habit = WatchHabits.findByUserAndTitle(userId, titleId, episodeId, profileId);
-    } else {
-      const matches = WatchHabits.findAll({ userId, titleId, profileId }) || [];
-      if (matches.length) {
-        habit = matches.sort((a, b) => new Date(b.lastWatchedAt || 0) - new Date(a.lastWatchedAt || 0))[0];
-      } else {
-        habit = WatchHabits.findByUserAndTitle(userId, titleId, null, profileId);
-      }
+      query.episodeId = episodeId;
+      const habit = await WatchHabitDoc.findOne(query).lean();
+      if (!habit) return res.json({});
+      return res.json({ 
+        positionSec: habit.watchedDuration || 0, 
+        totalDurationSec: habit.totalDuration || 0, 
+        episodeId: habit.episodeId || null 
+      });
     }
+    
+    // For movies or series without episodeId, find most recent progress
+    // This could be a movie or the most recently watched episode
+    const habit = await WatchHabitDoc.findOne(query)
+      .sort({ lastWatchedAt: -1 })
+      .lean();
+    
     if (!habit) return res.json({});
-    res.json({ positionSec: habit.watchedDuration || 0, totalDurationSec: habit.totalDuration || 0, episodeId: habit.episodeId || null });
+    res.json({ 
+      positionSec: habit.watchedDuration || 0, 
+      totalDurationSec: habit.totalDuration || 0, 
+      episodeId: habit.episodeId || null 
+    });
   } catch (error) {
+    console.error('getProgress error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-export const updateProgress = (req, res) => {
+export const updateProgress = async (req, res) => {
   try {
     const { titleId, episodeId, positionSec, durationSec, profileId: rawProfileId } = req.body || {};
     if (!titleId) return res.status(400).json({ error: 'titleId is required' });
     const userId = req.session.user.id;
     const profileId = rawProfileId ? String(rawProfileId) : null;
-    const existing = WatchHabits.findByUserAndTitle(userId, titleId, episodeId || null, profileId);
     const watchedDuration = Number(positionSec) || 0;
     const totalDuration = Number(durationSec) || 0;
+    
+    const query = {
+      userId,
+      titleId,
+      episodeId: episodeId || null,
+      profileId: profileId || null
+    };
+    
+    const existing = await WatchHabitDoc.findOne(query);
+    
     if (existing) {
-      WatchHabits.update(existing.id, { watchedDuration, totalDuration: totalDuration || existing.totalDuration, completed: false, lastWatchedAt: new Date().toISOString(), profileId });
+      existing.watchedDuration = watchedDuration;
+      existing.totalDuration = totalDuration || existing.totalDuration;
+      existing.completed = false;
+      existing.lastWatchedAt = new Date();
+      existing.updatedAt = new Date();
+      await existing.save();
       return res.json({ ok: true, positionSec: watchedDuration });
     }
-    WatchHabits.create({ userId, titleId, episodeId: episodeId || null, watchedDuration, totalDuration, completed: false, profileId });
+    
+    // Create new watch habit
+    await WatchHabitDoc.create({
+      userId,
+      titleId,
+      episodeId: episodeId || null,
+      profileId: profileId || null,
+      watchedDuration,
+      totalDuration,
+      completed: false,
+      lastWatchedAt: new Date(),
+      watchCount: 1
+    });
+    
     res.json({ ok: true, positionSec: watchedDuration });
   } catch (error) {
+    console.error('updateProgress error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-export const markFinished = (req, res) => {
+export const markFinished = async (req, res) => {
   try {
     const { titleId, episodeId, durationSec, profileId: rawProfileId } = req.body || {};
     if (!titleId) return res.status(400).json({ error: 'titleId is required' });
     const userId = req.session.user.id;
     const profileId = rawProfileId ? String(rawProfileId) : null;
     const targetDuration = Number(durationSec) || 0;
-    const existing = WatchHabits.findByUserAndTitle(userId, titleId, episodeId || null, profileId);
+    
+    const query = {
+      userId,
+      titleId,
+      episodeId: episodeId || null,
+      profileId: profileId || null
+    };
+    
+    const existing = await WatchHabitDoc.findOne(query);
+    
     if (existing) {
-      WatchHabits.update(existing.id, { watchedDuration: targetDuration, totalDuration: targetDuration || existing.totalDuration, completed: true, lastWatchedAt: new Date().toISOString(), profileId });
+      existing.watchedDuration = targetDuration;
+      existing.totalDuration = targetDuration || existing.totalDuration;
+      existing.completed = true;
+      existing.lastWatchedAt = new Date();
+      existing.updatedAt = new Date();
+      await existing.save();
       return res.json({ ok: true });
     }
-    WatchHabits.create({ userId, titleId, episodeId: episodeId || null, watchedDuration: targetDuration, totalDuration: targetDuration, completed: true, profileId });
+    
+    // Create new completed watch habit
+    await WatchHabitDoc.create({
+      userId,
+      titleId,
+      episodeId: episodeId || null,
+      profileId: profileId || null,
+      watchedDuration: targetDuration,
+      totalDuration: targetDuration,
+      completed: true,
+      lastWatchedAt: new Date(),
+      watchCount: 1
+    });
+    
     res.json({ ok: true });
   } catch (error) {
+    console.error('markFinished error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
