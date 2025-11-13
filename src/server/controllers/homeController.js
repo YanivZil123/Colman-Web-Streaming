@@ -245,6 +245,143 @@ export const getRecommendedForProfile = async (req, res) => {
   }
 };
 
+export const getMostLikedMovies = async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const limitNum = Math.min(parseInt(limit), 50); // Max 50
+    
+    // Step 1: Aggregate WatchHabitDoc to get titleIds with like counts
+    // Filter: liked: true, episodeId: null (title-level likes only)
+    // Note: MongoDB handles null differently - use $or to match null or missing field
+    const likedTitles = await WatchHabitDoc.aggregate([
+      {
+        $match: {
+          liked: true,
+          $or: [
+            { episodeId: null },
+            { episodeId: { $exists: false } }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: '$titleId',
+          likeCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { likeCount: -1 }
+      },
+      {
+        $limit: limitNum * 2 // Get more to account for filtering movies vs series
+      }
+    ]);
+    
+    if (!likedTitles || likedTitles.length === 0) {
+      return res.json({ items: [] });
+    }
+    
+    // Step 2: Extract titleIds
+    const titleIds = likedTitles.map(item => item._id);
+    
+    // Step 3: Fetch movies from MovieDoc
+    const movies = await MovieDoc.find({ id: { $in: titleIds } }).lean();
+    
+    // Step 4: Create a map of titleId -> likeCount for sorting
+    const likeCountMap = {};
+    likedTitles.forEach(item => {
+      likeCountMap[item._id] = item.likeCount;
+    });
+    
+    // Step 5: Sort movies by like count and limit
+    const sortedMovies = movies
+      .filter(movie => likeCountMap[movie.id]) // Only include movies that have likes
+      .sort((a, b) => {
+        const countA = likeCountMap[a.id] || 0;
+        const countB = likeCountMap[b.id] || 0;
+        if (countB !== countA) return countB - countA;
+        // If same like count, sort by IMDB rating
+        return (b.imdbRating || 0) - (a.imdbRating || 0);
+      })
+      .slice(0, limitNum);
+    
+    const items = sortedMovies.map(mapTitleItem);
+    
+    return res.json({ items });
+  } catch (error) {
+    console.error('getMostLikedMovies error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getMostLikedSeries = async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const limitNum = Math.min(parseInt(limit), 50); // Max 50
+    
+    // Step 1: Aggregate WatchHabitDoc to get titleIds with like counts
+    // Filter: liked: true, episodeId: null (title-level likes only)
+    const likedTitles = await WatchHabitDoc.aggregate([
+      {
+        $match: {
+          liked: true,
+          $or: [
+            { episodeId: null },
+            { episodeId: { $exists: false } }
+          ]
+        }
+      },
+      {
+        $group: {
+          _id: '$titleId',
+          likeCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { likeCount: -1 }
+      },
+      {
+        $limit: limitNum * 2 // Get more to account for filtering movies vs series
+      }
+    ]);
+    
+    if (!likedTitles || likedTitles.length === 0) {
+      return res.json({ items: [] });
+    }
+    
+    // Step 2: Extract titleIds
+    const titleIds = likedTitles.map(item => item._id);
+    
+    // Step 3: Fetch series from SeriesDoc
+    const series = await SeriesDoc.find({ id: { $in: titleIds } }).lean();
+    
+    // Step 4: Create a map of titleId -> likeCount for sorting
+    const likeCountMap = {};
+    likedTitles.forEach(item => {
+      likeCountMap[item._id] = item.likeCount;
+    });
+    
+    // Step 5: Sort series by like count and limit
+    const sortedSeries = series
+      .filter(serie => likeCountMap[serie.id]) // Only include series that have likes
+      .sort((a, b) => {
+        const countA = likeCountMap[a.id] || 0;
+        const countB = likeCountMap[b.id] || 0;
+        if (countB !== countA) return countB - countA;
+        // If same like count, sort by IMDB rating
+        return (b.imdbRating || 0) - (a.imdbRating || 0);
+      })
+      .slice(0, limitNum);
+    
+    const items = sortedSeries.map(mapTitleItem);
+    
+    return res.json({ items });
+  } catch (error) {
+    console.error('getMostLikedSeries error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 function mapTitleItem(t) {
   return {
     id: t.id,

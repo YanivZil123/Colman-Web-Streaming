@@ -8,5 +8,7 @@ router.get('/continue', requireAuth, homeController.getContinueWatching);
 router.get('/personal', requireAuth, homeController.getPersonalRecommendations);
 router.get('/popular', homeController.getPopular);
 router.get('/recommended', requireAuth, homeController.getRecommendedForProfile);
+router.get('/most-liked-movies', homeController.getMostLikedMovies);
+router.get('/most-liked-series', homeController.getMostLikedSeries);
 
 export default router;
