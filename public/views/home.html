@@ -274,6 +274,7 @@
     </main>
 
     <script src="/scripts/api.js"></script>
+    <script src="/scripts/profile-transition.js"></script>
     <script>
         let profiles = [];
         let currentProfile = null;
@@ -418,11 +419,17 @@
         }
 
         function switchProfile(profileId) {
+            if (!profileId) return;
             localStorage.setItem('selectedProfileId', profileId);
             // Update avatar immediately without reload
             loadCurrentProfile();
             // Close dropdown
             toggleProfileMenu();
+            if (window.profileTransition) {
+                profileTransition.play(() => window.location.reload());
+            } else {
+                window.location.reload();
+            }
         }
 
         function setupSearch() {
