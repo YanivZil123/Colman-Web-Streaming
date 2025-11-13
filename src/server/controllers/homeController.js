@@ -161,11 +161,15 @@ export const getMostLikedMovies = async (req, res) => {
     
     // Step 1: Aggregate WatchHabitDoc to get titleIds with like counts
     // Filter: liked: true, episodeId: null (title-level likes only)
+    // Note: MongoDB handles null differently - use $or to match null or missing field
     const likedTitles = await WatchHabitDoc.aggregate([
       {
         $match: {
           liked: true,
-          episodeId: null
+          $or: [
+            { episodeId: null },
+            { episodeId: { $exists: false } }
+          ]
         }
       },
       {
@@ -230,7 +234,10 @@ export const getMostLikedSeries = async (req, res) => {
       {
         $match: {
           liked: true,
-          episodeId: null
+          $or: [
+            { episodeId: null },
+            { episodeId: { $exists: false } }
+          ]
         }
       },
       {
