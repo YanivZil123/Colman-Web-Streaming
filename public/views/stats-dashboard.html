@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics Dashboard · Disney+ Demo</title>
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <style>
+        .stats-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .stats-header {
+            margin-bottom: 40px;
+        }
+
+        .stats-header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: hsl(var(--disney-text));
+            margin-bottom: 8px;
+        }
+
+        .stats-header p {
+            font-size: 16px;
+            color: hsl(var(--disney-muted));
+        }
+
+        .chart-container {
+            background: hsl(var(--disney-card));
+            border: 1px solid hsl(var(--disney-border));
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: hsl(var(--disney-text));
+            margin-bottom: 20px;
+        }
+
+        #dailyWatchChart {
+            max-height: 400px;
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            color: hsl(var(--disney-muted));
+        }
+
+        .error-message {
+            background: rgba(255, 59, 59, 0.1);
+            border: 1px solid rgba(255, 59, 59, 0.5);
+            color: hsl(0, 100%, 65%);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .stats-info {
+            background: hsl(220 25% 18%);
+            border: 1px solid hsl(var(--disney-border));
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid hsl(var(--disney-border));
+            font-size: 14px;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: hsl(var(--disney-muted));
+        }
+
+        .info-value {
+            color: hsl(var(--disney-text));
+            font-weight: 600;
+        }
+
+        .no-data-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: hsl(var(--disney-muted));
+            font-size: 16px;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: hsl(var(--disney-blue));
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            transition: background 0.2s ease;
+        }
+
+        .back-button:hover {
+            background: hsl(var(--disney-blue) / 0.8);
+        }
+    </style>
+</head>
+<body class="home-body">
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
+                <a href="/views/home.html" class="nav-link">Home</a>
+                <a href="/views/series.html" class="nav-link">Series</a>
+                <a href="/views/movies.html" class="nav-link">Movies</a>
+            </div>
+            <div class="nav-right">
+                <div class="profile-menu-container">
+                    <button class="profile-icon-btn" onclick="toggleProfileMenu()">
+                        <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-dropdown-header">Switch Profile</div>
+                        <div id="profileList" class="profile-list">
+                            <!-- Profiles will be loaded here -->
+                        </div>
+                        <div class="profile-dropdown-divider"></div>
+                        <div class="profile-dropdown-item has-submenu" id="settingsBtn">Settings</div>
+                        <div class="settings-submenu" id="settingsSubmenu">
+                            <a href="/views/profile-selection.html" class="settings-submenu-item">Manage Profile</a>
+                            <a href="/views/watch-habits.html" class="settings-submenu-item">Statistics</a>
+                        </div>
+                        <a href="/" class="profile-dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="home-main stats-container">
+        <a href="/views/admin.html" class="back-button">← Back to Admin Panel</a>
+
+        <div class="stats-header">
+            <h1>Daily Watch Statistics</h1>
+            <p>View aggregated watch data across all user profiles</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="stats-info" id="statsInfo" style="display: none;">
+            <div class="info-item">
+                <span class="info-label">Total Records:</span>
+                <span class="info-value" id="totalRecords">-</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Data Loaded:</span>
+                <span class="info-value" id="loadedTime">-</span>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Watch Duration by User and Date</div>
+            <div class="loading-spinner" id="loadingSpinner">
+                Loading data...
+            </div>
+            <canvas id="dailyWatchChart" style="display: none;"></canvas>
+            <div class="no-data-message" id="noDataMessage" style="display: none;">
+                No watch data available yet.
+            </div>
+        </div>
+    </main>
+
+    <script src="/scripts/api.js"></script>
+    <script src="/js/stats.js"></script>
+    <script>
+        // Profile menu setup (copied from other pages)
+        let profiles = [];
+
+        function setAvatarFromCache() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
+            if (selectedProfileId && avatarImg) {
+                try {
+                    const cachedProfiles = sessionStorage.getItem('cachedProfiles');
+                    if (cachedProfiles) {
+                        const profiles = JSON.parse(cachedProfiles);
+                        const cachedProfile = profiles.find(p => {
+                            return p.id == selectedProfileId || 
+                                   p.id.toString() === selectedProfileId.toString() ||
+                                   String(p.id) === String(selectedProfileId);
+                        });
+                        if (cachedProfile && cachedProfile.avatarUrl) {
+                            avatarImg.src = cachedProfile.avatarUrl;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore cache errors
+                }
+            }
+        }
+
+        async function loadProfiles() {
+            try {
+                const response = await api.get('/api/profiles');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load profiles');
+                }
+                
+                const data = await response.json();
+                profiles = (data.items || []).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    avatarUrl: p.avatarUrl
+                }));
+                
+                try {
+                    sessionStorage.setItem('cachedProfiles', JSON.stringify(profiles));
+                } catch (e) {
+                    // Ignore storage errors
+                }
+                
+                renderProfileList();
+                loadCurrentProfile();
+            } catch (error) {
+                console.error('Failed to load profiles:', error);
+                profiles = [];
+                renderProfileList();
+                loadCurrentProfile();
+            }
+        }
+
+        function loadCurrentProfile() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
+            if (selectedProfileId && profiles.length > 0) {
+                const currentProfile = profiles.find(p => {
+                    return p.id == selectedProfileId || 
+                           p.id.toString() === selectedProfileId.toString() ||
+                           String(p.id) === String(selectedProfileId);
+                });
+                
+                if (currentProfile && avatarImg) {
+                    const avatarUrl = currentProfile.avatarUrl || '/images/avatar1.png';
+                    avatarImg.src = avatarUrl;
+                    avatarImg.onerror = function() {
+                        this.src = '/images/avatar1.png';
+                    };
+                } else if (avatarImg) {
+                    avatarImg.src = '/images/avatar1.png';
+                }
+            } else if (avatarImg) {
+                avatarImg.src = '/images/avatar1.png';
+            }
+        }
+
+        function renderProfileList() {
+            const profileList = document.getElementById('profileList');
+            if (!profileList) return;
+            
+            profileList.innerHTML = '';
+            
+            profiles.forEach(profile => {
+                const profileItem = document.createElement('div');
+                profileItem.className = 'profile-dropdown-profile';
+                profileItem.onclick = () => switchProfile(profile.id);
+                
+                const initials = (profile.name || 'P').charAt(0).toUpperCase();
+                
+                profileItem.innerHTML = `
+                    <img src="${profile.avatarUrl || '/images/avatar1.png'}" alt="${profile.name}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="avatar-fallback-small">${initials}</div>
+                    <span>${profile.name}</span>
+                `;
+                
+                profileList.appendChild(profileItem);
+            });
+        }
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function switchProfile(profileId) {
+            localStorage.setItem('selectedProfileId', profileId);
+            loadCurrentProfile();
+            toggleProfileMenu();
+        }
+
+        function setupSettingsMenu() {
+            const settingsBtn = document.getElementById('settingsBtn');
+            const settingsSubmenu = document.getElementById('settingsSubmenu');
+            
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    settingsBtn.classList.toggle('open');
+                    settingsSubmenu.classList.toggle('show');
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setAvatarFromCache();
+            loadProfiles();
+            setupSettingsMenu();
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('profileDropdown');
+                const profileBtn = document.querySelector('.profile-icon-btn');
+                const settingsBtn = document.getElementById('settingsBtn');
+                const settingsSubmenu = document.getElementById('settingsSubmenu');
+                
+                if (!dropdown.contains(event.target) && !profileBtn.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                    if (settingsBtn) settingsBtn.classList.remove('open');
+                    if (settingsSubmenu) settingsSubmenu.classList.remove('show');
+                }
+            });
+
+            // Fetch and draw the chart
+            fetchAndDrawChart();
+        });
+    </script>
+</body>
+</html>
