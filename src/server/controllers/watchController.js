@@ -133,51 +133,51 @@ export const updateProgress = async (req, res) => {
       
       const isCompleted = totalDuration > 0 && watchedDuration >= totalDuration;
       
-      if(isCompleted && episodeId){
-        const title = await Title.findById(titleId);
-        if(title && title.type === 'series' && title.episodes && title.episodes.length > 0){
-          const lastEpisode = title.episodes[title.episodes.length - 1];
-          if(lastEpisode.id === episodeId){
-            await WatchHabitDoc.deleteMany({
-              userId,
-              titleId,
-              profileId: profileId || null
-            });
-            return res.json({ ok: true, positionSec: 0 });
-          }
-        }
-      }
-      
       existing.watchedDuration = isCompleted ? 0 : watchedDuration;
       existing.totalDuration = totalDuration || existing.totalDuration;
       existing.completed = isCompleted;
       existing.lastWatchedAt = now;
       existing.updatedAt = now;
       
+      if (isCompleted && episodeId) {
+        const titleLevelHabit = await WatchHabitDoc.findOne({
+          userId,
+          titleId,
+          profileId: profileId || null,
+          episodeId: null
+        });
+        
+        if (titleLevelHabit) {
+          titleLevelHabit.completed = true;
+          titleLevelHabit.lastWatchedAt = now;
+          await titleLevelHabit.save();
+        } else {
+          await WatchHabitDoc.create({
+            userId,
+            titleId,
+            episodeId: null,
+            profileId: profileId || null,
+            watchedDuration: 0,
+            totalDuration: 0,
+            completed: true,
+            lastWatchedAt: now,
+            watchCount: 0,
+            watchHistory: []
+          });
+        }
+      } else if (isCompleted && !episodeId) {
+        existing.watchedDuration = 0;
+      }
+      
       // watchCount derived from watchHistory.length
       existing.watchCount = existing.watchHistory.length;
       await existing.save();
       
-      return res.json({ ok: true, positionSec: watchedDuration });
+      return res.json({ ok: true, positionSec: isCompleted ? 0 : watchedDuration });
     }
     
     // Create new watch habit
     const isCompleted = totalDuration > 0 && watchedDuration >= totalDuration;
-    
-    if(isCompleted && episodeId){
-      const title = await Title.findById(titleId);
-      if(title && title.type === 'series' && title.episodes && title.episodes.length > 0){
-        const lastEpisode = title.episodes[title.episodes.length - 1];
-        if(lastEpisode.id === episodeId){
-          await WatchHabitDoc.deleteMany({
-            userId,
-            titleId,
-            profileId: profileId || null
-          });
-          return res.json({ ok: true, positionSec: 0 });
-        }
-      }
-    }
     
     await WatchHabitDoc.create({
       userId,
@@ -189,10 +189,38 @@ export const updateProgress = async (req, res) => {
       completed: isCompleted,
       lastWatchedAt: now,
       watchCount: 0,
-      watchHistory: [] // Initialize empty array
+      watchHistory: []
     });
     
-    res.json({ ok: true, positionSec: watchedDuration });
+    if (isCompleted && episodeId) {
+      const titleLevelHabit = await WatchHabitDoc.findOne({
+        userId,
+        titleId,
+        profileId: profileId || null,
+        episodeId: null
+      });
+      
+      if (titleLevelHabit) {
+        titleLevelHabit.completed = true;
+        titleLevelHabit.lastWatchedAt = now;
+        await titleLevelHabit.save();
+      } else {
+        await WatchHabitDoc.create({
+          userId,
+          titleId,
+          episodeId: null,
+          profileId: profileId || null,
+          watchedDuration: 0,
+          totalDuration: 0,
+          completed: true,
+          lastWatchedAt: now,
+          watchCount: 0,
+          watchHistory: []
+        });
+      }
+    }
+    
+    res.json({ ok: true, positionSec: isCompleted ? 0 : watchedDuration });
   } catch (error) {
     console.error('updateProgress error:', error);
     res.status(500).json({ error: 'Internal server error' });
