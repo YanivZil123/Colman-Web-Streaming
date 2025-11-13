@@ -584,22 +584,53 @@
                             .catch(() => null)
                     );
                     const allProgress = (await Promise.all(progressPromises)).filter(p => p && (p.positionSec > 0 || p.completed));
+                    
                     if(allProgress.length === 0){
                         playLink.textContent = '▶ Play S1 E1';
                         playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(t.episodes[0].id);
+                        playLink.classList.remove('btn-rewatch');
                         return;
                     }
+                    
                     let targetEpisode = null;
                     let targetProgress = null;
                     let shouldResume = false;
+                    
                     for(const prog of allProgress){
                         if(!prog.completed && prog.positionSec > 0){
-                            targetEpisode = prog.episode;
-                            targetProgress = prog;
-                            shouldResume = true;
-                            break;
+                            const pct = prog.durationSec > 0 ? (prog.positionSec / prog.durationSec) * 100 : 0;
+                            if(pct > 5 && pct < 95){
+                                targetEpisode = prog.episode;
+                                targetProgress = prog;
+                                shouldResume = true;
+                                break;
+                            }
                         }
                     }
+                    
+                    if(shouldResume){
+                        const episodeIndex = t.episodes.findIndex(ep => ep.id === targetEpisode.id);
+                        const seasonNum = targetEpisode.season || 1;
+                        const episodeNum = targetEpisode.episodeNumber || (episodeIndex + 1);
+                        playLink.textContent = `▶ Resume S${seasonNum} E${episodeNum}`;
+                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(targetEpisode.id) + '&resume=resume';
+                        playLink.classList.remove('btn-rewatch');
+                        return;
+                    }
+                    
+                    const lastEpisode = t.episodes[t.episodes.length - 1];
+                    const lastProgress = allProgress.find(p => p.episodeId === lastEpisode.id);
+                    
+                    if(lastProgress){
+                        const lastPct = lastProgress.durationSec > 0 ? (lastProgress.positionSec / lastProgress.durationSec) * 100 : 0;
+                        if(lastPct >= 95 || lastProgress.completed){
+                            playLink.innerHTML = '<span style="font-size: 20px;">↻</span> Rewatch';
+                            playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(t.episodes[0].id);
+                            playLink.classList.add('btn-rewatch');
+                            return;
+                        }
+                    }
+                    
                     if(!targetEpisode){
                         allProgress.sort((a, b) => {
                             const idxA = t.episodes.findIndex(e => e.id === a.episodeId);
@@ -608,25 +639,23 @@
                         });
                         targetProgress = allProgress[0];
                         targetEpisode = targetProgress.episode;
-                        shouldResume = false;
                     }
+                    
                     const episodeIndex = t.episodes.findIndex(ep => ep.id === targetEpisode.id);
                     const seasonNum = targetEpisode.season || 1;
                     const episodeNum = targetEpisode.episodeNumber || (episodeIndex + 1);
-                    if(shouldResume){
-                        playLink.textContent = `▶ Resume S${seasonNum} E${episodeNum}`;
-                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(targetEpisode.id) + '&resume=resume';
+                    
+                    const nextEpisode = t.episodes[episodeIndex + 1];
+                    if(nextEpisode){
+                        const nextSeason = nextEpisode.season || 1;
+                        const nextEpisodeNum = nextEpisode.episodeNumber || (episodeIndex + 2);
+                        playLink.textContent = `▶ Play S${nextSeason} E${nextEpisodeNum}`;
+                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(nextEpisode.id);
+                        playLink.classList.remove('btn-rewatch');
                     }else{
-                        const nextEpisode = t.episodes[episodeIndex + 1];
-                        if(nextEpisode){
-                            const nextSeason = nextEpisode.season || 1;
-                            const nextEpisodeNum = nextEpisode.episodeNumber || (episodeIndex + 2);
-                            playLink.textContent = `▶ Play S${nextSeason} E${nextEpisodeNum}`;
-                            playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(nextEpisode.id);
-                        }else{
-                            playLink.textContent = '▶ Play S1 E1';
-                            playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(t.episodes[0].id);
-                        }
+                        playLink.textContent = '▶ Play S1 E1';
+                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(t.episodes[0].id);
+                        playLink.classList.remove('btn-rewatch');
                     }
                 }else if(t.type==='movie'){
                     const resp = await api.get('/api/watch/progress?titleId=' + encodeURIComponent(t.id) + (profileId ? ('&profileId=' + encodeURIComponent(profileId)) : ''));
