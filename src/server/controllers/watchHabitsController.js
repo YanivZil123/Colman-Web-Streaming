@@ -1,14 +1,16 @@
 import WatchHabits from '../models/WatchHabits.js';
+import Like from '../models/Like.js';
 
 /**
  * Get all watch habits with optional filters
  */
 export const getWatchHabits = (req, res) => {
   try {
-    const { userId, titleId, completed, search, page = '1', limit = '20' } = req.query;
+    const { userId, profileId, titleId, completed, search, page = '1', limit = '20' } = req.query;
     
     const filters = {};
     if (userId) filters.userId = userId;
+    if (profileId) filters.profileId = profileId;
     if (titleId) filters.titleId = titleId;
     if (completed !== undefined) filters.completed = completed === 'true';
     if (search) filters.search = search;
@@ -56,7 +58,7 @@ export const getWatchHabitById = (req, res) => {
  */
 export const createWatchHabit = (req, res) => {
   try {
-    const { titleId, episodeId, watchedDuration, totalDuration, completed } = req.body;
+    const { titleId, profileId, episodeId, watchedDuration, totalDuration, completed } = req.body;
     
     if (!titleId) {
       return res.status(400).json({ error: 'Title ID is required' });
@@ -64,6 +66,7 @@ export const createWatchHabit = (req, res) => {
     
     const habitData = {
       userId: req.session.user.id,
+      profileId: profileId || null,
       titleId,
       episodeId: episodeId || null,
       watchedDuration: watchedDuration || 0,
@@ -145,7 +148,7 @@ export const deleteWatchHabit = (req, res) => {
  */
 export const upsertWatchProgress = (req, res) => {
   try {
-    const { titleId, episodeId, watchedDuration, totalDuration, completed } = req.body;
+    const { titleId, profileId, episodeId, watchedDuration, totalDuration, completed } = req.body;
     
     if (!titleId) {
       return res.status(400).json({ error: 'Title ID is required' });
@@ -153,6 +156,7 @@ export const upsertWatchProgress = (req, res) => {
     
     const data = {
       userId: req.session.user.id,
+      profileId: profileId || null,
       titleId,
       episodeId: episodeId || null,
       watchedDuration: watchedDuration || 0,
@@ -172,8 +176,12 @@ export const upsertWatchProgress = (req, res) => {
  */
 export const getContinueWatching = (req, res) => {
   try {
-    const { limit = '10' } = req.query;
-    const habits = WatchHabits.getContinueWatching(req.session.user.id, parseInt(limit));
+    const { profileId, limit = '10' } = req.query;
+    const habits = WatchHabits.getContinueWatching(
+      req.session.user.id, 
+      profileId || null,
+      parseInt(limit)
+    );
     res.json({ items: habits });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -186,15 +194,70 @@ export const getContinueWatching = (req, res) => {
 export const getUserStats = (req, res) => {
   try {
     const userId = req.params.userId || req.session.user.id;
+    const { profileId } = req.query;
     
     // Only allow users to see their own stats unless admin
     if (userId !== req.session.user.id && req.session.user.role !== 'admin') {
       return res.status(403).json({ error: 'Not authorized' });
     }
     
-    const stats = WatchHabits.getUserStats(userId);
+    const stats = WatchHabits.getUserStats(userId, profileId || null);
     res.json(stats);
   } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Get comprehensive profile watch habits (watched + liked content)
+ */
+export const getProfileHabits = (req, res) => {
+  try {
+    const { profileId } = req.params;
+    const userId = req.session.user.id;
+    
+    if (!profileId) {
+      return res.status(400).json({ error: 'Profile ID is required' });
+    }
+    
+    // Get watched content for this profile
+    const watched = WatchHabits.findAll({ 
+      userId, 
+      profileId, 
+      completed: true 
+    });
+    
+    // Get in-progress content
+    const inProgress = WatchHabits.findAll({ 
+      userId, 
+      profileId, 
+      completed: false 
+    }).filter(h => h.watchedDuration > 0);
+    
+    // Get liked content for this profile
+    const liked = Like.getByProfile(userId, profileId);
+    
+    // Get stats
+    const stats = WatchHabits.getUserStats(userId, profileId);
+    
+    res.json({
+      profileId,
+      watched: {
+        items: watched,
+        total: watched.length
+      },
+      inProgress: {
+        items: inProgress,
+        total: inProgress.length
+      },
+      liked: {
+        items: liked,
+        total: liked.length
+      },
+      stats
+    });
+  } catch (error) {
+    console.error('Get profile habits error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

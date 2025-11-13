@@ -28,4 +28,7 @@ router.get('/user/continue-watching', requireAuth, watchHabitsController.getCont
 // Get user watch statistics (requires authentication)
 router.get('/user/stats/:userId?', requireAuth, watchHabitsController.getUserStats);
 
+// Get comprehensive profile watch habits (watched + liked)
+router.get('/profile/:profileId/habits', requireAuth, watchHabitsController.getProfileHabits);
+
 export default router;

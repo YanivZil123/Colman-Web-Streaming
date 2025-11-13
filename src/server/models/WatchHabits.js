@@ -7,13 +7,14 @@ class WatchHabits {
 
   /**
    * Create a new watch habit record
-   * @param {Object} habitData - { userId, titleId, watchedDuration, totalDuration, lastWatchedAt, completed, episodeId }
+   * @param {Object} habitData - { userId, profileId, titleId, watchedDuration, totalDuration, lastWatchedAt, completed, episodeId }
    * @returns {Object} Created watch habit
    */
   create(habitData) {
     const habit = {
       id: nanoid(),
       userId: habitData.userId,
+      profileId: habitData.profileId || null,
       titleId: habitData.titleId,
       episodeId: habitData.episodeId || null,
       watchedDuration: habitData.watchedDuration || 0,
@@ -30,7 +31,7 @@ class WatchHabits {
 
   /**
    * Find all watch habits with optional filters
-   * @param {Object} filters - { userId, titleId, completed, search }
+   * @param {Object} filters - { userId, profileId, titleId, completed, search }
    * @returns {Array} Array of watch habits
    */
   findAll(filters = {}) {
@@ -39,6 +40,11 @@ class WatchHabits {
     // Filter by userId
     if (filters.userId) {
       results = results.filter(h => h.userId === filters.userId);
+    }
+
+    // Filter by profileId
+    if (filters.profileId) {
+      results = results.filter(h => h.profileId === filters.profileId);
     }
 
     // Filter by titleId
@@ -73,17 +79,19 @@ class WatchHabits {
   }
 
   /**
-   * Find watch habit by userId and titleId
+   * Find watch habit by userId, profileId and titleId
    * @param {string} userId - User ID
+   * @param {string} profileId - Profile ID
    * @param {string} titleId - Title ID
    * @param {string} episodeId - Optional episode ID
    * @returns {Object|null} Watch habit or null
    */
-  findByUserAndTitle(userId, titleId, episodeId = null) {
+  findByUserAndTitle(userId, titleId, episodeId = null, profileId = null) {
     return this.watchHabits.find(h =>
       h.userId === userId &&
       h.titleId === titleId &&
-      h.episodeId === episodeId
+      h.episodeId === episodeId &&
+      (profileId ? h.profileId === profileId : true)
     ) || null;
   }
 
@@ -124,11 +132,11 @@ class WatchHabits {
 
   /**
    * Update or create watch progress
-   * @param {Object} data - { userId, titleId, episodeId, watchedDuration, totalDuration, completed }
+   * @param {Object} data - { userId, profileId, titleId, episodeId, watchedDuration, totalDuration, completed }
    * @returns {Object} Updated or created watch habit
    */
   upsertProgress(data) {
-    const existing = this.findByUserAndTitle(data.userId, data.titleId, data.episodeId);
+    const existing = this.findByUserAndTitle(data.userId, data.titleId, data.episodeId, data.profileId);
 
     if (existing) {
       // Update existing habit
@@ -146,25 +154,35 @@ class WatchHabits {
   }
 
   /**
-   * Get continue watching list for user
+   * Get continue watching list for user/profile
    * @param {string} userId - User ID
+   * @param {string} profileId - Profile ID (optional)
    * @param {number} limit - Maximum number of items
    * @returns {Array} Array of incomplete watch habits
    */
-  getContinueWatching(userId, limit = 10) {
+  getContinueWatching(userId, profileId = null, limit = 10) {
     return this.watchHabits
-      .filter(h => h.userId === userId && !h.completed && h.watchedDuration > 0)
+      .filter(h => 
+        h.userId === userId && 
+        (profileId ? h.profileId === profileId : true) &&
+        !h.completed && 
+        h.watchedDuration > 0
+      )
       .sort((a, b) => new Date(b.lastWatchedAt) - new Date(a.lastWatchedAt))
       .slice(0, limit);
   }
 
   /**
-   * Get watch statistics for user
+   * Get watch statistics for user/profile
    * @param {string} userId - User ID
+   * @param {string} profileId - Profile ID (optional)
    * @returns {Object} Watch statistics
    */
-  getUserStats(userId) {
-    const userHabits = this.watchHabits.filter(h => h.userId === userId);
+  getUserStats(userId, profileId = null) {
+    const userHabits = this.watchHabits.filter(h => 
+      h.userId === userId && 
+      (profileId ? h.profileId === profileId : true)
+    );
     
     return {
       totalWatched: userHabits.length,
