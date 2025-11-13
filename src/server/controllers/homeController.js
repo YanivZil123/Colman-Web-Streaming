@@ -16,17 +16,28 @@ export const getContinueWatching = async (req, res) => {
       userId,
       profileId: profileId || null,
       watchedDuration: { $gt: 0 },
-      completed: false // Only show incomplete items
+      completed: false
     };
 
     const habits = await WatchHabitDoc.find(query)
       .sort({ lastWatchedAt: -1 })
       .lean();
 
+    const completedTitleIds = await WatchHabitDoc.distinct('titleId', {
+      userId,
+      profileId: profileId || null,
+      episodeId: null,
+      completed: true
+    });
+
     const enrichedItems = [];
     const seenTitles = new Set();
 
     for (const habit of habits) {
+      if (completedTitleIds.includes(habit.titleId)) {
+        continue;
+      }
+      
       if (!habit.totalDuration || habit.totalDuration === 0) continue;
       
       const progressPercent = (habit.watchedDuration / habit.totalDuration) * 100;
@@ -413,6 +424,7 @@ export const getAlreadyWatched = async (req, res) => {
     const query = {
       userId,
       profileId: profileId || null,
+      episodeId: null,
       completed: true
     };
 
@@ -470,6 +482,7 @@ export const getAlreadyWatchedMovies = async (req, res) => {
     const query = {
       userId,
       profileId: profileId || null,
+      episodeId: null,
       completed: true
     };
 
@@ -520,6 +533,7 @@ export const getAlreadyWatchedSeries = async (req, res) => {
     const query = {
       userId,
       profileId: profileId || null,
+      episodeId: null,
       completed: true
     };
 
