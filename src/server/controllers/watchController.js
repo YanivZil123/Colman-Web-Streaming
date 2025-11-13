@@ -192,16 +192,24 @@ export const markFinished = async (req, res) => {
         existing.watchHistory = [];
       }
       
-      // Add watch event to history for daily statistics
-      existing.watchHistory.push({
-        watchedAt: now,
-        duration: targetDuration,
-        completed: true,
-        startedAt: watchStartTime
-      });
+      // Check if session with same startedAt already exists (prevent duplicates)
+      const hasDuplicate = existing.watchHistory.some(s => 
+        s.startedAt && watchStartTime && 
+        Math.abs(new Date(s.startedAt).getTime() - watchStartTime.getTime()) < 1000
+      );
       
-      // Update watchCount from history length
-      existing.watchCount = existing.watchHistory.length;
+      if (!hasDuplicate) {
+        // Add watch event to history for daily statistics
+        existing.watchHistory.push({
+          watchedAt: now,
+          duration: targetDuration,
+          completed: true,
+          startedAt: watchStartTime
+        });
+        
+        // Update watchCount from history length
+        existing.watchCount = existing.watchHistory.length;
+      }
       
       await existing.save();
       return res.json({ ok: true });
@@ -258,16 +266,24 @@ export const endWatchSession = async (req, res) => {
         existing.watchHistory = [];
       }
       
-      // Add watch event to history (not completed, just a session)
-      existing.watchHistory.push({
-        watchedAt: now,
-        duration: watchedDuration,
-        completed: false,
-        startedAt: watchStartTime
-      });
+      // Check if session with same startedAt already exists (prevent duplicates)
+      const hasDuplicate = existing.watchHistory.some(s => 
+        s.startedAt && watchStartTime && 
+        Math.abs(new Date(s.startedAt).getTime() - watchStartTime.getTime()) < 1000
+      );
       
-      // Update watchCount from history length
-      existing.watchCount = existing.watchHistory.length;
+      if (!hasDuplicate) {
+        // Add watch event to history (not completed, just a session)
+        existing.watchHistory.push({
+          watchedAt: now,
+          duration: watchedDuration,
+          completed: false,
+          startedAt: watchStartTime
+        });
+        
+        // Update watchCount from history length
+        existing.watchCount = existing.watchHistory.length;
+      }
       existing.lastWatchedAt = now;
       existing.updatedAt = now;
       
