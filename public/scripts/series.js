@@ -264,6 +264,19 @@
     
     await loadGenreList();
     const genreSlugs = Object.keys(genreSections);
+
+    const profileId = localStorage.getItem('selectedProfileId');
+    const alreadyWatchedGrid = document.getElementById('alreadyWatchedSeriesGrid');
+    if (alreadyWatchedGrid) {
+      try {
+        const alreadyWatchedResp = await api.get(`/api/home/already-watched-series${profileId ? '?profileId=' + encodeURIComponent(profileId) : ''}`);
+        const alreadyWatchedData = await alreadyWatchedResp.json();
+        renderGenreGrid('alreadyWatchedSeriesGrid', alreadyWatchedData.items || [], 'already-watched');
+      } catch (error) {
+        console.error('Failed to load already watched series:', error);
+      }
+    }
+
     await Promise.all(genreSlugs.map(genre => loadGenreContent(genre)));
 
     // Hide loading screen after content is loaded

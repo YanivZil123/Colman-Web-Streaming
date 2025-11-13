@@ -400,6 +400,163 @@ function mapTitleItem(t) {
   };
 }
 
+export const getAlreadyWatched = async (req, res) => {
+  try {
+    const userId = req.session?.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const profileId = req.query.profileId || null;
+    const limit = Math.min(parseInt(req.query.limit || '20'), 50);
+
+    const query = {
+      userId,
+      profileId: profileId || null,
+      completed: true
+    };
+
+    const habits = await WatchHabitDoc.find(query)
+      .sort({ lastWatchedAt: -1 })
+      .lean();
+
+    const enrichedItems = [];
+    const seenTitles = new Set();
+
+    for (const habit of habits) {
+      if (seenTitles.has(habit.titleId)) continue;
+
+      let titleDoc = await MovieDoc.findOne({ id: habit.titleId }).lean();
+      let isMovie = true;
+      
+      if (!titleDoc) {
+        titleDoc = await SeriesDoc.findOne({ id: habit.titleId }).lean();
+        isMovie = false;
+      }
+
+      if (!titleDoc) continue;
+
+      seenTitles.add(habit.titleId);
+
+      enrichedItems.push({
+        id: titleDoc.id,
+        name: titleDoc.name,
+        type: titleDoc.type || (isMovie ? 'movie' : 'series'),
+        year: titleDoc.year,
+        posterUrl: normalizeAsset(titleDoc.posterUrl),
+        thumbnailUrl: normalizeAsset(titleDoc.thumbnailUrl)
+      });
+
+      if (enrichedItems.length >= limit) break;
+    }
+
+    return res.json({ items: enrichedItems });
+  } catch (error) {
+    console.error('getAlreadyWatched error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getAlreadyWatchedMovies = async (req, res) => {
+  try {
+    const userId = req.session?.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const profileId = req.query.profileId || null;
+    const limit = Math.min(parseInt(req.query.limit || '20'), 50);
+
+    const query = {
+      userId,
+      profileId: profileId || null,
+      completed: true
+    };
+
+    const habits = await WatchHabitDoc.find(query)
+      .sort({ lastWatchedAt: -1 })
+      .lean();
+
+    const enrichedItems = [];
+    const seenTitles = new Set();
+
+    for (const habit of habits) {
+      if (seenTitles.has(habit.titleId)) continue;
+
+      const titleDoc = await MovieDoc.findOne({ id: habit.titleId }).lean();
+      if (!titleDoc) continue;
+
+      seenTitles.add(habit.titleId);
+
+      enrichedItems.push({
+        id: titleDoc.id,
+        name: titleDoc.name,
+        type: titleDoc.type || 'movie',
+        year: titleDoc.year,
+        posterUrl: normalizeAsset(titleDoc.posterUrl),
+        thumbnailUrl: normalizeAsset(titleDoc.thumbnailUrl)
+      });
+
+      if (enrichedItems.length >= limit) break;
+    }
+
+    return res.json({ items: enrichedItems });
+  } catch (error) {
+    console.error('getAlreadyWatchedMovies error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getAlreadyWatchedSeries = async (req, res) => {
+  try {
+    const userId = req.session?.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const profileId = req.query.profileId || null;
+    const limit = Math.min(parseInt(req.query.limit || '20'), 50);
+
+    const query = {
+      userId,
+      profileId: profileId || null,
+      completed: true
+    };
+
+    const habits = await WatchHabitDoc.find(query)
+      .sort({ lastWatchedAt: -1 })
+      .lean();
+
+    const enrichedItems = [];
+    const seenTitles = new Set();
+
+    for (const habit of habits) {
+      if (seenTitles.has(habit.titleId)) continue;
+
+      const titleDoc = await SeriesDoc.findOne({ id: habit.titleId }).lean();
+      if (!titleDoc) continue;
+
+      seenTitles.add(habit.titleId);
+
+      enrichedItems.push({
+        id: titleDoc.id,
+        name: titleDoc.name,
+        type: titleDoc.type || 'series',
+        year: titleDoc.year,
+        posterUrl: normalizeAsset(titleDoc.posterUrl),
+        thumbnailUrl: normalizeAsset(titleDoc.thumbnailUrl)
+      });
+
+      if (enrichedItems.length >= limit) break;
+    }
+
+    return res.json({ items: enrichedItems });
+  } catch (error) {
+    console.error('getAlreadyWatchedSeries error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 function normalizeAsset(url) {
   if (!url) return null;
   if (/^https?:/i.test(url)) return url;
