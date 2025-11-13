@@ -68,17 +68,10 @@
             </div>
         </section>
 
-        <!-- Recommended Movies Section -->
+        <!-- Recommended Shows Section (unified movies + series) -->
         <section class="content-section">
-            <h2 class="section-title">Recommended Movies</h2>
-            <div class="content-grid" id="recommendedMoviesGrid">
-            </div>
-        </section>
-
-        <!-- Recommended Series Section -->
-        <section class="content-section">
-            <h2 class="section-title">Recommended Series</h2>
-            <div class="content-grid" id="recommendedSeriesGrid">
+            <h2 class="section-title">Recommended Shows</h2>
+            <div class="content-grid" id="recommendedShowsGrid">
             </div>
         </section>
 
@@ -526,8 +519,7 @@
 
             try {
                 const continueGrid = document.getElementById('continueWatchingGrid');
-                const moviesGrid = document.getElementById('recommendedMoviesGrid');
-                const seriesGrid = document.getElementById('recommendedSeriesGrid');
+                const recommendedGrid = document.getElementById('recommendedShowsGrid');
                 
                 const sections = document.querySelectorAll('.content-section');
                 if (sections[0]) {
@@ -535,19 +527,38 @@
                     if (heading) heading.textContent = 'Continue Watching';
                 }
                 
-                const [continueResp, moviesResp, seriesResp] = await Promise.all([
-                    api.get('/api/home/continue'),
-                    api.get(`/api/titles?type=movie&limit=${contentLimit}`),
-                    api.get(`/api/titles?type=series&limit=${contentLimit}`)
-                ]);
-                
+                // Load continue watching
+                const continueResp = await api.get('/api/home/continue');
                 const continueData = await continueResp.json();
-                const moviesData = await moviesResp.json();
-                const seriesData = await seriesResp.json();
-                
                 if (continueGrid) renderGrid(continueGrid, continueData.items || []);
-                if (moviesGrid) renderGrid(moviesGrid, moviesData.items || []);
-                if (seriesGrid) renderGrid(seriesGrid, seriesData.items || []);
+                
+                // Load recommended shows based on profile watch history
+                const profileId = localStorage.getItem('selectedProfileId');
+                if (profileId && recommendedGrid) {
+                    try {
+                        const recommendedResp = await api.get(`/api/home/recommended?profileId=${encodeURIComponent(profileId)}`);
+                        const recommendedData = await recommendedResp.json();
+                        if (recommendedData.items && recommendedData.items.length > 0) {
+                            renderGrid(recommendedGrid, recommendedData.items);
+                        } else {
+                            // Fallback to popular if no recommendations
+                            const popularResp = await api.get(`/api/home/popular`);
+                            const popularData = await popularResp.json();
+                            renderGrid(recommendedGrid, (popularData.items || []).slice(0, 5));
+                        }
+                    } catch (error) {
+                        console.error('Failed to load recommendations:', error);
+                        // Fallback to popular on error
+                        const popularResp = await api.get(`/api/home/popular`);
+                        const popularData = await popularResp.json();
+                        renderGrid(recommendedGrid, (popularData.items || []).slice(0, 5));
+                    }
+                } else if (recommendedGrid) {
+                    // No profile selected - show popular content
+                    const popularResp = await api.get(`/api/home/popular`);
+                    const popularData = await popularResp.json();
+                    renderGrid(recommendedGrid, (popularData.items || []).slice(0, 5));
+                }
 
                 await initGenreSections(contentLimit);
                 
