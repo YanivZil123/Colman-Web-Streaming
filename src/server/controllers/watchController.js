@@ -110,6 +110,12 @@ export const updateProgress = async (req, res) => {
       existing.completed = false;
       existing.lastWatchedAt = new Date();
       existing.updatedAt = new Date();
+      // Ensure watchHistory exists (for backward compatibility)
+      if (!existing.watchHistory) {
+        existing.watchHistory = [];
+      }
+      // watchCount should be derived from watchHistory.length
+      existing.watchCount = existing.watchHistory.length;
       await existing.save();
       return res.json({ ok: true, positionSec: watchedDuration });
     }
@@ -124,7 +130,8 @@ export const updateProgress = async (req, res) => {
       totalDuration,
       completed: false,
       lastWatchedAt: new Date(),
-      watchCount: 1
+      watchCount: 0,
+      watchHistory: [] // Initialize empty array
     });
     
     res.json({ ok: true, positionSec: watchedDuration });
@@ -159,6 +166,11 @@ export const markFinished = async (req, res) => {
       existing.completed = true;
       existing.lastWatchedAt = now;
       existing.updatedAt = now;
+      
+      // Ensure watchHistory exists (for backward compatibility)
+      if (!existing.watchHistory) {
+        existing.watchHistory = [];
+      }
       
       // Add watch event to history for daily statistics
       existing.watchHistory.push({

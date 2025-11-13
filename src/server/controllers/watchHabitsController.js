@@ -83,7 +83,8 @@ export const createWatchHabit = async (req, res) => {
       totalDuration: totalDuration || 0,
       completed: completed || false,
       lastWatchedAt: new Date(),
-      watchCount: 1
+      watchCount: 0,
+      watchHistory: [] // Initialize empty array
     });
     
     res.status(201).json(habit.toObject());
@@ -116,7 +117,19 @@ export const updateWatchHabit = async (req, res) => {
     if (completed !== undefined) habit.completed = completed;
     if (episodeId !== undefined) habit.episodeId = episodeId;
     if (profileId !== undefined) habit.profileId = profileId || null;
-    if (watchCount !== undefined) habit.watchCount = watchCount;
+    
+    // Ensure watchHistory exists before deriving watchCount
+    if (!habit.watchHistory) {
+      habit.watchHistory = [];
+    }
+    
+    // watchCount should be derived from watchHistory.length, not manually set
+    // Only allow manual setting if explicitly provided (for backward compatibility)
+    if (watchCount !== undefined) {
+      habit.watchCount = watchCount;
+    } else {
+      habit.watchCount = habit.watchHistory.length;
+    }
     
     habit.lastWatchedAt = new Date();
     habit.updatedAt = new Date();
@@ -172,23 +185,40 @@ export const upsertWatchProgress = async (req, res) => {
       profileId: profileId || null
     };
     
-    const habit = await WatchHabitDoc.findOneAndUpdate(
-      query,
-      {
-        $set: {
-          watchedDuration: watchedDuration || 0,
-          totalDuration: totalDuration || 0,
-          completed: completed || false,
-          lastWatchedAt: new Date(),
-          updatedAt: new Date()
-        },
-        $inc: { watchCount: 1 },
-        $setOnInsert: {
-          createdAt: new Date()
-        }
-      },
-      { upsert: true, new: true }
-    ).lean();
+    // Use findOne first to check if exists, then update appropriately
+    let habit = await WatchHabitDoc.findOne(query);
+    
+    if (habit) {
+      // Update existing habit
+      habit.watchedDuration = watchedDuration || 0;
+      habit.totalDuration = totalDuration || 0;
+      habit.completed = completed || false;
+      habit.lastWatchedAt = new Date();
+      habit.updatedAt = new Date();
+      // Ensure watchHistory exists
+      if (!habit.watchHistory) {
+        habit.watchHistory = [];
+      }
+      // watchCount derived from watchHistory.length
+      habit.watchCount = habit.watchHistory.length;
+      await habit.save();
+      habit = habit.toObject();
+    } else {
+      // Create new habit
+      habit = await WatchHabitDoc.create({
+        userId: req.session.user.id,
+        titleId,
+        episodeId: episodeId || null,
+        profileId: profileId || null,
+        watchedDuration: watchedDuration || 0,
+        totalDuration: totalDuration || 0,
+        completed: completed || false,
+        lastWatchedAt: new Date(),
+        watchCount: 0,
+        watchHistory: []
+      });
+      habit = habit.toObject();
+    }
     
     res.json(habit);
   } catch (error) {
