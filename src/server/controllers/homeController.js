@@ -154,6 +154,26 @@ export const getRecommendedForProfile = async (req, res) => {
   }
 };
 
+export const getMostLikedMovies = async (req, res) => {
+  try {
+    //Implement algorithm 
+    return res.json({ items: [] });
+  } catch (error) {
+    console.error('getMostLikedMovies error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getMostLikedSeries = async (req, res) => {
+  try {
+    // Implement algorithm 
+    return res.json({ items: [] });
+  } catch (error) {
+    console.error('getMostLikedSeries error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 function mapTitleItem(t) {
   return {
     id: t.id,
