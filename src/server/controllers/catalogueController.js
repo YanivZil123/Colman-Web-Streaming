@@ -15,8 +15,10 @@ export const getCatalogues = (req, res) => {
     let catalogues = Catalogue.findAll(filters);
     
     // Pagination
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    const MAX_LIMIT = 100;
+    const MAX_PAGE = 1000;
+    const pageNum = Math.max(1, Math.min(parseInt(page), MAX_PAGE));
+    const limitNum = Math.min(parseInt(limit), MAX_LIMIT);
     const startIndex = (pageNum - 1) * limitNum;
     const endIndex = startIndex + limitNum;
     

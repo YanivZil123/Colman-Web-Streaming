@@ -16,8 +16,10 @@ export const getWatchHabits = (req, res) => {
     let habits = WatchHabits.findAll(filters);
     
     // Pagination
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    const MAX_LIMIT = 100;
+    const MAX_PAGE = 1000;
+    const pageNum = Math.max(1, Math.min(parseInt(page), MAX_PAGE));
+    const limitNum = Math.min(parseInt(limit), MAX_LIMIT);
     const startIndex = (pageNum - 1) * limitNum;
     const endIndex = startIndex + limitNum;
     
@@ -173,7 +175,9 @@ export const upsertWatchProgress = (req, res) => {
 export const getContinueWatching = (req, res) => {
   try {
     const { limit = '10' } = req.query;
-    const habits = WatchHabits.getContinueWatching(req.session.user.id, parseInt(limit));
+    const MAX_LIMIT = 50;
+    const limitNum = Math.min(parseInt(limit), MAX_LIMIT);
+    const habits = WatchHabits.getContinueWatching(req.session.user.id, limitNum);
     res.json({ items: habits });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
