@@ -89,6 +89,13 @@
             </div>
         </section>
 
+        <!-- Already Watched Section -->
+        <section class="content-section">
+            <h2 class="section-title">Already Watched</h2>
+            <div class="content-grid" id="alreadyWatchedGrid">
+            </div>
+        </section>
+
         <!-- New Content Section -->
         <section class="content-section" style="margin-bottom: 40px;">
             <h2 class="section-title" style="font-size: 32px; font-weight: 700; margin-bottom: 10px;">New</h2>
@@ -591,6 +598,7 @@
                 const recommendedGrid = document.getElementById('recommendedShowsGrid');
                 const mostLikedMoviesGrid = document.getElementById('mostLikedMoviesGrid');
                 const mostLikedSeriesGrid = document.getElementById('mostLikedSeriesGrid');
+                const alreadyWatchedGrid = document.getElementById('alreadyWatchedGrid');
                 
                 const sections = document.querySelectorAll('.content-section');
                 if (sections[0]) {
@@ -641,6 +649,12 @@
                 
                 if (mostLikedMoviesGrid) renderGrid(mostLikedMoviesGrid, mostLikedMoviesData.items || []);
                 if (mostLikedSeriesGrid) renderGrid(mostLikedSeriesGrid, mostLikedSeriesData.items || []);
+
+                if (alreadyWatchedGrid) {
+                    const alreadyWatchedResp = await api.get(`/api/home/already-watched${profileId ? '?profileId=' + encodeURIComponent(profileId) : ''}`);
+                    const alreadyWatchedData = await alreadyWatchedResp.json();
+                    renderGrid(alreadyWatchedGrid, alreadyWatchedData.items || []);
+                }
 
                 await initGenreSections(contentLimit);
                 
