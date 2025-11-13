@@ -645,7 +645,7 @@
                 if (moviesGrid) renderGrid(moviesGrid, moviesData.items || []);
                 if (seriesGrid) renderGrid(seriesGrid, seriesData.items || []);
 
-                await loadLatestByGenre(contentLimit);
+                await loadLatestByGenre(10);
                 
                 // Hide loading screen after all content is loaded
                 hideLoadingScreen();
@@ -677,7 +677,7 @@
             }
         }
 
-        async function loadLatestByGenre(contentLimit = 20) {
+        async function loadLatestByGenre(contentLimit = 10) {
             const genres = [
                 { name: 'action', gridId: 'latestActionGrid' },
                 { name: 'drama', gridId: 'latestDramaGrid' },
@@ -691,7 +691,7 @@
 
             for (const genre of genres) {
                 try {
-                    const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre.name)}&sort=createdAt&limit=${contentLimit}`);
+                    const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre.name)}&sort=year&limit=${contentLimit}`);
                     const data = await response.json();
                     const grid = document.getElementById(genre.gridId);
                     if (grid) renderGrid(grid, data.items || []);
