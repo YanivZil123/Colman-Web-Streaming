@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import config from './config/config.js';
 import seedDatabase from './config/seed.js';
 import registerRoutes from './routes/index.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -120,6 +121,8 @@ app.get('*', (req, res, next) => {
   // Serve main app for authenticated users (fallback)
   res.sendFile(path.join(__dirname, '../../public/views', 'index.html'));
 });
+
+app.use(errorHandler);
 
 async function startServer() {
   try {
