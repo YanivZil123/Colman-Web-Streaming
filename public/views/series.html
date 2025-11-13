@@ -51,7 +51,11 @@
                             <!-- Profiles will be loaded here -->
                         </div>
                         <div class="profile-dropdown-divider"></div>
-                        <a href="/views/profile-selection.html" class="profile-dropdown-item">Manage Profiles</a>
+                        <div class="profile-dropdown-item has-submenu" id="settingsBtn">Settings</div>
+                        <div class="settings-submenu" id="settingsSubmenu">
+                            <a href="/views/profile-selection.html" class="settings-submenu-item">Manage Profile</a>
+                            <a href="/views/watch-habits.html" class="settings-submenu-item">Statistics</a>
+                        </div>
                         <a href="/" class="profile-dropdown-item">Sign Out</a>
                     </div>
                 </div>
@@ -105,17 +109,36 @@
             
             loadProfiles();
             setupSearch();
+            setupSettingsMenu();
             
             // Close dropdown when clicking outside
             document.addEventListener('click', function(event) {
                 const dropdown = document.getElementById('profileDropdown');
                 const profileBtn = document.querySelector('.profile-icon-btn');
+                const settingsBtn = document.getElementById('settingsBtn');
+                const settingsSubmenu = document.getElementById('settingsSubmenu');
                 
                 if (!dropdown.contains(event.target) && !profileBtn.contains(event.target)) {
                     dropdown.classList.remove('show');
+                    if (settingsBtn) settingsBtn.classList.remove('open');
+                    if (settingsSubmenu) settingsSubmenu.classList.remove('show');
                 }
             });
         });
+
+        // Setup Settings menu toggle
+        function setupSettingsMenu() {
+            const settingsBtn = document.getElementById('settingsBtn');
+            const settingsSubmenu = document.getElementById('settingsSubmenu');
+            
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    settingsBtn.classList.toggle('open');
+                    settingsSubmenu.classList.toggle('show');
+                });
+            }
+        }
 
         // Set avatar immediately from cached profile data to prevent flash
         function setAvatarFromCache() {

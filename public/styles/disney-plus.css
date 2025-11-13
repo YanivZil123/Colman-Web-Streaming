@@ -999,9 +999,74 @@ body.screen-shake {
     text-decoration: none;
     font-size: 14px;
     transition: background 0.2s ease;
+    position: relative;
 }
 
 .profile-dropdown-item:hover {
+    background: hsl(220 25% 18%);
+}
+
+/* Settings button and submenu styles */
+.profile-dropdown-item.has-submenu {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.profile-dropdown-item.has-submenu::after {
+    content: '▶';
+    font-size: 12px;
+    color: hsl(var(--disney-muted));
+    transition: transform 0.2s ease;
+}
+
+.profile-dropdown-item.has-submenu.open::after {
+    transform: rotate(90deg);
+}
+
+.settings-submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    background: hsl(var(--disney-card));
+    border: 1px solid hsl(var(--disney-border));
+    border-radius: 8px;
+    min-width: 200px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    margin-left: 8px;
+}
+
+.profile-dropdown-item.has-submenu.open ~ .settings-submenu,
+.settings-submenu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.settings-submenu-item {
+    display: block;
+    padding: 12px 16px;
+    color: hsl(var(--disney-text));
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.settings-submenu-item:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.settings-submenu-item:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+.settings-submenu-item:hover {
     background: hsl(220 25% 18%);
 }
 
