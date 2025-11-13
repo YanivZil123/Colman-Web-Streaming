@@ -139,10 +139,21 @@ Colman-Web-Streaming/
 ## 🔐 Default Credentials
 
 After seeding the database, you can login with:
-
+Admin:
 - **Username**: `admin`
 - **Password**: `admin1`
+Example Usernames:
+- **Username**: `user1`
+- **Password**: `password123`
 
+- **Username**: `user2`
+- **Password**: `password123`
+
+- **Username**: `user3`
+- **Password**: `password123`
+
+- **Username**: `user4`
+- **Password**: `password123`
 **⚠️ Warning**: Change the default admin password in production!
 
 ## 🌐 API Endpoints
@@ -275,8 +286,10 @@ This project is part of a course assignment and is for educational purposes.
 
 ## 👥 Authors
 
+- **yehonatan-magen-323810879**
 - **yaniv-berniker-213371776**
 - **yaniv-zilberson-214269292**
+
 
 ## 🙏 Acknowledgments
 
@@ -285,7 +298,5 @@ This project is part of a course assignment and is for educational purposes.
 - Express.js community for excellent documentation
 
 ---
-
-**Note**: This is an educational project. Ensure all sensitive data is properly secured before deploying to production.
 
 **Happy Streaming! 🎬🍿**
