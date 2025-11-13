@@ -18,24 +18,70 @@
       console.error('Failed to load content limit config:', error);
     }
     
-    const genreGrids = {
-      'action': 'actionGrid',
-      'drama': 'dramaGrid',
-      'comedy': 'comedyGrid',
-      'horror': 'horrorGrid',
-      'cartoon': 'cartoonGrid',
-      'kids': 'kidsGrid',
-      'sci-fi': 'scifiGrid',
-      'thriller': 'thrillerGrid'
-    };
+    const defaultGenres = [
+      { name: 'Action', slug: 'action' },
+      { name: 'Drama', slug: 'drama' },
+      { name: 'Comedy', slug: 'comedy' },
+      { name: 'Horror', slug: 'horror' },
+      { name: 'Cartoon', slug: 'cartoon' },
+      { name: 'Kids', slug: 'kids' },
+      { name: 'Sci-Fi', slug: 'sci-fi' },
+      { name: 'Thriller', slug: 'thriller' }
+    ];
+    const genreSections = {};
+    const container = document.getElementById('moviesGenreContainer');
+
+    function renderGenreSections(genres) {
+      if (!container) return;
+      container.innerHTML = '';
+      Object.keys(genreSections).forEach(key => delete genreSections[key]);
+
+      (genres || []).forEach(genre => {
+        const slug = genre.slug || slugify(genre.name);
+        const gridId = `movies-${slug}-grid`;
+        const section = document.createElement('section');
+        section.className = 'content-section';
+        section.dataset.genre = slug;
+        section.innerHTML = `
+          <h2 class="section-title">${genre.name || slug}</h2>
+          <div class="content-grid" id="${gridId}"></div>
+        `;
+        genreSections[slug] = { gridId, name: genre.name || slug };
+        container.appendChild(section);
+      });
+    }
+
+    async function loadGenreList() {
+      let genresToUse = defaultGenres;
+      try {
+        const response = await api.get('/api/genres');
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data.items) && data.items.length) {
+            genresToUse = data.items;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load genres:', error);
+      }
+      renderGenreSections(genresToUse);
+    }
     
-    function initHorizontalScroll(grid, initialItems = []) {
+    function resetSectionHeadings() {
+      Object.entries(genreSections).forEach(([slug, info]) => {
+        const sectionEl = document.querySelector(`section[data-genre="${slug}"]`);
+        if (sectionEl) {
+          const heading = sectionEl.querySelector('h2');
+          if (heading) heading.textContent = info.name;
+        }
+      });
+    }
+    
+    function initHorizontalScroll(grid, initialItems = [], genreSlug) {
       let scrollInterval = null;
       let currentPage = 1;
       let isLoading = false;
-      let hasMore = true;
       let allItemIds = new Set(initialItems.map(item => item.id));
-      const genre = Object.keys(genreGrids).find(key => genreGrids[key] === grid.id);
       const section = grid.closest('.content-section');
       
       const leftArrow = document.createElement('button');
@@ -49,6 +95,8 @@
       rightArrow.onclick = () => scrollGrid(1);
       
       if (section) {
+        const existingArrows = section.querySelectorAll('.scroll-arrow');
+        existingArrows.forEach(btn => btn.remove());
         section.appendChild(leftArrow);
         section.appendChild(rightArrow);
       }
@@ -113,20 +161,20 @@
       }
       
       async function loadMoreContent() {
-        if (!genre || isLoading) return;
+        if (!genreSlug || isLoading) return;
         
         isLoading = true;
         currentPage++;
         
         try {
-          const response = await api.get(`/api/titles?genre=${encodeURIComponent(genre)}&type=movie&page=${currentPage}&limit=${contentLimit}&sort=popularity`);
+          const response = await api.get(`/api/titles?genre=${encodeURIComponent(genreSlug)}&type=movie&page=${currentPage}&limit=${contentLimit}&sort=popularity`);
           const data = await response.json();
           const items = data.items || [];
           
           if (items.length === 0) {
             allItemIds.clear();
             currentPage = 1;
-            const resetResponse = await api.get(`/api/titles?genre=${encodeURIComponent(genre)}&type=movie&page=1&limit=${contentLimit}&sort=popularity`);
+            const resetResponse = await api.get(`/api/titles?genre=${encodeURIComponent(genreSlug)}&type=movie&page=1&limit=${contentLimit}&sort=popularity`);
             const resetData = await resetResponse.json();
             const resetItems = resetData.items || [];
             
@@ -145,7 +193,7 @@
             });
           }
         } catch (error) {
-          console.error(`Failed to load more ${genre} content:`, error);
+          console.error(`Failed to load more ${genreSlug} content:`, error);
         } finally {
           isLoading = false;
         }
@@ -158,7 +206,7 @@
       card.onclick = () => window.location.href = `/title.html?id=${t.id}`;
       card.innerHTML = `
         <div class="content-thumbnail">
-          <img src="${t.posterUrl || '/images/poster-placeholder.jpg'}" alt="${t.name || 'Movie'}" onerror="this.src='/images/poster-placeholder.jpg'">
+          <img src="${resolveImageUrl(t.thumbnailUrl || t.posterUrl)}" alt="${t.name || 'Movie'}" onerror="this.src='/images/poster-placeholder.jpg'">
           <div class="play-overlay">
             <span class="play-icon">▶</span>
           </div>
@@ -171,7 +219,18 @@
       return card;
     }
     
-    function renderGenreGrid(gridId, items) {
+    function resolveImageUrl(url) {
+      if (!url) return '/images/poster-placeholder.jpg';
+      if (/^https?:/i.test(url)) return url;
+      let cleaned = String(url).replace(/^\/+/, '');
+      if (cleaned.startsWith('public/')) cleaned = cleaned.replace(/^public\//, '');
+      const idx = cleaned.indexOf('uploads/');
+      if (idx !== -1) cleaned = cleaned.slice(idx);
+      if (!cleaned.startsWith('uploads/')) cleaned = 'uploads/' + cleaned;
+      return '/' + cleaned;
+    }
+    
+    function renderGenreGrid(gridId, items, genreSlug) {
       const grid = document.getElementById(gridId);
       if (!grid) return;
       grid.innerHTML = '';
@@ -185,24 +244,25 @@
         grid.appendChild(createContentCard(t));
       });
       
-      initHorizontalScroll(grid, items);
+      initHorizontalScroll(grid, items, genreSlug);
     }
     
     async function loadGenreContent(genreSlug) {
       try {
   const response = await api.get(`/api/titles?genre=${encodeURIComponent(genreSlug)}&type=movie&limit=${contentLimit}&page=1&sort=popularity`);
         const data = await response.json();
-        const gridId = genreGrids[genreSlug];
-        if (gridId) {
-          renderGenreGrid(gridId, data.items || []);
+        const section = genreSections[genreSlug];
+        if (section) {
+          renderGenreGrid(section.gridId, data.items || [], genreSlug);
         }
       } catch (error) {
         console.error(`Failed to load ${genreSlug} content:`, error);
       }
     }
     
-    const genres = ['action', 'drama', 'comedy', 'horror', 'cartoon', 'kids', 'sci-fi', 'thriller'];
-    await Promise.all(genres.map(genre => loadGenreContent(genre)));
+    await loadGenreList();
+    const genreSlugs = Object.keys(genreSections);
+    await Promise.all(genreSlugs.map(genre => loadGenreContent(genre)));
 
     // Hide loading screen after content is loaded
     if (typeof hideLoadingScreen === 'function') {
@@ -227,7 +287,8 @@
 
     async function performSearch(query) {
       if (!query || query.trim().length === 0) {
-        await Promise.all(genres.map(genre => loadGenreContent(genre)));
+        resetSectionHeadings();
+        await Promise.all(genreSlugs.map(genre => loadGenreContent(genre)));
         return;
       }
 
@@ -236,17 +297,19 @@
         const response = await api.get(`/api/titles?q=${encodeURIComponent(trimmedQuery)}&type=movie`);
         const data = await response.json();
         
-        Object.values(genreGrids).forEach(gridId => {
-          const grid = document.getElementById(gridId);
+        Object.values(genreSections).forEach(section => {
+          const grid = document.getElementById(section.gridId);
           if (grid) grid.innerHTML = '';
         });
 
-        const firstGridId = Object.values(genreGrids)[0];
-        renderGenreGrid(firstGridId, data.items || []);
-        
-        const firstSection = document.querySelector('.content-section');
+        const firstSection = Object.values(genreSections)[0];
         if (firstSection) {
-          const heading = firstSection.querySelector('h2');
+          renderGenreGrid(firstSection.gridId, data.items || [], null);
+        }
+        
+        const firstSectionEl = document.querySelector('.content-section');
+        if (firstSectionEl) {
+          const heading = firstSectionEl.querySelector('h2');
           if (heading) heading.textContent = `Search Results for "${trimmedQuery}"`;
         }
       } catch (error) {
@@ -271,5 +334,8 @@
         performSearch(searchInput.value);
       }
     });
+    
+    function slugify(value = '') {
+      return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'genre';
+    }
   })();
-
