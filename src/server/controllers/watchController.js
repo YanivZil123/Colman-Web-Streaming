@@ -64,7 +64,8 @@ export const getProgress = async (req, res) => {
       return res.json({ 
         positionSec: habit.watchedDuration || 0, 
         totalDurationSec: habit.totalDuration || 0, 
-        episodeId: habit.episodeId || null 
+        episodeId: habit.episodeId || null,
+        completed: habit.completed || false
       });
     }
     
@@ -78,7 +79,8 @@ export const getProgress = async (req, res) => {
     res.json({ 
       positionSec: habit.watchedDuration || 0, 
       totalDurationSec: habit.totalDuration || 0, 
-      episodeId: habit.episodeId || null 
+      episodeId: habit.episodeId || null,
+      completed: habit.completed || false
     });
   } catch (error) {
     console.error('getProgress error:', error);
@@ -128,27 +130,62 @@ export const updateProgress = async (req, res) => {
         });
       }
       
-      existing.watchedDuration = watchedDuration;
+      const isCompleted = totalDuration > 0 && watchedDuration >= totalDuration;
+      
+      if(isCompleted && episodeId){
+        const title = await Title.findById(titleId);
+        if(title && title.type === 'series' && title.episodes && title.episodes.length > 0){
+          const lastEpisode = title.episodes[title.episodes.length - 1];
+          if(lastEpisode.id === episodeId){
+            await WatchHabitDoc.deleteMany({
+              userId,
+              titleId,
+              profileId: profileId || null
+            });
+            return res.json({ ok: true, positionSec: 0 });
+          }
+        }
+      }
+      
+      existing.watchedDuration = isCompleted ? 0 : watchedDuration;
       existing.totalDuration = totalDuration || existing.totalDuration;
-      existing.completed = false;
+      existing.completed = isCompleted;
       existing.lastWatchedAt = now;
       existing.updatedAt = now;
       
       // watchCount derived from watchHistory.length
       existing.watchCount = existing.watchHistory.length;
       await existing.save();
+      
       return res.json({ ok: true, positionSec: watchedDuration });
     }
     
     // Create new watch habit
+    const isCompleted = totalDuration > 0 && watchedDuration >= totalDuration;
+    
+    if(isCompleted && episodeId){
+      const title = await Title.findById(titleId);
+      if(title && title.type === 'series' && title.episodes && title.episodes.length > 0){
+        const lastEpisode = title.episodes[title.episodes.length - 1];
+        if(lastEpisode.id === episodeId){
+          await WatchHabitDoc.deleteMany({
+            userId,
+            titleId,
+            profileId: profileId || null
+          });
+          return res.json({ ok: true, positionSec: 0 });
+        }
+      }
+    }
+    
     await WatchHabitDoc.create({
       userId,
       titleId,
       episodeId: episodeId || null,
       profileId: profileId || null,
-      watchedDuration,
+      watchedDuration: isCompleted ? 0 : watchedDuration,
       totalDuration,
-      completed: false,
+      completed: isCompleted,
       lastWatchedAt: now,
       watchCount: 0,
       watchHistory: [] // Initialize empty array
@@ -241,7 +278,7 @@ export const markFinished = async (req, res) => {
         existing.watchCount = existing.watchHistory.length;
       }
       
-      existing.watchedDuration = targetDuration;
+      existing.watchedDuration = 0;
       existing.totalDuration = targetDuration || existing.totalDuration;
       existing.completed = true;
       existing.lastWatchedAt = now;
@@ -257,7 +294,7 @@ export const markFinished = async (req, res) => {
       titleId,
       episodeId: episodeId || null,
       profileId: profileId || null,
-      watchedDuration: targetDuration,
+      watchedDuration: 0,
       totalDuration: targetDuration,
       completed: true,
       lastWatchedAt: now,

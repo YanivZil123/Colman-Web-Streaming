@@ -208,9 +208,12 @@
         </div>
 
         <section class="content-section" id="episodesSection" style="display: none;">
-            <h2 class="section-title">Episodes</h2>
-            <div class="content-grid" id="episodesGrid">
-                <!-- Episodes will be loaded here -->
+            <div class="episode-browser">
+                <div class="episode-browser-header">
+                    <h2 class="section-title">Episodes</h2>
+                    <div class="season-selector" id="seasonSelector"></div>
+                </div>
+                <div class="episode-list" id="episodeList"></div>
             </div>
         </section>
 
@@ -567,58 +570,192 @@
                 const playLink = actions.querySelector('.btn-play');
                 if (!playLink) return;
                 const profileId = localStorage.getItem('selectedProfileId');
-                const resp = await api.get('/api/watch/progress?titleId=' + encodeURIComponent(t.id) + (profileId ? ('&profileId=' + encodeURIComponent(profileId)) : ''));
-                if (!resp.ok) return;
-                const progress = await resp.json().catch(() => null);
-                if (!progress || progress.positionSec === undefined) return;
-                const position = Number(progress.positionSec || 0);
-                const total = Number(progress.totalDurationSec || 0);
-                if (position <= 1) return;
-                if (total && position >= total - 2) return;
-                const base = '/player.html?titleId=' + encodeURIComponent(t.id) + (progress.episodeId ? ('&episodeId=' + encodeURIComponent(progress.episodeId)) : '');
-                playLink.textContent = '▶ Play from beginning';
-                playLink.href = base + '&resume=start&resumePosition=0';
-                const resumeBtn = document.createElement('a');
-                resumeBtn.className = 'btn-play';
-                resumeBtn.textContent = '⟲ Continue';
-                resumeBtn.href = base + '&resume=resume&resumePosition=' + Math.floor(position);
-                actions.insertBefore(resumeBtn, playLink);
+                if(t.type==='series' && t.episodes && t.episodes.length>0){
+                    const progressPromises = t.episodes.map(ep =>
+                        api.get('/api/watch/progress?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(ep.id) + (profileId ? ('&profileId=' + encodeURIComponent(profileId)) : ''))
+                            .then(r => r.json())
+                            .then(d => ({
+                                episodeId: ep.id,
+                                episode: ep,
+                                positionSec: d.positionSec || 0,
+                                durationSec: d.totalDurationSec || d.durationSec || 0,
+                                completed: d.completed || false
+                            }))
+                            .catch(() => null)
+                    );
+                    const allProgress = (await Promise.all(progressPromises)).filter(p => p && (p.positionSec > 0 || p.completed));
+                    if(allProgress.length === 0){
+                        playLink.textContent = '▶ Play S1 E1';
+                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(t.episodes[0].id);
+                        return;
+                    }
+                    let targetEpisode = null;
+                    let targetProgress = null;
+                    let shouldResume = false;
+                    for(const prog of allProgress){
+                        if(!prog.completed && prog.positionSec > 0){
+                            targetEpisode = prog.episode;
+                            targetProgress = prog;
+                            shouldResume = true;
+                            break;
+                        }
+                    }
+                    if(!targetEpisode){
+                        allProgress.sort((a, b) => {
+                            const idxA = t.episodes.findIndex(e => e.id === a.episodeId);
+                            const idxB = t.episodes.findIndex(e => e.id === b.episodeId);
+                            return idxB - idxA;
+                        });
+                        targetProgress = allProgress[0];
+                        targetEpisode = targetProgress.episode;
+                        shouldResume = false;
+                    }
+                    const episodeIndex = t.episodes.findIndex(ep => ep.id === targetEpisode.id);
+                    const seasonNum = targetEpisode.season || 1;
+                    const episodeNum = targetEpisode.episodeNumber || (episodeIndex + 1);
+                    if(shouldResume){
+                        playLink.textContent = `▶ Resume S${seasonNum} E${episodeNum}`;
+                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(targetEpisode.id) + '&resume=resume';
+                    }else{
+                        const nextEpisode = t.episodes[episodeIndex + 1];
+                        if(nextEpisode){
+                            const nextSeason = nextEpisode.season || 1;
+                            const nextEpisodeNum = nextEpisode.episodeNumber || (episodeIndex + 2);
+                            playLink.textContent = `▶ Play S${nextSeason} E${nextEpisodeNum}`;
+                            playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(nextEpisode.id);
+                        }else{
+                            playLink.textContent = '▶ Play S1 E1';
+                            playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(t.episodes[0].id);
+                        }
+                    }
+                }else if(t.type==='movie'){
+                    const resp = await api.get('/api/watch/progress?titleId=' + encodeURIComponent(t.id) + (profileId ? ('&profileId=' + encodeURIComponent(profileId)) : ''));
+                    const progress = await resp.json().catch(() => null);
+                    if (!progress || progress.positionSec === undefined) {
+                        playLink.textContent = '▶ Play';
+                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id);
+                        return;
+                    }
+                    const position = Number(progress.positionSec || 0);
+                    const total = Number(progress.totalDurationSec || progress.durationSec || 0);
+                    if (position <= 30) {
+                        playLink.textContent = '▶ Play';
+                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id);
+                        return;
+                    }
+                    if (total && position >= total - 30) {
+                        playLink.textContent = '▶ Play from beginning';
+                        playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&resume=start';
+                        return;
+                    }
+                    playLink.textContent = '▶ Resume';
+                    playLink.href = '/player.html?titleId=' + encodeURIComponent(t.id) + '&resume=resume';
+                }
             } catch (error) {
                 console.error('Resume buttons error', error);
             }
         }
 
-        function renderEpisodes(t) {
+        async function renderEpisodes(t) {
             const episodesSection = document.getElementById('episodesSection');
-            const episodesGrid = document.getElementById('episodesGrid');
+            const episodeList = document.getElementById('episodeList');
+            const seasonSelector = document.getElementById('seasonSelector');
             
-            if (!episodesSection || !episodesGrid) return;
+            if (!episodesSection || !episodeList || !seasonSelector) return;
             
             episodesSection.style.display = 'block';
-            episodesGrid.innerHTML = '';
-            
-            t.episodes.forEach(episode => {
-                const episodeCard = document.createElement('a');
-                episodeCard.className = 'content-card';
-                episodeCard.href = `/player.html?titleId=${t.id}&episodeId=${episode.id}`;
-                
-                episodeCard.innerHTML = `
-                    <div class="content-thumbnail">
-                        <img src="${t.thumbnailUrl || t.posterUrl || '/images/poster-placeholder.jpg'}" 
-                             alt="${episode.name}" 
-                             onerror="this.src='/images/poster-placeholder.jpg'">
-                        <div class="play-overlay">
-                            <span class="play-icon">▶</span>
-                        </div>
-                    </div>
-                    <div class="content-info">
-                        <h3 class="content-title">S${episode.season || 1} E${episode.episodeNumber || 1} - ${episode.name || 'Episode'}</h3>
-                        <p class="content-meta">${episode.rating ? `Rating: ${episode.rating}` : ''}</p>
-                    </div>
-                `;
-                
-                episodesGrid.appendChild(episodeCard);
+            const seasons = {};
+            t.episodes.forEach(ep => {
+                const seasonNum = ep.season || 1;
+                if (!seasons[seasonNum]) seasons[seasonNum] = [];
+                seasons[seasonNum].push(ep);
             });
+            const seasonNumbers = Object.keys(seasons).sort((a, b) => Number(a) - Number(b));
+            let selectedSeason = seasonNumbers[0];
+            seasonSelector.innerHTML = '';
+            if (seasonNumbers.length > 1) {
+                const select = document.createElement('select');
+                select.className = 'season-select';
+                seasonNumbers.forEach(s => {
+                    const option = document.createElement('option');
+                    option.value = s;
+                    option.textContent = `Season ${s}`;
+                    select.appendChild(option);
+                });
+                select.onchange = () => {
+                    selectedSeason = select.value;
+                    renderEpisodeList(seasons[selectedSeason], t.id);
+                };
+                seasonSelector.appendChild(select);
+            }
+            const profileId = localStorage.getItem('selectedProfileId');
+            let progressMap = {};
+            try {
+                const progressPromises = t.episodes.map(ep =>
+                    api.get('/api/watch/progress?titleId=' + encodeURIComponent(t.id) + '&episodeId=' + encodeURIComponent(ep.id) + (profileId ? ('&profileId=' + encodeURIComponent(profileId)) : ''))
+                        .then(r => r.json())
+                        .then(d => ({ id: ep.id, progress: d }))
+                        .catch(() => ({ id: ep.id, progress: null }))
+                );
+                const results = await Promise.all(progressPromises);
+                results.forEach(r => {
+                    if (r.progress && r.progress.positionSec !== undefined) {
+                        progressMap[r.id] = r.progress;
+                    }
+                });
+            } catch (err) { }
+            function renderEpisodeList(episodes, titleId) {
+                episodeList.innerHTML = '';
+                episodes.forEach((ep, idx) => {
+                    const item = document.createElement('div');
+                    item.className = 'episode-item';
+                    const thumbnail = document.createElement('div');
+                    thumbnail.className = 'episode-thumbnail';
+                    const img = document.createElement('img');
+                    img.src = ep.thumbnailUrl || t.thumbnailUrl || t.posterUrl || '/images/poster-placeholder.jpg';
+                    img.alt = ep.name || `Episode ${ep.episodeNumber || (idx + 1)}`;
+                    img.onerror = function () { this.src = '/images/poster-placeholder.jpg'; };
+                    thumbnail.appendChild(img);
+                    const playOverlay = document.createElement('div');
+                    playOverlay.className = 'episode-play-overlay';
+                    playOverlay.innerHTML = '<span class="episode-play-icon">▶</span>';
+                    thumbnail.appendChild(playOverlay);
+                    const info = document.createElement('div');
+                    info.className = 'episode-info';
+                    const number = document.createElement('div');
+                    number.className = 'episode-number';
+                    number.textContent = `Episode ${ep.episodeNumber || (idx + 1)}`;
+                    const title = document.createElement('h3');
+                    title.className = 'episode-title';
+                    title.textContent = ep.name || `Episode ${ep.episodeNumber || (idx + 1)}`;
+                    const desc = document.createElement('p');
+                    desc.className = 'episode-description';
+                    desc.textContent = ep.description || '';
+                    info.appendChild(number);
+                    info.appendChild(title);
+                    if (ep.description) info.appendChild(desc);
+                    const progress = progressMap[ep.id];
+                    if (progress && progress.positionSec > 0 && progress.durationSec > 0) {
+                        const pct = (progress.positionSec / progress.durationSec) * 100;
+                        if (pct < 95) {
+                            const progressBar = document.createElement('div');
+                            progressBar.className = 'episode-progress';
+                            const progressFill = document.createElement('div');
+                            progressFill.className = 'episode-progress-bar';
+                            progressFill.style.width = pct + '%';
+                            progressBar.appendChild(progressFill);
+                            info.appendChild(progressBar);
+                        }
+                    }
+                    item.appendChild(thumbnail);
+                    item.appendChild(info);
+                    item.onclick = () => {
+                        location.href = '/player.html?titleId=' + encodeURIComponent(titleId) + '&episodeId=' + encodeURIComponent(ep.id);
+                    };
+                    episodeList.appendChild(item);
+                });
+            }
+            renderEpisodeList(seasons[selectedSeason], t.id);
         }
 
         async function loadSimilarTitles(id) {
