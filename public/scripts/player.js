@@ -1,15 +1,16 @@
 const v=document.getElementById('v');
 const bar=document.getElementById('bar');
 const progressWrap=document.getElementById('progressTrack');
-const nextEpLink=document.getElementById('nextEp');
-const titleBreadcrumb=document.getElementById('titleBreadcrumb');
-const titleName=document.getElementById('titleName');
-const titleMeta=document.getElementById('titleMeta');
-const moreInfo=document.getElementById('moreInfo');
+const overlayBack=document.getElementById('overlayBack');
 const overlayBack10=document.getElementById('overlayBack10');
 const overlayFwd10=document.getElementById('overlayFwd10');
 const overlayPlayPause=document.getElementById('overlayPlayPause');
 const overlayFullscreen=document.getElementById('overlayFullscreen');
+const overlayEpisodes=document.getElementById('overlayEpisodes');
+const episodeSheet=document.getElementById('episodeSheet');
+const episodeSheetClose=document.getElementById('episodeSheetClose');
+const episodeSheetTitle=document.getElementById('episodeSheetTitle');
+const episodeList=document.getElementById('episodeList');
 const overlay=document.querySelector('.video-overlay');
 const videoFrame=document.querySelector('.video-frame');
 let overlayHideTimer=null;
@@ -25,27 +26,19 @@ let resumePromptShown=false;
 let cachedProgress=null;
 let metadataLoaded=false;
 let sessionStartTime=Date.now();
+let titleData=null;
+let episodeProgressMap={};
 
 async function loadTitleDetails(){
   if(!titleId) return;
   try{
     const res=await api.get('/api/titles/'+encodeURIComponent(titleId));
     if(!res.ok) throw new Error('fetch failed');
-    const data=await res.json();
-    const name=data?.name||'Player';
-    if(titleBreadcrumb) titleBreadcrumb.textContent=name;
-    if(titleName) titleName.textContent=name;
-    if(titleMeta){
-      const parts=[];
-      if(data?.year) parts.push(data.year);
-      if(data?.type) parts.push(data.type==='series'?'Series':'Movie');
-      if(data?.genres?.length) parts.push(data.genres.join(', '));
-      titleMeta.textContent=parts.join(' · ');
-    }
+    titleData=await res.json();
+    return titleData;
   }catch(err){
-    if(titleBreadcrumb) titleBreadcrumb.textContent='Player';
+    return null;
   }
-  if(moreInfo) moreInfo.href='/title.html?id='+encodeURIComponent(titleId);
 }
 
 function sendProgress(payload, preferBeacon){
@@ -98,6 +91,85 @@ function hideOverlay(){
   overlay.classList.remove('visible');
 }
 
+async function loadEpisodeProgress(){
+  if(!titleData || !titleData.episodes || titleData.type!=='series') return;
+  try{
+    const promises=titleData.episodes.map(ep=>
+      api.get('/api/watch/progress?titleId='+encodeURIComponent(titleId)+'&episodeId='+encodeURIComponent(ep.id)+(profileId?('&profileId='+encodeURIComponent(profileId)):''))
+        .then(r=>r.json())
+        .then(d=>({id:ep.id,progress:d}))
+        .catch(()=>({id:ep.id,progress:null}))
+    );
+    const results=await Promise.all(promises);
+    results.forEach(r=>{
+      if(r.progress && r.progress.positionSec!==undefined){
+        episodeProgressMap[r.id]=r.progress;
+      }
+    });
+  }catch(err){}
+}
+
+function renderEpisodeList(){
+  if(!episodeList || !titleData || !titleData.episodes || titleData.type!=='series') {
+    if(overlayEpisodes) overlayEpisodes.style.display='none';
+    return;
+  }
+  if(overlayEpisodes) overlayEpisodes.style.display='flex';
+  episodeList.innerHTML='';
+  if(episodeSheetTitle) episodeSheetTitle.textContent='Episodes';
+  titleData.episodes.forEach((ep,idx)=>{
+    const item=document.createElement('div');
+    item.className='episode-item';
+    if(ep.id===episodeId) item.classList.add('now-playing');
+    const thumbnail=document.createElement('div');
+    thumbnail.className='episode-thumbnail';
+    if(ep.thumbnailUrl){
+      const img=document.createElement('img');
+      img.src=ep.thumbnailUrl;
+      img.alt=ep.name||`Episode ${idx+1}`;
+      thumbnail.appendChild(img);
+    }
+    const playIcon=document.createElement('div');
+    playIcon.className='play-icon';
+    playIcon.textContent='▶';
+    thumbnail.appendChild(playIcon);
+    const info=document.createElement('div');
+    info.className='episode-info';
+    const number=document.createElement('div');
+    number.className='episode-number';
+    number.textContent=`Episode ${idx+1}`;
+    const title=document.createElement('h3');
+    title.className='episode-title';
+    title.textContent=ep.name||`Episode ${idx+1}`;
+    const desc=document.createElement('p');
+    desc.className='episode-description';
+    desc.textContent=ep.description||'';
+    info.appendChild(number);
+    info.appendChild(title);
+    if(ep.description) info.appendChild(desc);
+    const progress=episodeProgressMap[ep.id];
+    if(progress && progress.positionSec>0 && progress.durationSec>0){
+      const pct=(progress.positionSec/progress.durationSec)*100;
+      if(pct<95){
+        const progressBar=document.createElement('div');
+        progressBar.className='episode-progress';
+        const progressFill=document.createElement('div');
+        progressFill.className='episode-progress-bar';
+        progressFill.style.width=pct+'%';
+        progressBar.appendChild(progressFill);
+        info.appendChild(progressBar);
+      }
+    }
+    item.appendChild(thumbnail);
+    item.appendChild(info);
+    item.onclick=()=>{
+      episodeSheet.classList.remove('active');
+      location.href='/player.html?titleId='+encodeURIComponent(titleId)+'&episodeId='+encodeURIComponent(ep.id);
+    };
+    episodeList.appendChild(item);
+  });
+}
+
 function applyResumeIfReady(){
   if(resumePromptShown) return;
   if(!metadataLoaded) return;
@@ -114,14 +186,41 @@ function applyResumeIfReady(){
   let resume;
   if(resumeDirective==='resume'){ resume=true; }
   else if(resumeDirective==='start'){ resume=false; }
-  else { resume=confirm('Resume from your last position? Press Cancel to start from the beginning.'); }
+  else { resume=true; }
   v.currentTime = resume ? candidate : 0;
   if(!resume){ saveProgress(true); }
 }
 
 (async()=>{
-  if(!titleId){ alert('Missing title'); location.href='/title.html'; return; }
+  if(!titleId){ alert('Missing title'); location.href='/views/home.html'; return; }
   await loadTitleDetails();
+  await loadEpisodeProgress();
+  renderEpisodeList();
+  if(overlayBack){
+    overlayBack.onclick=()=>{
+      if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+      location.href='/title.html?id='+encodeURIComponent(titleId);
+    };
+  }
+  if(overlayEpisodes){
+    overlayEpisodes.onclick=(e)=>{
+      e.stopPropagation();
+      episodeSheet.classList.add('active');
+      hideOverlay();
+    };
+  }
+  if(episodeSheetClose){
+    episodeSheetClose.onclick=()=>{
+      episodeSheet.classList.remove('active');
+    };
+  }
+  if(episodeSheet){
+    episodeSheet.onclick=(e)=>{
+      if(e.target===episodeSheet){
+        episodeSheet.classList.remove('active');
+      }
+    };
+  }
   const res = await api.get('/api/watch/source?titleId='+encodeURIComponent(titleId)+(episodeId?('&episodeId='+encodeURIComponent(episodeId)):''));
   const meta = await res.json();
   if (!res.ok || !meta || meta.error) {
@@ -186,13 +285,6 @@ function applyResumeIfReady(){
       startedAt: new Date(sessionStartTime).toISOString()
     });
   });
-
-  if(nextEpLink){
-    const nextResp = await api.get('/api/watch/next-episode?titleId='+encodeURIComponent(titleId)+(episodeId?('&episodeId='+encodeURIComponent(episodeId)):''));
-    const next = await nextResp.json();
-    if(next?.id){ nextEpLink.href='/player.html?titleId='+encodeURIComponent(titleId)+'&episodeId='+encodeURIComponent(next.id); }
-    else { nextEpLink.style.display='none'; }
-  }
 
   try {
     const posRes = await api.get('/api/watch/progress?titleId='+encodeURIComponent(titleId)+(episodeId?('&episodeId='+encodeURIComponent(episodeId)):'')+(profileId?('&profileId='+encodeURIComponent(profileId)):'') );

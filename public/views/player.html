@@ -2,13 +2,14 @@
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Player · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
 </head><body class="player-body">
-<header><div class="nav" style="justify-content:space-between"><div style="display:flex;gap:12px;align-items:center"><a href="/views/home.html">← Home</a><span id="titleBreadcrumb">Player</span></div></div></header>
 <main class="player-stage">
   <div class="video-frame">
     <video id="v" preload="metadata" controlslist="nodownload"></video>
     <div class="video-overlay">
       <div class="overlay-top">
-        <a id="nextEp" class="overlay-next">Next Episode ▶</a>
+        <button class="overlay-back" id="overlayBack">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
       </div>
       <div class="overlay-center">
         <button class="overlay-btn" id="overlayBack10"><span>⟲</span><small>10s</small></button>
@@ -17,6 +18,9 @@
       </div>
       <div class="overlay-bottom">
         <div class="overlay-progress" id="progressTrack"><div id="bar"></div></div>
+        <button class="overlay-btn overlay-episodes" id="overlayEpisodes" title="Episode List">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
         <button class="overlay-btn overlay-fullscreen" id="overlayFullscreen">⛶</button>
       </div>
     </div>
@@ -29,5 +33,16 @@
     <a class="btn" id="moreInfo" href="#">Details</a>
   </div>
 </main>
+<div class="episode-sheet" id="episodeSheet">
+  <div class="episode-sheet-content">
+    <div class="episode-sheet-header">
+      <h2 id="episodeSheetTitle">Episodes</h2>
+      <button class="episode-sheet-close" id="episodeSheetClose">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="episode-sheet-list" id="episodeList"></div>
+  </div>
+</div>
 <script src="/scripts/api.js"></script><script src="/scripts/player.js"></script>
 </body></html>
