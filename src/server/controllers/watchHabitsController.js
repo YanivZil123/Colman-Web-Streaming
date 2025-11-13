@@ -1,36 +1,46 @@
-import WatchHabits from '../models/WatchHabits.js';
+import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
 
 /**
  * Get all watch habits with optional filters
  */
-export const getWatchHabits = (req, res) => {
+export const getWatchHabits = async (req, res) => {
   try {
     const { userId, titleId, completed, search, page = '1', limit = '20', profileId } = req.query;
     
-    const filters = {};
-    if (userId) filters.userId = userId;
-    if (titleId) filters.titleId = titleId;
-    if (completed !== undefined) filters.completed = completed === 'true';
-    if (search) filters.search = search;
-    if (profileId !== undefined) filters.profileId = profileId || null;
-
-    let habits = WatchHabits.findAll(filters);
+    const query = {};
+    if (userId) query.userId = userId;
+    if (titleId) query.titleId = titleId;
+    if (completed !== undefined) query.completed = completed === 'true';
+    if (profileId !== undefined) query.profileId = profileId || null;
     
-    // Pagination
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { userId: { $regex: search, $options: 'i' } },
+        { titleId: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
-    const startIndex = (pageNum - 1) * limitNum;
-    const endIndex = startIndex + limitNum;
+    const skip = (pageNum - 1) * limitNum;
     
-    const paginatedResults = habits.slice(startIndex, endIndex);
+    const habits = await WatchHabitDoc.find(query)
+      .sort({ lastWatchedAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+    
+    const total = await WatchHabitDoc.countDocuments(query);
     
     res.json({
-      items: paginatedResults,
-      total: habits.length,
+      items: habits,
+      total,
       page: pageNum,
-      totalPages: Math.ceil(habits.length / limitNum)
+      totalPages: Math.ceil(total / limitNum)
     });
   } catch (error) {
+    console.error('getWatchHabits error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -38,9 +48,9 @@ export const getWatchHabits = (req, res) => {
 /**
  * Get watch habit by ID
  */
-export const getWatchHabitById = (req, res) => {
+export const getWatchHabitById = async (req, res) => {
   try {
-    const habit = WatchHabits.findById(req.params.id);
+    const habit = await WatchHabitDoc.findById(req.params.id).lean();
     
     if (!habit) {
       return res.status(404).json({ error: 'Watch habit not found' });
@@ -48,6 +58,7 @@ export const getWatchHabitById = (req, res) => {
     
     res.json(habit);
   } catch (error) {
+    console.error('getWatchHabitById error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -55,7 +66,7 @@ export const getWatchHabitById = (req, res) => {
 /**
  * Create new watch habit
  */
-export const createWatchHabit = (req, res) => {
+export const createWatchHabit = async (req, res) => {
   try {
     const { titleId, episodeId, watchedDuration, totalDuration, completed, profileId } = req.body;
     
@@ -63,19 +74,21 @@ export const createWatchHabit = (req, res) => {
       return res.status(400).json({ error: 'Title ID is required' });
     }
     
-    const habitData = {
+    const habit = await WatchHabitDoc.create({
       userId: req.session.user.id,
       titleId,
       episodeId: episodeId || null,
       profileId: profileId || null,
       watchedDuration: watchedDuration || 0,
       totalDuration: totalDuration || 0,
-      completed: completed || false
-    };
+      completed: completed || false,
+      lastWatchedAt: new Date(),
+      watchCount: 1
+    });
     
-    const habit = WatchHabits.create(habitData);
-    res.status(201).json(habit);
+    res.status(201).json(habit.toObject());
   } catch (error) {
+    console.error('createWatchHabit error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -83,9 +96,9 @@ export const createWatchHabit = (req, res) => {
 /**
  * Update watch habit
  */
-export const updateWatchHabit = (req, res) => {
+export const updateWatchHabit = async (req, res) => {
   try {
-    const habit = WatchHabits.findById(req.params.id);
+    const habit = await WatchHabitDoc.findById(req.params.id);
     
     if (!habit) {
       return res.status(404).json({ error: 'Watch habit not found' });
@@ -97,20 +110,21 @@ export const updateWatchHabit = (req, res) => {
     }
     
     const { watchedDuration, totalDuration, completed, episodeId, watchCount, profileId } = req.body;
-    const updateData = {};
     
-    if (watchedDuration !== undefined) updateData.watchedDuration = watchedDuration;
-    if (totalDuration !== undefined) updateData.totalDuration = totalDuration;
-    if (completed !== undefined) updateData.completed = completed;
-    if (episodeId !== undefined) updateData.episodeId = episodeId;
-    if (profileId !== undefined) updateData.profileId = profileId || null;
-    if (watchCount !== undefined) updateData.watchCount = watchCount;
+    if (watchedDuration !== undefined) habit.watchedDuration = watchedDuration;
+    if (totalDuration !== undefined) habit.totalDuration = totalDuration;
+    if (completed !== undefined) habit.completed = completed;
+    if (episodeId !== undefined) habit.episodeId = episodeId;
+    if (profileId !== undefined) habit.profileId = profileId || null;
+    if (watchCount !== undefined) habit.watchCount = watchCount;
     
-    updateData.lastWatchedAt = new Date().toISOString();
+    habit.lastWatchedAt = new Date();
+    habit.updatedAt = new Date();
+    await habit.save();
     
-    const updated = WatchHabits.update(req.params.id, updateData);
-    res.json(updated);
+    res.json(habit.toObject());
   } catch (error) {
+    console.error('updateWatchHabit error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -118,9 +132,9 @@ export const updateWatchHabit = (req, res) => {
 /**
  * Delete watch habit
  */
-export const deleteWatchHabit = (req, res) => {
+export const deleteWatchHabit = async (req, res) => {
   try {
-    const habit = WatchHabits.findById(req.params.id);
+    const habit = await WatchHabitDoc.findById(req.params.id);
     
     if (!habit) {
       return res.status(404).json({ error: 'Watch habit not found' });
@@ -131,14 +145,11 @@ export const deleteWatchHabit = (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
     
-    const deleted = WatchHabits.delete(req.params.id);
+    await WatchHabitDoc.findByIdAndDelete(req.params.id);
     
-    if (deleted) {
-      res.json({ ok: true, message: 'Watch habit deleted' });
-    } else {
-      res.status(404).json({ error: 'Watch habit not found' });
-    }
+    res.json({ ok: true, message: 'Watch habit deleted' });
   } catch (error) {
+    console.error('deleteWatchHabit error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -146,7 +157,7 @@ export const deleteWatchHabit = (req, res) => {
 /**
  * Update or create watch progress (upsert)
  */
-export const upsertWatchProgress = (req, res) => {
+export const upsertWatchProgress = async (req, res) => {
   try {
     const { titleId, episodeId, watchedDuration, totalDuration, completed, profileId } = req.body;
     
@@ -154,19 +165,34 @@ export const upsertWatchProgress = (req, res) => {
       return res.status(400).json({ error: 'Title ID is required' });
     }
     
-    const data = {
+    const query = {
       userId: req.session.user.id,
       titleId,
       episodeId: episodeId || null,
-      watchedDuration: watchedDuration || 0,
-      totalDuration: totalDuration || 0,
-      completed: completed || false,
       profileId: profileId || null
     };
     
-    const habit = WatchHabits.upsertProgress(data);
+    const habit = await WatchHabitDoc.findOneAndUpdate(
+      query,
+      {
+        $set: {
+          watchedDuration: watchedDuration || 0,
+          totalDuration: totalDuration || 0,
+          completed: completed || false,
+          lastWatchedAt: new Date(),
+          updatedAt: new Date()
+        },
+        $inc: { watchCount: 1 },
+        $setOnInsert: {
+          createdAt: new Date()
+        }
+      },
+      { upsert: true, new: true }
+    ).lean();
+    
     res.json(habit);
   } catch (error) {
+    console.error('upsertWatchProgress error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -174,12 +200,29 @@ export const upsertWatchProgress = (req, res) => {
 /**
  * Get continue watching list
  */
-export const getContinueWatching = (req, res) => {
+export const getContinueWatching = async (req, res) => {
   try {
     const { limit = '10', profileId } = req.query;
-    const habits = WatchHabits.getContinueWatching(req.session.user.id, parseInt(limit), profileId !== undefined ? (profileId || null) : undefined);
+    const limitNum = parseInt(limit);
+    
+    const query = {
+      userId: req.session.user.id,
+      completed: false,
+      watchedDuration: { $gt: 0 }
+    };
+    
+    if (profileId !== undefined) {
+      query.profileId = profileId || null;
+    }
+    
+    const habits = await WatchHabitDoc.find(query)
+      .sort({ lastWatchedAt: -1 })
+      .limit(limitNum)
+      .lean();
+    
     res.json({ items: habits });
   } catch (error) {
+    console.error('getContinueWatching error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -187,7 +230,7 @@ export const getContinueWatching = (req, res) => {
 /**
  * Get user watch statistics
  */
-export const getUserStats = (req, res) => {
+export const getUserStats = async (req, res) => {
   try {
     const userId = req.params.userId || req.session.user.id;
     
@@ -196,9 +239,18 @@ export const getUserStats = (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
     
-    const stats = WatchHabits.getUserStats(userId);
+    const userHabits = await WatchHabitDoc.find({ userId }).lean();
+    
+    const stats = {
+      totalWatched: userHabits.length,
+      completed: userHabits.filter(h => h.completed).length,
+      inProgress: userHabits.filter(h => !h.completed && h.watchedDuration > 0).length,
+      totalWatchTime: userHabits.reduce((sum, h) => sum + (h.watchedDuration || 0), 0)
+    };
+    
     res.json(stats);
   } catch (error) {
+    console.error('getUserStats error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
