@@ -1,5 +1,5 @@
 import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
-import { User } from '../models/User.js';
+import User from '../models/User.js';
 import ErrorLog from '../models/ErrorLog.js';
 
 export const getViewsByDay = (req, res) => {
@@ -27,13 +27,19 @@ export const getPopularByGenre = (req, res) => {
 };
 
 /**
- * Get aggregated daily watch data for all user profiles
- * Groups by userId and day, calculates total watched duration
- * Includes username via $lookup
+ * Get aggregated daily watch data per profile
+ * Groups by profileId and day, calculates total watched duration
+ * Includes profile name via $lookup with User model
  */
 export const getDailyWatchData = async (req, res, next) => {
   try {
     const data = await WatchHabitDoc.aggregate([
+      // Filter out records without profileId
+      {
+        $match: {
+          profileId: { $ne: null, $exists: true }
+        }
+      },
       // Unwind watch history to process each watch event
       {
         $unwind: {
@@ -41,10 +47,11 @@ export const getDailyWatchData = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
-      // Group by userId and date
+      // Group by profileId and date
       {
         $group: {
           _id: {
+            profileId: '$profileId',
             userId: '$userId',
             date: {
               $dateToString: {
@@ -63,28 +70,40 @@ export const getDailyWatchData = async (req, res, next) => {
       {
         $sort: { '_id.date': 1 }
       },
-      // Lookup to get user details
+      // Lookup to get user and profile details
       {
         $lookup: {
           from: 'users',
-          let: { userId: '$_id.userId' },
+          let: { userId: '$_id.userId', profileId: '$_id.profileId' },
           pipeline: [
             {
               $match: {
-                $expr: { $eq: ['$_id', '$$userId'] }
+                $expr: { $eq: [{ $toString: '$_id' }, '$$userId'] }
               }
             },
             {
-              $project: { username: 1, _id: 1 }
+              $unwind: '$profiles'
+            },
+            {
+              $match: {
+                $expr: { $eq: [{ $toString: '$profiles._id' }, '$$profileId'] }
+              }
+            },
+            {
+              $project: { 
+                username: 1, 
+                profileName: '$profiles.name',
+                profileAvatar: '$profiles.avatarUrl'
+              }
             }
           ],
-          as: 'user'
+          as: 'profileData'
         }
       },
-      // Unwind user array
+      // Unwind profile data
       {
         $unwind: {
-          path: '$user',
+          path: '$profileData',
           preserveNullAndEmptyArrays: true
         }
       },
@@ -92,11 +111,13 @@ export const getDailyWatchData = async (req, res, next) => {
       {
         $project: {
           _id: 0,
+          profileId: '$_id.profileId',
           userId: '$_id.userId',
           date: '$_id.date',
           totalWatchedDuration: 1,
           watchCount: 1,
-          username: { $ifNull: ['$user.username', 'Unknown'] }
+          username: { $ifNull: ['$profileData.username', 'Unknown'] },
+          profileName: { $ifNull: ['$profileData.profileName', 'Unknown Profile'] }
         }
       }
     ]);

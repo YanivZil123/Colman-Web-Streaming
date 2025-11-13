@@ -1,5 +1,3 @@
-import { default as UserModel } from '../models/User.js';
-
 export const requireAuth = (req, res, next) => {
   if (!req.session.user) {
     return res.status(401).json({ error: 'auth' });
@@ -16,7 +14,7 @@ export const requireAdmin = (req, res, next) => {
 
 /**
  * isAdmin middleware: Checks if user is authenticated and has admin role
- * Redirects to /content/catalog if not admin, otherwise continues to next middleware
+ * Redirects to /views/home.html if not admin, otherwise continues to next middleware
  */
 export const isAdmin = async (req, res, next) => {
   try {

@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import config from './config/config.js';
 import seedDatabase from './config/seed.js';
 import registerRoutes from './routes/index.js';
+import ErrorLog from './models/ErrorLog.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,14 +48,16 @@ app.use((req, res, next) => {
       return res.redirect('/signin.html');
     }
     
-    // Admin users can ONLY access admin.html
+    // Admin users can access admin.html and stats-dashboard.html
     if (req.session.user.role === 'admin') {
-      if (req.path !== '/views/admin.html' && req.path !== '/admin.html') {
+      if (req.path !== '/views/admin.html' && req.path !== '/admin.html' &&
+          req.path !== '/views/stats-dashboard.html' && req.path !== '/stats-dashboard.html') {
         return res.status(403).send('Access denied. Admin users can only access the admin panel.');
       }
     } else {
-      // Regular users CANNOT access admin.html
-      if (req.path === '/views/admin.html' || req.path === '/admin.html') {
+      // Regular users CANNOT access admin.html or stats-dashboard.html
+      if ((req.path === '/views/admin.html' || req.path === '/admin.html' ||
+           req.path === '/views/stats-dashboard.html' || req.path === '/stats-dashboard.html')) {
         return res.status(403).send('Access denied. Admin privileges required.');
       }
     }
@@ -98,6 +101,13 @@ app.get('*', (req, res, next) => {
     }
     return res.sendFile(path.join(__dirname, '../../public/views/admin.html'));
   }
+
+  if (p === '/views/stats-dashboard.html' || p === '/stats-dashboard.html') {
+    if (req.session.user.role !== 'admin') {
+      return res.status(403).send('Access denied. Admin privileges required.');
+    }
+    return res.sendFile(path.join(__dirname, '../../public/views/stats-dashboard.html'));
+  }
   
   if (p === '/profile-selection.html') {
     return res.sendFile(path.join(__dirname, '../../public/views', p));
@@ -119,6 +129,79 @@ app.get('*', (req, res, next) => {
   
   // Serve main app for authenticated users (fallback)
   res.sendFile(path.join(__dirname, '../../public/views', 'index.html'));
+});
+
+/**
+ * Global Error Handler Middleware
+ * Captures all errors passed via next(err) and logs them to ErrorLog model
+ * Must be defined after all other routes and middleware
+ */
+app.use(async (err, req, res, next) => {
+  console.error('Global error handler caught:', err);
+
+  try {
+    // Log error to database
+    const errorLog = new ErrorLog({
+      message: err.message || 'Unknown error',
+      stack: err.stack,
+      endpoint: req.path,
+      method: req.method,
+      userId: req.session?.user?._id || req.session?.user?.id,
+      timestamp: new Date()
+    });
+
+    await errorLog.save();
+  } catch (logError) {
+    console.error('Failed to log error to database:', logError);
+  }
+
+  // Send error response to client
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal server error';
+
+  if (req.path.startsWith('/api/')) {
+    // API endpoint - return JSON
+    return res.status(statusCode).json({
+      error: message,
+      success: false
+    });
+  } else {
+    // HTML page - return error page
+    return res.status(statusCode).send(`
+      <html>
+        <head>
+          <title>Error</title>
+          <style>
+            body { 
+              background: #1A1D29; 
+              color: #fff; 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+            }
+            .error-container {
+              text-align: center;
+              padding: 20px;
+            }
+            h1 { font-size: 48px; margin: 0 0 10px; }
+            p { font-size: 16px; color: #888; margin: 0 0 20px; }
+            a { color: #00D6E8; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <div class="error-container">
+            <h1>${statusCode}</h1>
+            <p>${message}</p>
+            <a href="/">← Go Home</a>
+          </div>
+        </body>
+      </html>
+    `);
+  }
 });
 
 async function startServer() {
