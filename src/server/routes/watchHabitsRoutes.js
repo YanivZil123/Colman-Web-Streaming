@@ -28,4 +28,7 @@ router.get('/user/continue-watching', requireAuth, watchHabitsController.getCont
 // Get user watch statistics (requires authentication)
 router.get('/user/stats/:userId?', requireAuth, watchHabitsController.getUserStats);
 
+// Get daily watch statistics (requires authentication)
+router.get('/user/daily-stats/:userId?', requireAuth, watchHabitsController.getDailyWatchStats);
+
 export default router;
