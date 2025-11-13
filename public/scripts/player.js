@@ -24,6 +24,7 @@ const profileId = (()=>{ try { return localStorage.getItem('selectedProfileId');
 let resumePromptShown=false;
 let cachedProgress=null;
 let metadataLoaded=false;
+let sessionStartTime=Date.now();
 
 async function loadTitleDetails(){
   if(!titleId) return;
@@ -49,6 +50,7 @@ async function loadTitleDetails(){
 
 function sendProgress(payload, preferBeacon){
   if(profileId) payload.profileId = profileId;
+  payload.sessionStartTime = sessionStartTime;
   if(preferBeacon && navigator.sendBeacon){
     try {
       const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
@@ -176,7 +178,13 @@ function applyResumeIfReady(){
 
   v.addEventListener('ended', ()=>{
     saveProgress(true);
-    api.post('/api/watch/finish',{titleId,episodeId,durationSec:Math.floor(v.duration||0),profileId});
+    api.post('/api/watch/finish',{
+      titleId,
+      episodeId,
+      durationSec:Math.floor(v.duration||0),
+      profileId,
+      startedAt: new Date(sessionStartTime).toISOString()
+    });
   });
 
   if(nextEpLink){
@@ -200,7 +208,33 @@ function applyResumeIfReady(){
     videoFrame.addEventListener('mouseleave', hideOverlay);
   }
   window.addEventListener('keydown', showOverlay);
-  window.addEventListener('beforeunload', ()=>saveProgress(true,true));
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') saveProgress(true,true); });
+  // Close current session when page unloads or becomes hidden
+  function closeCurrentSession() {
+    if(v && v.currentTime > 5) { // Only if watched at least 5 seconds
+      const duration = Math.floor(v.currentTime || 0);
+      api.post('/api/watch/session-end', {
+        titleId,
+        episodeId,
+        positionSec: duration,
+        durationSec: Math.floor(v.duration || 0),
+        profileId,
+        startedAt: new Date(sessionStartTime).toISOString()
+      }).catch(() => {}); // Ignore errors on unload
+    }
+  }
+  
+  window.addEventListener('beforeunload', ()=>{
+    saveProgress(true,true);
+    closeCurrentSession();
+  });
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='hidden') {
+      saveProgress(true,true);
+      closeCurrentSession();
+    } else {
+      // Start new session when page becomes visible again
+      sessionStartTime = Date.now();
+    }
+  });
   showOverlay();
 })();

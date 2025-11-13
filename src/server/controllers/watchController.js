@@ -88,12 +88,13 @@ export const getProgress = async (req, res) => {
 
 export const updateProgress = async (req, res) => {
   try {
-    const { titleId, episodeId, positionSec, durationSec, profileId: rawProfileId } = req.body || {};
+    const { titleId, episodeId, positionSec, durationSec, profileId: rawProfileId, sessionStartTime } = req.body || {};
     if (!titleId) return res.status(400).json({ error: 'titleId is required' });
     const userId = req.session.user.id;
     const profileId = rawProfileId ? String(rawProfileId) : null;
     const watchedDuration = Number(positionSec) || 0;
     const totalDuration = Number(durationSec) || 0;
+    const sessionStart = sessionStartTime ? new Date(sessionStartTime) : new Date();
     
     const query = {
       userId,
@@ -103,18 +104,37 @@ export const updateProgress = async (req, res) => {
     };
     
     const existing = await WatchHabitDoc.findOne(query);
+    const now = new Date();
     
     if (existing) {
-      existing.watchedDuration = watchedDuration;
-      existing.totalDuration = totalDuration || existing.totalDuration;
-      existing.completed = false;
-      existing.lastWatchedAt = new Date();
-      existing.updatedAt = new Date();
-      // Ensure watchHistory exists (for backward compatibility)
+      // Ensure watchHistory exists
       if (!existing.watchHistory) {
         existing.watchHistory = [];
       }
-      // watchCount should be derived from watchHistory.length
+      
+      // Check if we need to start a new session (gap > 30 minutes)
+      const lastUpdate = existing.lastWatchedAt || existing.updatedAt;
+      const gapMinutes = (now - lastUpdate) / (1000 * 60);
+      const SESSION_GAP_MINUTES = 30;
+      
+      // If gap is too large, close previous session and start new one
+      if (gapMinutes > SESSION_GAP_MINUTES && existing.watchedDuration > 5) {
+        // Close previous session (use lastUpdate as both watchedAt and startedAt since we don't track exact start)
+        existing.watchHistory.push({
+          watchedAt: lastUpdate,
+          duration: existing.watchedDuration,
+          completed: false,
+          startedAt: new Date(lastUpdate.getTime() - (existing.watchedDuration * 1000)) // Estimate start time
+        });
+      }
+      
+      existing.watchedDuration = watchedDuration;
+      existing.totalDuration = totalDuration || existing.totalDuration;
+      existing.completed = false;
+      existing.lastWatchedAt = now;
+      existing.updatedAt = now;
+      
+      // watchCount derived from watchHistory.length
       existing.watchCount = existing.watchHistory.length;
       await existing.save();
       return res.json({ ok: true, positionSec: watchedDuration });
@@ -129,7 +149,7 @@ export const updateProgress = async (req, res) => {
       watchedDuration,
       totalDuration,
       completed: false,
-      lastWatchedAt: new Date(),
+      lastWatchedAt: now,
       watchCount: 0,
       watchHistory: [] // Initialize empty array
     });
@@ -209,6 +229,54 @@ export const markFinished = async (req, res) => {
     res.json({ ok: true });
   } catch (error) {
     console.error('markFinished error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const endWatchSession = async (req, res) => {
+  try {
+    const { titleId, episodeId, positionSec, durationSec, profileId: rawProfileId, startedAt } = req.body || {};
+    if (!titleId) return res.status(400).json({ error: 'titleId is required' });
+    const userId = req.session.user.id;
+    const profileId = rawProfileId ? String(rawProfileId) : null;
+    const watchedDuration = Number(positionSec) || 0;
+    const watchStartTime = startedAt ? new Date(startedAt) : new Date();
+    const now = new Date();
+    
+    const query = {
+      userId,
+      titleId,
+      episodeId: episodeId || null,
+      profileId: profileId || null
+    };
+    
+    const existing = await WatchHabitDoc.findOne(query);
+    
+    if (existing && watchedDuration > 5) { // Only record if watched at least 5 seconds
+      // Ensure watchHistory exists
+      if (!existing.watchHistory) {
+        existing.watchHistory = [];
+      }
+      
+      // Add watch event to history (not completed, just a session)
+      existing.watchHistory.push({
+        watchedAt: now,
+        duration: watchedDuration,
+        completed: false,
+        startedAt: watchStartTime
+      });
+      
+      // Update watchCount from history length
+      existing.watchCount = existing.watchHistory.length;
+      existing.lastWatchedAt = now;
+      existing.updatedAt = now;
+      
+      await existing.save();
+    }
+    
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('endWatchSession error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
