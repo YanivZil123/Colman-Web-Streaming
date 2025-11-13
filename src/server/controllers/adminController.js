@@ -3,6 +3,7 @@ import path from 'path';
 import { nanoid } from 'nanoid';
 import Title from '../models/Title.js';
 import { MovieDoc, SeriesDoc } from '../models/TitleDoc.js';
+import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
 
 export const createTitle = async (req, res) => {
   try {
@@ -240,5 +241,19 @@ export const listDbTitles = async (req, res) => {
     res.json({ movies, series });
   } catch (err) {
     res.status(500).json({ error: 'Failed to query DB' });
+  }
+};
+
+export const clearAllWatchHistory = async (req, res) => {
+  try {
+    const result = await WatchHabitDoc.deleteMany({});
+    res.json({ 
+      success: true, 
+      deletedCount: result.deletedCount,
+      message: `Cleared ${result.deletedCount} watch history records`
+    });
+  } catch (error) {
+    console.error("clearAllWatchHistory error", error);
+    res.status(500).json({ error: "Failed to clear watch history" });
   }
 };

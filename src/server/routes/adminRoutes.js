@@ -24,4 +24,6 @@ router.post(
 
 router.get('/debug/titles', requireAuth, requireAdmin, adminController.listDbTitles);
 
+router.delete('/watch-history', requireAuth, requireAdmin, adminController.clearAllWatchHistory);
+
 export default router;
