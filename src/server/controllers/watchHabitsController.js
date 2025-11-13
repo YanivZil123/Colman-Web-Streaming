@@ -1,4 +1,6 @@
 import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
+import WatchHabits from '../models/WatchHabits.js';
+import Like from '../models/Like.js';
 
 /**
  * Get all watch habits with optional filters
@@ -20,6 +22,16 @@ export const getWatchHabits = async (req, res) => {
         { titleId: { $regex: search, $options: 'i' } }
       ];
     }
+    const { userId, profileId, titleId, completed, search, page = '1', limit = '20' } = req.query;
+    
+    const filters = {};
+    if (userId) filters.userId = userId;
+    if (profileId) filters.profileId = profileId;
+    if (titleId) filters.titleId = titleId;
+    if (completed !== undefined) filters.completed = completed === 'true';
+    if (search) filters.search = search;
+
+    let habits = WatchHabits.findAll(filters);
     
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
@@ -76,6 +88,7 @@ export const createWatchHabit = async (req, res) => {
     
     const habit = await WatchHabitDoc.create({
       userId: req.session.user.id,
+      profileId: profileId || null,
       titleId,
       episodeId: episodeId || null,
       profileId: profileId || null,
@@ -180,6 +193,7 @@ export const upsertWatchProgress = async (req, res) => {
     
     const query = {
       userId: req.session.user.id,
+      profileId: profileId || null,
       titleId,
       episodeId: episodeId || null,
       profileId: profileId || null
@@ -404,6 +418,60 @@ export const getDailyWatchStats = async (req, res) => {
     res.json(dailyStats);
   } catch (error) {
     console.error('getDailyWatchStats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Get comprehensive profile watch habits (watched + liked content)
+ */
+export const getProfileHabits = (req, res) => {
+  try {
+    const { profileId } = req.params;
+    const userId = req.session.user.id;
+    
+    if (!profileId) {
+      return res.status(400).json({ error: 'Profile ID is required' });
+    }
+    
+    // Get watched content for this profile
+    const watched = WatchHabits.findAll({ 
+      userId, 
+      profileId, 
+      completed: true 
+    });
+    
+    // Get in-progress content
+    const inProgress = WatchHabits.findAll({ 
+      userId, 
+      profileId, 
+      completed: false 
+    }).filter(h => h.watchedDuration > 0);
+    
+    // Get liked content for this profile
+    const liked = Like.getByProfile(userId, profileId);
+    
+    // Get stats
+    const stats = WatchHabits.getUserStats(userId, profileId);
+    
+    res.json({
+      profileId,
+      watched: {
+        items: watched,
+        total: watched.length
+      },
+      inProgress: {
+        items: inProgress,
+        total: inProgress.length
+      },
+      liked: {
+        items: liked,
+        total: liked.length
+      },
+      stats
+    });
+  } catch (error) {
+    console.error('Get profile habits error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

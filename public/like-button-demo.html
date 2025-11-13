@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Like Button Demo - Disney+ Premium Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1A1D29;
+            color: #F9F9F9;
+            padding: 40px;
+            min-height: 100vh;
+        }
+
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #00D6E8, #F9F9F9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: rgba(249, 249, 249, 0.7);
+            margin-bottom: 60px;
+        }
+
+        .states-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-bottom: 80px;
+        }
+
+        .state-card {
+            background: rgba(26, 29, 41, 0.6);
+            border: 1px solid rgba(249, 249, 249, 0.1);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .state-title {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: #00D6E8;
+        }
+
+        .button-showcase {
+            margin: 40px 0;
+        }
+
+        .state-description {
+            font-size: 14px;
+            color: rgba(249, 249, 249, 0.6);
+            line-height: 1.6;
+            margin-top: 24px;
+        }
+
+        /* Like Button Styles */
+        .like-btn-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .like-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(107, 116, 138, 0.3);
+            border: 2px solid rgba(249, 249, 249, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: visible;
+        }
+
+        .like-btn:hover {
+            background: rgba(107, 116, 138, 0.5);
+            border-color: rgba(249, 249, 249, 0.4);
+            transform: scale(1.05);
+        }
+
+        .like-btn:active {
+            transform: scale(0.95);
+        }
+
+        .like-btn.liked {
+            background: rgba(0, 214, 232, 0.2);
+            border-color: rgba(0, 214, 232, 0.6);
+        }
+
+        .like-btn.liked:hover {
+            background: rgba(0, 214, 232, 0.3);
+            border-color: rgba(0, 214, 232, 0.8);
+        }
+
+        .heart-icon {
+            width: 24px;
+            height: 24px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .heart-outline {
+            stroke: #F9F9F9;
+            stroke-width: 2;
+            fill: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .heart-fill {
+            fill: #00D6E8;
+            stroke: none;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .like-btn.liked .heart-outline {
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .like-btn.liked .heart-fill {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .sparkle-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            width: 100px;
+            height: 100px;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00D6E8;
+            border-radius: 50%;
+            opacity: 0;
+            box-shadow: 0 0 6px #00D6E8, 0 0 12px rgba(0, 214, 232, 0.6);
+        }
+
+        @keyframes sparkleAnimation {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: var(--sparkle-end) scale(0);
+            }
+        }
+
+        .like-btn.animating .sparkle {
+            animation: sparkleAnimation 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(0, 214, 232, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(0, 214, 232, 0);
+            }
+        }
+
+        .like-btn.animating {
+            animation: pulseGlow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 214, 232, 0.3);
+            width: 0;
+            height: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        }
+
+        @keyframes rippleAnimation {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.6;
+            }
+            100% {
+                width: 80px;
+                height: 80px;
+                opacity: 0;
+            }
+        }
+
+        .like-btn.animating .ripple {
+            animation: rippleAnimation 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Interactive Demo Section */
+        .interactive-demo {
+            background: rgba(0, 214, 232, 0.05);
+            border: 2px solid rgba(0, 214, 232, 0.2);
+            border-radius: 16px;
+            padding: 60px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .demo-title {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .demo-subtitle {
+            font-size: 16px;
+            color: rgba(249, 249, 249, 0.6);
+            margin-bottom: 40px;
+        }
+
+        .demo-button-large {
+            width: 80px;
+            height: 80px;
+        }
+
+        .demo-button-large .heart-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 60px;
+        }
+
+        .color-swatch {
+            text-align: center;
+        }
+
+        .color-box {
+            width: 100%;
+            height: 100px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(249, 249, 249, 0.1);
+        }
+
+        .color-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .color-value {
+            font-size: 12px;
+            color: rgba(249, 249, 249, 0.6);
+            font-family: monospace;
+        }
+
+        .instructions {
+            background: rgba(249, 249, 249, 0.05);
+            border-left: 4px solid #00D6E8;
+            padding: 20px 24px;
+            margin-top: 40px;
+            border-radius: 4px;
+        }
+
+        .instructions h3 {
+            color: #00D6E8;
+            margin-bottom: 12px;
+        }
+
+        .instructions p {
+            color: rgba(249, 249, 249, 0.8);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>Premium Like Button</h1>
+        <p class="subtitle">Disney+ Redesign - Seamless, Non-Disruptive, Magical ✨</p>
+
+        <div class="states-grid">
+            <div class="state-card">
+                <h2 class="state-title">Default State</h2>
+                <div class="button-showcase">
+                    <div class="like-btn-container">
+                        <button class="like-btn" aria-label="Like">
+                            <svg class="heart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path class="heart-outline" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                <path class="heart-fill" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            <div class="sparkle-container">
+                                <div class="sparkle" style="--sparkle-end: translate(20px, -20px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(-20px, -20px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(20px, 20px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(-20px, 20px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(28px, 0);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(-28px, 0);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(0, -28px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(0, 28px);"></div>
+                            </div>
+                            <div class="ripple"></div>
+                        </button>
+                    </div>
+                </div>
+                <p class="state-description">
+                    Circular button with subtle gray background. Heart outline in off-white. 
+                    Hover reveals enhanced contrast. Clean, minimalist design.
+                </p>
+            </div>
+
+            <div class="state-card">
+                <h2 class="state-title">Liked State</h2>
+                <div class="button-showcase">
+                    <div class="like-btn-container">
+                        <button class="like-btn liked" aria-label="Unlike">
+                            <svg class="heart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path class="heart-outline" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                <path class="heart-fill" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            <div class="sparkle-container">
+                                <div class="sparkle" style="--sparkle-end: translate(20px, -20px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(-20px, -20px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(20px, 20px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(-20px, 20px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(28px, 0);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(-28px, 0);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(0, -28px);"></div>
+                                <div class="sparkle" style="--sparkle-end: translate(0, 28px);"></div>
+                            </div>
+                            <div class="ripple"></div>
+                        </button>
+                    </div>
+                </div>
+                <p class="state-description">
+                    Aurora teal background with glow. Solid filled heart in magical teal color. 
+                    Clear visual confirmation of liked status.
+                </p>
+            </div>
+        </div>
+
+        <div class="interactive-demo">
+            <h2 class="demo-title">✨ Try It Yourself ✨</h2>
+            <p class="demo-subtitle">Click the button to see the magical micro-interaction</p>
+            <div class="button-showcase">
+                <div class="like-btn-container">
+                    <button id="demoButton" class="like-btn demo-button-large" aria-label="Like">
+                        <svg class="heart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path class="heart-outline" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            <path class="heart-fill" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        <div class="sparkle-container">
+                            <div class="sparkle" style="--sparkle-end: translate(30px, -30px);"></div>
+                            <div class="sparkle" style="--sparkle-end: translate(-30px, -30px);"></div>
+                            <div class="sparkle" style="--sparkle-end: translate(30px, 30px);"></div>
+                            <div class="sparkle" style="--sparkle-end: translate(-30px, 30px);"></div>
+                            <div class="sparkle" style="--sparkle-end: translate(42px, 0);"></div>
+                            <div class="sparkle" style="--sparkle-end: translate(-42px, 0);"></div>
+                            <div class="sparkle" style="--sparkle-end: translate(0, -42px);"></div>
+                            <div class="sparkle" style="--sparkle-end: translate(0, 42px);"></div>
+                        </div>
+                        <div class="ripple"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>🎯 Key Features</h3>
+            <p>
+                <strong>✓ No Modal Popup</strong> - All feedback is inline and seamless<br>
+                <strong>✓ Sparkle Animation</strong> - Magical Aurora particles burst on like<br>
+                <strong>✓ State Persistence</strong> - Button remembers state per profile<br>
+                <strong>✓ Instant Feedback</strong> - Optimistic UI updates immediately<br>
+                <strong>✓ Smooth Animations</strong> - 60fps hardware-accelerated CSS<br>
+                <strong>✓ Brand Aligned</strong> - Uses Disney+ official color palette
+            </p>
+        </div>
+
+        <h2 style="margin-top: 80px; margin-bottom: 32px; color: #00D6E8;">Brand Color Palette</h2>
+        <div class="color-palette">
+            <div class="color-swatch">
+                <div class="color-box" style="background: #1A1D29;"></div>
+                <div class="color-name">Dark Blue</div>
+                <div class="color-value">#1A1D29</div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: #00D6E8;"></div>
+                <div class="color-name">Aurora Teal</div>
+                <div class="color-value">#00D6E8</div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: #F9F9F9;"></div>
+                <div class="color-name">Off-White</div>
+                <div class="color-value">#F9F9F9</div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: #6B748A;"></div>
+                <div class="color-name">Medium Gray</div>
+                <div class="color-value">#6B748A</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const demoButton = document.getElementById('demoButton');
+        
+        demoButton.addEventListener('click', function() {
+            const wasLiked = this.classList.contains('liked');
+            
+            if (!wasLiked) {
+                this.classList.add('liked', 'animating');
+                setTimeout(() => {
+                    this.classList.remove('animating');
+                }, 600);
+            } else {
+                this.classList.remove('liked');
+            }
+        });
+    </script>
+</body>
+</html>

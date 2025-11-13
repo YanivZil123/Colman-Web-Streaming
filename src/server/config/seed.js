@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Title from '../models/Title.js';
 import Catalogue from '../models/Catalogue.js';
 import WatchHabits from '../models/WatchHabits.js';
+import Like from '../models/Like.js';
 
 export default async function seedDatabase() {
   try {
@@ -34,5 +35,6 @@ export default async function seedDatabase() {
   Title.seed();
   Catalogue.seed();
   WatchHabits.seed();
+  Like.seed();
   console.log('Database seeded successfully');
 }
