@@ -17,6 +17,8 @@ async function fetchAndDrawChart() {
     const statsInfo = document.getElementById('statsInfo');
 
     try {
+        console.log('Fetching daily watch data from API...');
+        
         // Show loading state
         loadingSpinner.style.display = 'flex';
         errorMessage.classList.remove('show');
@@ -32,6 +34,8 @@ async function fetchAndDrawChart() {
             }
         });
 
+        console.log('Response status:', response.status);
+
         if (!response.ok) {
             if (response.status === 403) {
                 throw new Error('Access denied. Admin privileges required.');
@@ -40,22 +44,28 @@ async function fetchAndDrawChart() {
         }
 
         const responseData = await response.json();
+        console.log('API Response:', responseData);
         
         if (!responseData.success || !responseData.data) {
             throw new Error('Invalid response format from API');
         }
 
         const data = responseData.data;
+        console.log(`Received ${data.length} records`);
 
         // Handle empty data
         if (!data || data.length === 0) {
+            console.warn('No data available');
             loadingSpinner.style.display = 'none';
             noDataMessage.style.display = 'block';
             return;
         }
 
+        console.log('Sample data:', data[0]);
+
         // Transform data for Chart.js
         const chartData = transformDataForChart(data);
+        console.log('Transformed chart data:', chartData);
 
         // Hide loading spinner
         loadingSpinner.style.display = 'none';

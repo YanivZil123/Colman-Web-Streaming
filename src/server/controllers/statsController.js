@@ -33,6 +33,17 @@ export const getPopularByGenre = (req, res) => {
  */
 export const getDailyWatchData = async (req, res, next) => {
   try {
+    console.log('Fetching daily watch data...');
+    
+    // First, check if we have any watch habits data
+    const totalCount = await WatchHabitDoc.countDocuments();
+    console.log(`Total watch habits records: ${totalCount}`);
+    
+    const withProfileCount = await WatchHabitDoc.countDocuments({ 
+      profileId: { $ne: null, $exists: true } 
+    });
+    console.log(`Records with profileId: ${withProfileCount}`);
+
     const data = await WatchHabitDoc.aggregate([
       // Filter out records without profileId
       {
@@ -40,11 +51,22 @@ export const getDailyWatchData = async (req, res, next) => {
           profileId: { $ne: null, $exists: true }
         }
       },
-      // Unwind watch history to process each watch event
+      // Unwind watch history to process each watch event (or use main record if no history)
       {
         $unwind: {
           path: '$watchHistory',
           preserveNullAndEmptyArrays: true
+        }
+      },
+      // Add a computed field for the date and duration
+      {
+        $addFields: {
+          eventDate: {
+            $ifNull: ['$watchHistory.watchedAt', '$lastWatchedAt']
+          },
+          eventDuration: {
+            $ifNull: ['$watchHistory.duration', '$watchedDuration']
+          }
         }
       },
       // Group by profileId and date
@@ -56,12 +78,12 @@ export const getDailyWatchData = async (req, res, next) => {
             date: {
               $dateToString: {
                 format: '%Y-%m-%d',
-                date: { $ifNull: ['$watchHistory.watchedAt', '$lastWatchedAt'] }
+                date: '$eventDate'
               }
             }
           },
           totalWatchedDuration: {
-            $sum: { $ifNull: ['$watchHistory.duration', '$watchedDuration'] }
+            $sum: '$eventDuration'
           },
           watchCount: { $sum: 1 }
         }
@@ -121,6 +143,11 @@ export const getDailyWatchData = async (req, res, next) => {
         }
       }
     ]);
+
+    console.log(`Aggregation returned ${data.length} records`);
+    if (data.length > 0) {
+      console.log('Sample record:', JSON.stringify(data[0], null, 2));
+    }
 
     res.status(200).json({
       success: true,
