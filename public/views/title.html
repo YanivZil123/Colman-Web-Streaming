@@ -218,7 +218,7 @@
         </section>
 
         <section class="content-section">
-            <h2 class="section-title">Similar Titles</h2>
+            <h2 class="section-title" id="similarSectionTitle">Similar Titles</h2>
             <div class="content-grid" id="similarGrid">
                 <!-- Similar titles will be loaded here -->
             </div>
@@ -763,8 +763,19 @@
             try {
                 const sim = await (await api.get('/api/titles/' + id + '/similar')).json();
                 const grid = document.getElementById('similarGrid');
+                const titleElement = document.getElementById('similarSectionTitle');
                 
                 if (!grid) return;
+                
+                if (titleElement && sim.sourceType) {
+                    if (sim.sourceType === 'movie') {
+                        titleElement.textContent = 'More Movies Like This';
+                    } else if (sim.sourceType === 'series') {
+                        titleElement.textContent = 'More Series Like This';
+                    } else {
+                        titleElement.textContent = 'Similar Titles';
+                    }
+                }
                 
                 grid.innerHTML = '';
                 
