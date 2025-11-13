@@ -271,8 +271,82 @@
             <div class="content-grid" id="latestThrillerGrid">
             </div>
         </section>
+
+        <section class="content-section" style="margin-bottom: 80px;">
+            <h2 class="section-title">Statistics</h2>
+            <div style="display: grid; gap: 32px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                <div>
+                    <h3 class="section-subtitle" style="margin-bottom: 12px;">Daily Views per Profile</h3>
+                    <canvas id="profileViewsChart" height="220"></canvas>
+                </div>
+                <div>
+                    <h3 class="section-subtitle" style="margin-bottom: 12px;">Content Popularity by Genre</h3>
+                    <canvas id="genrePopularityChart" height="220"></canvas>
+                </div>
+            </div>
+        </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const profileChartEl = document.getElementById('profileViewsChart');
+            const genreChartEl = document.getElementById('genrePopularityChart');
+
+            if (profileChartEl) {
+                const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const profileDatasets = [
+                    { label: 'Maya', data: [120, 150, 130, 170, 160, 180, 140], backgroundColor: '#4BC0C0' },
+                    { label: 'Eli', data: [90, 110, 100, 130, 120, 140, 115], backgroundColor: '#9966FF' },
+                    { label: 'Noa', data: [70, 95, 90, 100, 110, 105, 98], backgroundColor: '#FF9F40' }
+                ];
+
+                new Chart(profileChartEl, {
+                    type: 'bar',
+                    data: {
+                        labels: dayLabels,
+                        datasets: profileDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 50 }
+                            }
+                        },
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+
+            if (genreChartEl) {
+                const genreLabels = ['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Kids', 'Documentary'];
+                const genreData = [320, 210, 260, 190, 150, 120];
+
+                new Chart(genreChartEl, {
+                    type: 'pie',
+                    data: {
+                        labels: genreLabels,
+                        datasets: [{
+                            data: genreData,
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
     <script src="/scripts/api.js"></script>
     <script src="/scripts/profile-transition.js"></script>
     <script>
