@@ -15,7 +15,8 @@ export const getContinueWatching = async (req, res) => {
     const query = {
       userId,
       profileId: profileId || null,
-      watchedDuration: { $gt: 0 }
+      watchedDuration: { $gt: 0 },
+      completed: false // Only show incomplete items
     };
 
     const habits = await WatchHabitDoc.find(query)
@@ -43,6 +44,12 @@ export const getContinueWatching = async (req, res) => {
       }
 
       if (!titleDoc) continue;
+
+      // For movies, only process movie-level records (episodeId: null)
+      // Skip episode-level records for movies
+      if (isMovie && habit.episodeId !== null && habit.episodeId !== undefined) {
+        continue;
+      }
 
       seenTitles.add(habit.titleId);
 
