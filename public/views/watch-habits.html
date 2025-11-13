@@ -1,0 +1,597 @@
+<!-- yaniv-berniker-213371776-yaniv-zilberson-214269292 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney+ - Watch Habits</title>
+    <meta name="description" content="View your profile's watch habits, liked content, and viewing history">
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+    <style>
+        .loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#1A1D29;display:flex;justify-content:center;align-items:center;z-index:9999;opacity:1;transition:opacity .8s ease}.loading-screen.hidden{opacity:0;pointer-events:none}.loading-screen.completing{animation:completionFlash .5s ease-out}@keyframes completionFlash{0%{background:#1A1D29}50%{background:rgba(0,214,232,.15)}100%{background:#1A1D29}}.aurora-circle-container{position:relative;width:200px;height:200px}.aurora-circle,.aurora-circle-secondary,.aurora-circle-inner{position:absolute;top:50%;left:50%;border-radius:50%}.aurora-circle{width:150px;height:150px;margin:-75px 0 0 -75px;border:4px solid #00D6E8;box-shadow:0 0 20px rgba(0,214,232,.6),inset 0 0 20px rgba(0,214,232,.3);animation:circleRotate 2s cubic-bezier(.4,0,.2,1) infinite}.aurora-circle-secondary{width:120px;height:120px;margin:-60px 0 0 -60px;border:3px solid rgba(0,214,232,.6);box-shadow:0 0 15px rgba(0,214,232,.4);animation:circleRotateReverse 2.5s cubic-bezier(.4,0,.2,1) infinite}.aurora-circle-inner{width:90px;height:90px;margin:-45px 0 0 -45px;background:radial-gradient(circle,rgba(0,214,232,.2),transparent 70%);animation:innerPulse 2s ease-in-out infinite}@keyframes circleRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes circleRotateReverse{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}@keyframes innerPulse{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}.circle-particle{position:absolute;top:50%;left:50%;width:8px;height:8px;background:#00D6E8;border-radius:50%;margin:-4px 0 0 -4px;box-shadow:0 0 10px rgba(0,214,232,.8);animation:orbitParticle 2s cubic-bezier(.4,0,.2,1) infinite}.circle-particle:nth-child(1){animation-delay:.1s;--orbit-angle:0deg}.circle-particle:nth-child(2){animation-delay:.4s;--orbit-angle:90deg}.circle-particle:nth-child(3){animation-delay:.8s;--orbit-angle:180deg}.circle-particle:nth-child(4){animation-delay:1.2s;--orbit-angle:270deg}@keyframes orbitParticle{0%{transform:rotate(var(--orbit-angle))translateX(75px)rotate(calc(-1*var(--orbit-angle)));opacity:.6}50%{opacity:1}100%{transform:rotate(calc(var(--orbit-angle) + 360deg))translateX(75px)rotate(calc(-1*(var(--orbit-angle) + 360deg)));opacity:.6}}.aurora-circle-container.completing .aurora-circle,.aurora-circle-container.completing .aurora-circle-secondary,.aurora-circle-container.completing .aurora-circle-inner{animation:completeCircle .5s ease-out forwards}@keyframes completeCircle{to{transform:scale(0);opacity:0}}.aurora-circle-container.completing .circle-particle{animation:particleExplode .5s ease-out forwards}.aurora-circle-container.completing .circle-particle:nth-child(1){--explode-x:100px;--explode-y:0}.aurora-circle-container.completing .circle-particle:nth-child(2){--explode-x:0;--explode-y:-100px}.aurora-circle-container.completing .circle-particle:nth-child(3){--explode-x:-100px;--explode-y:0}.aurora-circle-container.completing .circle-particle:nth-child(4){--explode-x:0;--explode-y:100px}@keyframes particleExplode{to{transform:translate(var(--explode-x),var(--explode-y));opacity:0}}body.loading .home-main,body.loading .main-nav{opacity:0}body:not(.loading) .home-main,body:not(.loading) .main-nav{opacity:1;transition:opacity .3s ease}
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(26, 29, 41, 0.8), rgba(26, 29, 41, 0.4));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #00D6E8;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(249, 249, 249, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .profile-selector {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 40px;
+            overflow-x: auto;
+            padding-bottom: 16px;
+        }
+
+        .profile-card {
+            min-width: 120px;
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .profile-card:hover {
+            transform: scale(1.05);
+        }
+
+        .profile-card.active .profile-avatar {
+            border: 3px solid #00D6E8;
+            box-shadow: 0 0 20px rgba(0, 214, 232, 0.6);
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            object-fit: cover;
+        }
+
+        .profile-name {
+            margin-top: 8px;
+            font-size: 14px;
+            color: rgba(249, 249, 249, 0.9);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: rgba(249, 249, 249, 0.6);
+            font-size: 16px;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .tab:hover {
+            color: rgba(249, 249, 249, 0.9);
+        }
+
+        .tab.active {
+            color: #00D6E8;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #00D6E8;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(249, 249, 249, 0.6);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body class="home-body loading">
+    <div class="loading-screen" id="loadingScreen">
+        <div class="aurora-circle-container" id="circleContainer">
+            <div class="aurora-circle"></div>
+            <div class="aurora-circle-secondary"></div>
+            <div class="aurora-circle-inner"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+            <div class="circle-particle"></div>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
+                <a href="/views/home.html" class="nav-link">Home</a>
+                <a href="/views/series.html" class="nav-link">Series</a>
+                <a href="/views/movies.html" class="nav-link">Movies</a>
+                <a href="/views/watch-habits.html" class="nav-link active">Watch Habits</a>
+            </div>
+            
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <div class="profile-menu-container">
+                    <button class="profile-icon-btn" onclick="toggleProfileMenu()">
+                        <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                        <script>
+                            (function(){try{const s=sessionStorage.getItem('cachedProfiles'),p=localStorage.getItem('selectedProfileId');if(s&&p){const ps=JSON.parse(s),cp=ps.find(pr=>pr.id==p||pr.id.toString()===p.toString()||String(pr.id)===String(p));if(cp&&cp.avatarUrl){const img=document.getElementById('currentProfileAvatar');if(img)img.src=cp.avatarUrl;}}}catch(e){}})();
+                        </script>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-dropdown-header">Switch Profile</div>
+                        <div id="profileList" class="profile-list">
+                            <!-- Profiles will be loaded here -->
+                        </div>
+                        <div class="profile-dropdown-divider"></div>
+                        <a href="/views/profile-selection.html" class="profile-dropdown-item">Manage Profiles</a>
+                        <a href="/" class="profile-dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="home-main">
+        <!-- Page Header -->
+        <div class="page-header" style="margin-bottom: 40px;">
+            <h1 class="page-title" style="font-size: 32px; font-weight: 600; margin-bottom: 8px;">Watch Habits</h1>
+            <p class="page-subtitle" style="font-size: 16px; color: hsl(var(--disney-muted));">View your watching history and liked content</p>
+        </div>
+
+        <!-- Profile Selector -->
+        <div class="profile-selector" id="profileSelector">
+            <!-- Profiles will be loaded here -->
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalWatchedStat">0</div>
+                <div class="stat-label">Total Watched</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="completedStat">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="inProgressStat">0</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="likedStat">0</div>
+                <div class="stat-label">Liked</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="watched">Watched</button>
+            <button class="tab" data-tab="inProgress">In Progress</button>
+            <button class="tab" data-tab="liked">Liked</button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="tab-content active" id="watchedContent">
+            <div class="content-grid" id="watchedGrid">
+                <!-- Watched content will be loaded here -->
+            </div>
+        </div>
+
+        <div class="tab-content" id="inProgressContent">
+            <div class="content-grid" id="inProgressGrid">
+                <!-- In progress content will be loaded here -->
+            </div>
+        </div>
+
+        <div class="tab-content" id="likedContent">
+            <div class="content-grid" id="likedGrid">
+                <!-- Liked content will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <script src="/scripts/api.js"></script>
+    <script>
+        let profiles = [];
+        let currentProfile = null;
+        let selectedProfileId = null;
+        let habitsData = null;
+
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const circleContainer = document.getElementById('circleContainer');
+            const body = document.body;
+            
+            if (loadingScreen && circleContainer) {
+                loadingScreen.classList.add('completing');
+                circleContainer.classList.add('completing');
+                
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                    body.classList.remove('loading');
+                    
+                    setTimeout(() => {
+                        if (loadingScreen.parentNode) {
+                            loadingScreen.parentNode.removeChild(loadingScreen);
+                        }
+                    }, 600);
+                }, 500);
+            }
+        }
+
+        async function loadProfiles() {
+            try {
+                const response = await api.get('/api/profiles');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load profiles');
+                }
+                
+                const data = await response.json();
+                profiles = (data.items || []).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    avatarUrl: p.avatarUrl
+                }));
+                
+                sessionStorage.setItem('cachedProfiles', JSON.stringify(profiles));
+                
+                renderProfileSelector();
+                renderProfileList();
+                
+                // Select profile from localStorage or default to first
+                const storedProfileId = localStorage.getItem('selectedProfileId');
+                if (storedProfileId && profiles.some(p => String(p.id) === String(storedProfileId))) {
+                    await selectProfile(storedProfileId);
+                } else if (profiles.length > 0) {
+                    await selectProfile(profiles[0].id);
+                }
+                
+                loadCurrentProfile();
+            } catch (error) {
+                console.error('Failed to load profiles:', error);
+                hideLoadingScreen();
+            }
+        }
+
+        function renderProfileSelector() {
+            const selector = document.getElementById('profileSelector');
+            selector.innerHTML = '';
+            
+            profiles.forEach(profile => {
+                const card = document.createElement('div');
+                card.className = 'profile-card';
+                card.onclick = () => selectProfile(profile.id);
+                
+                card.innerHTML = `
+                    <img src="${profile.avatarUrl || '/images/avatar1.png'}" 
+                         alt="${profile.name}" 
+                         class="profile-avatar"
+                         onerror="this.src='/images/avatar1.png'">
+                    <div class="profile-name">${profile.name}</div>
+                `;
+                
+                selector.appendChild(card);
+            });
+        }
+
+        async function selectProfile(profileId) {
+            selectedProfileId = profileId;
+            
+            // Update active state
+            const cards = document.querySelectorAll('.profile-card');
+            cards.forEach((card, index) => {
+                if (profiles[index].id == profileId || 
+                    String(profiles[index].id) === String(profileId)) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+            
+            // Load habits for this profile
+            await loadProfileHabits(profileId);
+        }
+
+        async function loadProfileHabits(profileId) {
+            try {
+                const response = await api.get(`/api/watch-habits/profile/${profileId}/habits`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load profile habits');
+                }
+                
+                habitsData = await response.json();
+                
+                // Update stats
+                updateStats(habitsData);
+                
+                // Load content for each tab
+                await loadWatchedContent(habitsData.watched.items);
+                await loadInProgressContent(habitsData.inProgress.items);
+                await loadLikedContent(habitsData.liked.items);
+                
+                hideLoadingScreen();
+            } catch (error) {
+                console.error('Failed to load profile habits:', error);
+                hideLoadingScreen();
+            }
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalWatchedStat').textContent = data.stats.totalWatched || 0;
+            document.getElementById('completedStat').textContent = data.stats.completed || 0;
+            document.getElementById('inProgressStat').textContent = data.stats.inProgress || 0;
+            document.getElementById('likedStat').textContent = data.liked.total || 0;
+        }
+
+        async function loadWatchedContent(watchedItems) {
+            const grid = document.getElementById('watchedGrid');
+            
+            if (watchedItems.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📺</div>
+                        <p>No watched content yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = '';
+            
+            for (const item of watchedItems) {
+                const title = await fetchTitle(item.titleId);
+                if (title) {
+                    grid.appendChild(createContentCard(title));
+                }
+            }
+        }
+
+        async function loadInProgressContent(inProgressItems) {
+            const grid = document.getElementById('inProgressGrid');
+            
+            if (inProgressItems.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⏸️</div>
+                        <p>No content in progress</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = '';
+            
+            for (const item of inProgressItems) {
+                const title = await fetchTitle(item.titleId);
+                if (title) {
+                    grid.appendChild(createContentCard(title));
+                }
+            }
+        }
+
+        async function loadLikedContent(likedItems) {
+            const grid = document.getElementById('likedGrid');
+            
+            if (likedItems.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❤️</div>
+                        <p>No liked content yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = '';
+            
+            for (const item of likedItems) {
+                const title = await fetchTitle(item.titleId);
+                if (title) {
+                    grid.appendChild(createContentCard(title));
+                }
+            }
+        }
+
+        async function fetchTitle(titleId) {
+            try {
+                const response = await api.get(`/api/titles/${titleId}`);
+                if (!response.ok) return null;
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch title:', error);
+                return null;
+            }
+        }
+
+        function createContentCard(title) {
+            const card = document.createElement('div');
+            card.className = 'content-card';
+            card.onclick = () => window.location.href = `/views/title.html?id=${title.id}`;
+            
+            card.innerHTML = `
+                <img src="${title.poster || '/images/placeholder.jpg'}" 
+                     alt="${title.title}" 
+                     class="content-poster"
+                     onerror="this.src='/images/placeholder.jpg'">
+                <div class="content-info">
+                    <h3 class="content-title">${title.title}</h3>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        function renderProfileList() {
+            const profileList = document.getElementById('profileList');
+            if (!profileList) return;
+            
+            profileList.innerHTML = '';
+            
+            profiles.forEach(profile => {
+                const profileItem = document.createElement('div');
+                profileItem.className = 'profile-dropdown-profile';
+                profileItem.onclick = () => switchProfile(profile.id);
+                
+                const initials = (profile.name || 'P').charAt(0).toUpperCase();
+                
+                profileItem.innerHTML = `
+                    <img src="${profile.avatarUrl || '/images/avatar1.png'}" alt="${profile.name}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="avatar-fallback-small">${initials}</div>
+                    <span>${profile.name}</span>
+                `;
+                
+                profileList.appendChild(profileItem);
+            });
+        }
+
+        function loadCurrentProfile() {
+            const selectedProfileId = localStorage.getItem('selectedProfileId');
+            const avatarImg = document.getElementById('currentProfileAvatar');
+            
+            if (selectedProfileId && profiles.length > 0) {
+                currentProfile = profiles.find(p => {
+                    return p.id == selectedProfileId || 
+                           p.id.toString() === selectedProfileId.toString() ||
+                           String(p.id) === String(selectedProfileId);
+                });
+                
+                if (currentProfile && avatarImg) {
+                    const avatarUrl = currentProfile.avatarUrl || '/images/avatar1.png';
+                    avatarImg.src = avatarUrl;
+                    avatarImg.onerror = function() {
+                        this.src = '/images/avatar1.png';
+                    };
+                } else if (avatarImg) {
+                    avatarImg.src = '/images/avatar1.png';
+                }
+            } else if (avatarImg) {
+                avatarImg.src = '/images/avatar1.png';
+            }
+        }
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function switchProfile(profileId) {
+            localStorage.setItem('selectedProfileId', profileId);
+            loadCurrentProfile();
+            toggleProfileMenu();
+            selectProfile(profileId);
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.querySelector('.search-btn');
+            
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+
+        function performSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput.value.trim();
+            
+            if (query) {
+                window.location.href = `/views/genre.html?q=${encodeURIComponent(query)}`;
+            }
+        }
+
+        // Tab switching
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfiles();
+            setupSearch();
+            
+            // Tab switching logic
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Update active content
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(`${tabName}Content`).classList.add('active');
+                });
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('profileDropdown');
+                const profileBtn = document.querySelector('.profile-icon-btn');
+                
+                if (!dropdown.contains(event.target) && !profileBtn.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

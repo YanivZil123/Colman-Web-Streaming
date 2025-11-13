@@ -1,12 +1,33 @@
 <!doctype html><html><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Player · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
-</head><body>
-<header><div class="nav"><a href="/">← Home</a><strong>Player</strong></div></header>
-<div class="video-wrap">
-  <video id="v" width="100%" controls></video>
-  <div class="row" style="margin-top:8px"><button class="btn" id="back10">⏪ 10s</button><button class="btn" id="fwd10">10s ⏩</button><a id="nextEp" class="btn">Next Episode ▶</a></div>
-  <div class="progress" style="margin-top:10px"><div id="bar"></div></div>
-</div>
+</head><body class="player-body">
+<header><div class="nav" style="justify-content:space-between"><div style="display:flex;gap:12px;align-items:center"><a href="/views/home.html">← Home</a><span id="titleBreadcrumb">Player</span></div></div></header>
+<main class="player-stage">
+  <div class="video-frame">
+    <video id="v" preload="metadata" controlslist="nodownload"></video>
+    <div class="video-overlay">
+      <div class="overlay-top">
+        <a id="nextEp" class="overlay-next">Next Episode ▶</a>
+      </div>
+      <div class="overlay-center">
+        <button class="overlay-btn" id="overlayBack10"><span>⟲</span><small>10s</small></button>
+        <button class="overlay-btn overlay-play" id="overlayPlayPause">▶︎</button>
+        <button class="overlay-btn" id="overlayFwd10"><small>10s</small><span>⟳</span></button>
+      </div>
+      <div class="overlay-bottom">
+        <div class="overlay-progress" id="progressTrack"><div id="bar"></div></div>
+        <button class="overlay-btn overlay-fullscreen" id="overlayFullscreen">⛶</button>
+      </div>
+    </div>
+  </div>
+  <div class="meta-row">
+    <div>
+      <h1 id="titleName"></h1>
+      <p id="titleMeta"></p>
+    </div>
+    <a class="btn" id="moreInfo" href="#">Details</a>
+  </div>
+</main>
 <script src="/scripts/api.js"></script><script src="/scripts/player.js"></script>
 </body></html>

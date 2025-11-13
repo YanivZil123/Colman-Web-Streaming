@@ -7,6 +7,164 @@
     <title>Title · Disney+</title>
     <meta name="description" content="Details for your selected title">
     <link rel="stylesheet" href="/styles/disney-plus.css">
+    <style>
+        /* Premium Like Button Styles */
+        .like-btn-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .like-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(107, 116, 138, 0.3);
+            border: 2px solid rgba(249, 249, 249, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: visible;
+        }
+
+        .like-btn:hover {
+            background: rgba(107, 116, 138, 0.5);
+            border-color: rgba(249, 249, 249, 0.4);
+            transform: scale(1.05);
+        }
+
+        .like-btn:active {
+            transform: scale(0.95);
+        }
+
+        .like-btn.liked {
+            background: rgba(0, 214, 232, 0.2);
+            border-color: rgba(0, 214, 232, 0.6);
+        }
+
+        .like-btn.liked:hover {
+            background: rgba(0, 214, 232, 0.3);
+            border-color: rgba(0, 214, 232, 0.8);
+        }
+
+        /* Heart Icon */
+        .heart-icon {
+            width: 24px;
+            height: 24px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* SVG Heart Outline (Not Liked State) */
+        .heart-outline {
+            stroke: #F9F9F9;
+            stroke-width: 2;
+            fill: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* SVG Heart Fill (Liked State) */
+        .heart-fill {
+            fill: #00D6E8;
+            stroke: none;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .like-btn.liked .heart-outline {
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .like-btn.liked .heart-fill {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Sparkle Particles */
+        .sparkle-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            width: 100px;
+            height: 100px;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00D6E8;
+            border-radius: 50%;
+            opacity: 0;
+            box-shadow: 0 0 6px #00D6E8, 0 0 12px rgba(0, 214, 232, 0.6);
+        }
+
+        /* Sparkle Animation */
+        @keyframes sparkleAnimation {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: var(--sparkle-end) scale(0);
+            }
+        }
+
+        .like-btn.animating .sparkle {
+            animation: sparkleAnimation 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Pulse Animation on Like */
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(0, 214, 232, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(0, 214, 232, 0);
+            }
+        }
+
+        .like-btn.animating {
+            animation: pulseGlow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Ripple Effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 214, 232, 0.3);
+            width: 0;
+            height: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        }
+
+        @keyframes rippleAnimation {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.6;
+            }
+            100% {
+                width: 80px;
+                height: 80px;
+                opacity: 0;
+            }
+        }
+
+        .like-btn.animating .ripple {
+            animation: rippleAnimation 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
 </head>
 <body class="home-body">
     <!-- Navigation Bar -->
@@ -24,7 +182,6 @@
                     <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
                     <button class="search-btn">🔍</button>
                 </div>
-                <a href="/views/admin.html" class="nav-link">Admin</a>
                 <div class="profile-menu-container">
                     <button class="profile-icon-btn" onclick="toggleProfileMenu()">
                         <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
@@ -231,6 +388,29 @@
             }
         }
 
+        async function checkLikeStatus(titleId) {
+            const profileId = localStorage.getItem('selectedProfileId');
+            if (!profileId || !titleId) return;
+            
+            try {
+                const response = await api.get(`/api/likes/check?titleId=${titleId}&profileId=${profileId}`);
+                
+                if (!response.ok) {
+                    console.error('Failed to check like status');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                const likeBtn = document.getElementById('likeBtn');
+                if (likeBtn && data.liked) {
+                    likeBtn.classList.add('liked');
+                }
+            } catch (error) {
+                console.error('Failed to check like status:', error);
+            }
+        }
+
         async function loadTitle() {
             const id = new URLSearchParams(location.search).get('id');
             if (!id) {
@@ -301,38 +481,110 @@
                         ${actorsHtml}
                         <div class="title-hero-actions">
                             <a href="/player.html?titleId=${t.id}" class="btn-play">▶ Play</a>
-                            <button id="likeBtn" class="btn-secondary">♥ Like</button>
-                            <button id="restartBtn" class="btn-secondary">Re-watch</button>
+                            <div class="like-btn-container">
+                                <button id="likeBtn" class="like-btn" aria-label="Like this title">
+                                    <svg class="heart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path class="heart-outline" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                        <path class="heart-fill" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                    </svg>
+                                    <div class="sparkle-container">
+                                        <div class="sparkle" style="--sparkle-end: translate(20px, -20px);"></div>
+                                        <div class="sparkle" style="--sparkle-end: translate(-20px, -20px);"></div>
+                                        <div class="sparkle" style="--sparkle-end: translate(20px, 20px);"></div>
+                                        <div class="sparkle" style="--sparkle-end: translate(-20px, 20px);"></div>
+                                        <div class="sparkle" style="--sparkle-end: translate(28px, 0);"></div>
+                                        <div class="sparkle" style="--sparkle-end: translate(-28px, 0);"></div>
+                                        <div class="sparkle" style="--sparkle-end: translate(0, -28px);"></div>
+                                        <div class="sparkle" style="--sparkle-end: translate(0, 28px);"></div>
+                                    </div>
+                                    <div class="ripple"></div>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
             
+            // Check if title is liked and update button state
+            checkLikeStatus(t.id);
+            
             // Setup button handlers
             const likeBtn = document.getElementById('likeBtn');
-            const restartBtn = document.getElementById('restartBtn');
             
             if (likeBtn) {
                 likeBtn.onclick = async () => {
+                    const profileId = localStorage.getItem('selectedProfileId');
+                    if (!profileId) {
+                        console.error('No profile selected');
+                        return;
+                    }
+                    
                     try {
-                        await api.post('/api/likes/toggle', { titleId: t.id });
-                        alert('Toggled like');
+                        const wasLiked = likeBtn.classList.contains('liked');
+                        
+                        if (!wasLiked) {
+                            likeBtn.classList.add('liked', 'animating');
+                            
+                            setTimeout(() => {
+                                likeBtn.classList.remove('animating');
+                            }, 600);
+                        } else {
+                            likeBtn.classList.remove('liked');
+                        }
+                        
+                        const response = await api.post('/api/likes/toggle', { 
+                            titleId: t.id,
+                            profileId: profileId
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Failed to toggle like');
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.liked !== undefined) {
+                            if (data.liked) {
+                                likeBtn.classList.add('liked');
+                            } else {
+                                likeBtn.classList.remove('liked');
+                            }
+                        }
                     } catch (error) {
                         console.error('Failed to toggle like:', error);
+                        likeBtn.classList.toggle('liked');
                     }
                 };
             }
-            
-            if (restartBtn) {
-                restartBtn.onclick = async (e) => {
-                    e.preventDefault();
-                    try {
-                        await api.post('/api/watch/finish', { titleId: t.id, reset: true });
-                        alert('Marked as ready to re-watch');
-                    } catch (error) {
-                        console.error('Failed to reset watch status:', error);
-                    }
-                };
+
+            setupResumeButtons(t);
+        }
+
+        async function setupResumeButtons(t) {
+            try {
+                const actions = document.querySelector('.title-hero-actions');
+                if (!actions) return;
+                const playLink = actions.querySelector('.btn-play');
+                if (!playLink) return;
+                const profileId = localStorage.getItem('selectedProfileId');
+                const resp = await api.get('/api/watch/progress?titleId=' + encodeURIComponent(t.id) + (profileId ? ('&profileId=' + encodeURIComponent(profileId)) : ''));
+                if (!resp.ok) return;
+                const progress = await resp.json().catch(() => null);
+                if (!progress || progress.positionSec === undefined) return;
+                const position = Number(progress.positionSec || 0);
+                const total = Number(progress.totalDurationSec || 0);
+                if (position <= 1) return;
+                if (total && position >= total - 2) return;
+                const base = '/player.html?titleId=' + encodeURIComponent(t.id) + (progress.episodeId ? ('&episodeId=' + encodeURIComponent(progress.episodeId)) : '');
+                playLink.textContent = '▶ Play from beginning';
+                playLink.href = base + '&resume=start&resumePosition=0';
+                const resumeBtn = document.createElement('a');
+                resumeBtn.className = 'btn-play';
+                resumeBtn.textContent = '⟲ Continue';
+                resumeBtn.href = base + '&resume=resume&resumePosition=' + Math.floor(position);
+                actions.insertBefore(resumeBtn, playLink);
+            } catch (error) {
+                console.error('Resume buttons error', error);
             }
         }
 

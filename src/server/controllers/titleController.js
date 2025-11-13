@@ -50,24 +50,12 @@ export const getTitles = (req, res) => {
           }).slice((p - 1) * limit, p * limit);
         }
 
-        const items = docs.map(t => ({
-          id: t.id,
-          name: t.name,
-          type: t.type,
-          year: t.year,
-          posterUrl: t.posterUrl
-        }));
+        const items = docs.map(mapTitleItem);
 
         return res.json({ items });
       } catch (err) {
         const titles = Title.findAll({ genre, q, type });
-        const items = titles.slice((p - 1) * limit, p * limit).map(t => ({
-          id: t.id,
-          name: t.name,
-          type: t.type,
-          year: t.year,
-          posterUrl: t.posterUrl
-        }));
+        const items = titles.slice((p - 1) * limit, p * limit).map(mapTitleItem);
         return res.json({ items });
       }
     })();
@@ -107,21 +95,21 @@ export const getSimilarTitles = (req, res) => {
 
         const movieItems = await MovieDoc.find({
           id: { $ne: req.params.id },
-          genres: { $in: base.genres || [] }
+          genres: { $in: (base.genres || []) }
         }).limit(8).lean();
 
         const seriesItems = await SeriesDoc.find({
           id: { $ne: req.params.id },
-          genres: { $in: base.genres || [] }
+          genres: { $in: (base.genres || []) }
         }).limit(8).lean();
 
         const items = [...movieItems, ...seriesItems].slice(0, 8);
 
-        return res.json({ items: items.map(t => ({ id: t.id, name: t.name, posterUrl: t.posterUrl })) });
+        return res.json({ items: items.map(t => ({ id: t.id, name: t.name, posterUrl: normalizeAsset(t.posterUrl), thumbnailUrl: normalizeAsset(t.thumbnailUrl) })) });
       } catch (err) {
         const title = Title.findById(req.params.id);
         if (!title) return res.json({ items: [] });
-        const items = Title.findSimilar(req.params.id).map(t => ({ id: t.id, name: t.name, posterUrl: t.posterUrl }));
+        const items = Title.findSimilar(req.params.id).map(t => ({ id: t.id, name: t.name, posterUrl: normalizeAsset(t.posterUrl), thumbnailUrl: normalizeAsset(t.thumbnailUrl) }));
         return res.json({ items });
       }
     })();
@@ -129,3 +117,26 @@ export const getSimilarTitles = (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+function mapTitleItem(t) {
+  return {
+    id: t.id,
+    name: t.name,
+    type: t.type,
+    year: t.year,
+    posterUrl: normalizeAsset(t.posterUrl),
+    thumbnailUrl: normalizeAsset(t.thumbnailUrl),
+    defaultEpisodeId: t.type === 'series' && t.episodes && t.episodes.length ? t.episodes[0].id : undefined
+  };
+}
+
+function normalizeAsset(url) {
+  if (!url) return null;
+  if (/^https?:/i.test(url)) return url;
+  let cleaned = String(url).replace(/^\/+/,'');
+  if (cleaned.startsWith('public/')) cleaned = cleaned.replace(/^public\//,'');
+  const idx = cleaned.indexOf('uploads/');
+  if (idx !== -1) cleaned = cleaned.slice(idx);
+  if (!cleaned.startsWith('uploads/')) cleaned = 'uploads/' + cleaned;
+  return '/' + cleaned;
+}

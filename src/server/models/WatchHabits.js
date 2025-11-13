@@ -7,20 +7,29 @@ class WatchHabits {
 
   /**
    * Create a new watch habit record
-   * @param {Object} habitData - { userId, titleId, watchedDuration, totalDuration, lastWatchedAt, completed, episodeId }
+   * @param {Object} habitData - { userId, profileId, titleId, watchedDuration, totalDuration, lastWatchedAt, completed, episodeId }
    * @returns {Object} Created watch habit
    */
   create(habitData) {
     const habit = {
       id: nanoid(),
       userId: habitData.userId,
+      profileId: habitData.profileId || null,
       titleId: habitData.titleId,
       episodeId: habitData.episodeId || null,
+      profileId: habitData.profileId ? String(habitData.profileId) : null,
       watchedDuration: habitData.watchedDuration || 0,
       totalDuration: habitData.totalDuration || 0,
       completed: habitData.completed || false,
       lastWatchedAt: habitData.lastWatchedAt || new Date().toISOString(),
       watchCount: habitData.watchCount || 1,
+      watchHistory: habitData.watchHistory || [{
+        watchedAt: new Date().toISOString(),
+        duration: habitData.watchedDuration || 0,
+        completed: habitData.completed || false,
+        startedAt: new Date().toISOString()
+      }],
+      liked: habitData.liked || false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -30,7 +39,7 @@ class WatchHabits {
 
   /**
    * Find all watch habits with optional filters
-   * @param {Object} filters - { userId, titleId, completed, search }
+   * @param {Object} filters - { userId, profileId, titleId, completed, search }
    * @returns {Array} Array of watch habits
    */
   findAll(filters = {}) {
@@ -41,9 +50,19 @@ class WatchHabits {
       results = results.filter(h => h.userId === filters.userId);
     }
 
+    // Filter by profileId
+    if (filters.profileId) {
+      results = results.filter(h => h.profileId === filters.profileId);
+    }
+
     // Filter by titleId
     if (filters.titleId) {
       results = results.filter(h => h.titleId === filters.titleId);
+    }
+
+    if (filters.profileId !== undefined) {
+      const pid = filters.profileId === null ? null : String(filters.profileId);
+      results = results.filter(h => (pid === null ? !h.profileId : h.profileId === pid));
     }
 
     // Filter by completed status
@@ -73,17 +92,20 @@ class WatchHabits {
   }
 
   /**
-   * Find watch habit by userId and titleId
+   * Find watch habit by userId, profileId and titleId
    * @param {string} userId - User ID
+   * @param {string} profileId - Profile ID
    * @param {string} titleId - Title ID
    * @param {string} episodeId - Optional episode ID
    * @returns {Object|null} Watch habit or null
    */
-  findByUserAndTitle(userId, titleId, episodeId = null) {
+  findByUserAndTitle(userId, titleId, episodeId = null, profileId = null) {
     return this.watchHabits.find(h =>
       h.userId === userId &&
       h.titleId === titleId &&
-      h.episodeId === episodeId
+      h.episodeId === episodeId &&
+      (profileId === undefined ? true : (profileId === null ? !h.profileId : h.profileId === profileId))
+      (profileId ? h.profileId === profileId : true)
     ) || null;
   }
 
@@ -103,6 +125,9 @@ class WatchHabits {
     if (updateData.lastWatchedAt !== undefined) habit.lastWatchedAt = updateData.lastWatchedAt;
     if (updateData.watchCount !== undefined) habit.watchCount = updateData.watchCount;
     if (updateData.episodeId !== undefined) habit.episodeId = updateData.episodeId;
+    if (updateData.profileId !== undefined) habit.profileId = updateData.profileId ? String(updateData.profileId) : null;
+    if (updateData.liked !== undefined) habit.liked = updateData.liked;
+    if (updateData.watchHistory !== undefined) habit.watchHistory = updateData.watchHistory;
 
     habit.updatedAt = new Date().toISOString();
 
@@ -124,47 +149,66 @@ class WatchHabits {
 
   /**
    * Update or create watch progress
-   * @param {Object} data - { userId, titleId, episodeId, watchedDuration, totalDuration, completed }
+   * @param {Object} data - { userId, profileId, titleId, episodeId, watchedDuration, totalDuration, completed }
    * @returns {Object} Updated or created watch habit
    */
   upsertProgress(data) {
-    const existing = this.findByUserAndTitle(data.userId, data.titleId, data.episodeId);
+    const prof = data.profileId ? String(data.profileId) : null;
+    const existing = this.findByUserAndTitle(data.userId, data.titleId, data.episodeId, prof);
 
     if (existing) {
-      // Update existing habit
+      if (!existing.watchHistory) {
+        existing.watchHistory = [];
+      }
+      existing.watchHistory.push({
+        watchedAt: new Date().toISOString(),
+        duration: data.watchedDuration,
+        completed: data.completed || false,
+        startedAt: new Date().toISOString()
+      });
       existing.watchedDuration = data.watchedDuration;
       existing.totalDuration = data.totalDuration || existing.totalDuration;
       existing.completed = data.completed || false;
       existing.lastWatchedAt = new Date().toISOString();
-      existing.watchCount += 1;
+      existing.watchCount = existing.watchHistory.length;
+      existing.profileId = prof;
       existing.updatedAt = new Date().toISOString();
       return existing;
     } else {
-      // Create new habit
-      return this.create(data);
+      return this.create({ ...data, profileId: prof });
     }
   }
 
   /**
-   * Get continue watching list for user
+   * Get continue watching list for user/profile
    * @param {string} userId - User ID
+   * @param {string} profileId - Profile ID (optional)
    * @param {number} limit - Maximum number of items
    * @returns {Array} Array of incomplete watch habits
    */
-  getContinueWatching(userId, limit = 10) {
+  getContinueWatching(userId, limit = 10, profileId = undefined) {
     return this.watchHabits
-      .filter(h => h.userId === userId && !h.completed && h.watchedDuration > 0)
+      .filter(h =>
+        h.userId === userId &&
+        !h.completed &&
+        h.watchedDuration > 0 &&
+        (profileId === undefined ? true : (profileId === null ? !h.profileId : h.profileId === profileId))
+      )
       .sort((a, b) => new Date(b.lastWatchedAt) - new Date(a.lastWatchedAt))
       .slice(0, limit);
   }
 
   /**
-   * Get watch statistics for user
+   * Get watch statistics for user/profile
    * @param {string} userId - User ID
+   * @param {string} profileId - Profile ID (optional)
    * @returns {Object} Watch statistics
    */
-  getUserStats(userId) {
-    const userHabits = this.watchHabits.filter(h => h.userId === userId);
+  getUserStats(userId, profileId = null) {
+    const userHabits = this.watchHabits.filter(h => 
+      h.userId === userId && 
+      (profileId ? h.profileId === profileId : true)
+    );
     
     return {
       totalWatched: userHabits.length,
