@@ -7,6 +7,7 @@
     <title>Disney+ - Home</title>
     <meta name="description" content="Stream your favorite Disney+ movies and series">
     <link rel="stylesheet" href="/styles/disney-plus.css">
+    <link rel="stylesheet" href="/styles/skeleton-loader.css">
     <style>
         .loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#1A1D29;display:flex;justify-content:center;align-items:center;z-index:9999;opacity:1;transition:opacity .6s ease}.loading-screen.hidden{opacity:0;pointer-events:none}.loading-screen.completing{animation:completionFlash .5s ease-out}.aurora-circle-container{position:relative;width:150px;height:150px}.aurora-circle{position:absolute;width:100%;height:100%;border-radius:50%;border:4px solid transparent;border-top-color:#00D6E8;border-right-color:rgba(0,214,232,.6);animation:circleRotate 2s cubic-bezier(.4,0,.2,1) infinite;filter:drop-shadow(0 0 20px rgba(0,214,232,.8))}.aurora-circle-secondary{position:absolute;width:120px;height:120px;top:15px;left:15px;border-radius:50%;border:3px solid transparent;border-bottom-color:#00D6E8;border-left-color:rgba(0,214,232,.4);animation:circleRotateReverse 2.5s cubic-bezier(.4,0,.2,1) infinite;filter:drop-shadow(0 0 15px rgba(0,214,232,.6))}.aurora-circle-inner{position:absolute;width:90px;height:90px;top:30px;left:30px;border-radius:50%;background:radial-gradient(circle,rgba(0,214,232,.2) 0%,transparent 70%);animation:innerPulse 2s ease-in-out infinite}.circle-particle{position:absolute;width:6px;height:6px;background:#00D6E8;border-radius:50%;box-shadow:0 0 10px #00D6E8,0 0 20px rgba(0,214,232,.8);animation:particleOrbit 2s cubic-bezier(.4,0,.2,1) infinite}.circle-particle:nth-child(1){animation-delay:0s;animation-duration:2s}.circle-particle:nth-child(2){animation-delay:.4s;animation-duration:2.2s}.circle-particle:nth-child(3){animation-delay:.8s;animation-duration:2.4s}.circle-particle:nth-child(4){animation-delay:1.2s;animation-duration:2.6s}@keyframes circleRotate{0%{transform:rotate(0deg);animation-timing-function:ease-in}50%{transform:rotate(180deg);animation-timing-function:ease-out}100%{transform:rotate(360deg)}}@keyframes circleRotateReverse{0%{transform:rotate(360deg);animation-timing-function:ease-in}50%{transform:rotate(180deg);animation-timing-function:ease-out}100%{transform:rotate(0deg)}}@keyframes innerPulse{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.3);opacity:.8}}@keyframes particleOrbit{0%{transform:rotate(0deg) translateX(75px) scale(0);opacity:0}20%{opacity:1;transform:rotate(72deg) translateX(75px) scale(1)}80%{opacity:1;transform:rotate(288deg) translateX(75px) scale(1)}100%{transform:rotate(360deg) translateX(75px) scale(0);opacity:0}}@keyframes completionFlash{0%{background:#1A1D29}50%{background:rgba(0,214,232,.2)}100%{background:#1A1D29}}.aurora-circle-container.completing .aurora-circle,.aurora-circle-container.completing .aurora-circle-secondary{animation:completeCircle .5s ease-out forwards}.aurora-circle-container.completing .circle-particle{animation:particleExplode .5s ease-out forwards}@keyframes completeCircle{0%{transform:rotate(0deg) scale(1);opacity:1}50%{transform:scale(1.2);opacity:1}100%{transform:scale(0);opacity:0}}@keyframes particleExplode{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--explode-x,100px),var(--explode-y,-100px)) scale(0);opacity:0}}body.loading .home-main,body.loading .main-nav{opacity:0}body:not(.loading) .home-main,body:not(.loading) .main-nav{opacity:1;transition:opacity .3s ease}
     </style>
@@ -106,6 +107,9 @@
     </main>
 
     <script src="/scripts/api.js"></script>
+    <script src="/scripts/cacheInvalidator.js"></script>
+    <script src="/scripts/homeDataCache.js"></script>
+    <script src="/scripts/homeDataLoader.js"></script>
     <script src="/scripts/profile-transition.js"></script>
     <script>
         let profiles = [];
@@ -129,6 +133,7 @@
             
             loadProfiles();
             setupSearch();
+            setupSignOutHandler();
             
             // Close dropdown when clicking outside
             document.addEventListener('click', function(event) {
@@ -140,6 +145,20 @@
                 }
             });
         });
+
+        // Setup sign out handler to clear caches
+        function setupSignOutHandler() {
+            const signOutLinks = document.querySelectorAll('a[href="/"]');
+            signOutLinks.forEach(link => {
+                if (link.textContent.includes('Sign Out')) {
+                    link.addEventListener('click', function(e) {
+                        console.log('[Logout] Dispatching user-logout event to clear all caches');
+                        window.dispatchEvent(new CustomEvent('user-logout'));
+                        // Let the default navigation happen after event
+                    });
+                }
+            });
+        }
 
         // Set avatar immediately from cached profile data to prevent flash
         function setAvatarFromCache() {
@@ -263,6 +282,13 @@
 
         function switchProfile(profileId) {
             if (!profileId) return;
+            
+            // Dispatch event for cache modules to reload for new profile
+            console.log('[Profile Switch] Switching to profile:', profileId);
+            window.dispatchEvent(new CustomEvent('profile-switched', { 
+                detail: { profileId } 
+            }));
+            
             localStorage.setItem('selectedProfileId', profileId);
             // Update avatar immediately without reload
             loadCurrentProfile();
@@ -279,20 +305,23 @@
             const container = document.getElementById('genreSectionsContainer');
             if (!container) return;
 
-            container.innerHTML = '';
-            genreSections = (genres || []).map(genre => {
-                const slug = genre.slug || slugify(genre.name);
-                const gridId = `latest-${slug}-grid`;
-                const section = document.createElement('section');
-                section.className = 'content-section';
-                section.dataset.genre = slug;
-                section.innerHTML = `
-                    <h2 class="section-title">Latest ${genre.name || slug}</h2>
-                    <div class="content-grid" id="${gridId}"></div>
-                `;
-                container.appendChild(section);
-                return { slug, gridId, name: genre.name || slug };
-            });
+            // Only rebuild if genreSections is empty (first load)
+            if (genreSections.length === 0) {
+                container.innerHTML = '';
+                genreSections = (genres || []).map(genre => {
+                    const slug = genre.slug || slugify(genre.name);
+                    const gridId = `latest-${slug}-grid`;
+                    const section = document.createElement('section');
+                    section.className = 'content-section';
+                    section.dataset.genre = slug;
+                    section.innerHTML = `
+                        <h2 class="section-title">Latest ${genre.name || slug}</h2>
+                        <div class="content-grid" id="${gridId}"></div>
+                    `;
+                    container.appendChild(section);
+                    return { slug, gridId, name: genre.name || slug };
+                });
+            }
         }
 
         async function initGenreSections(contentLimit = 10) {
@@ -312,6 +341,9 @@
                 } catch (error) {
                     console.error('Failed to load genres:', error);
                 }
+                
+                // Cache the genres list
+                HomeDataCache.set('genres', genresToRender);
                 renderGenreSections(genresToRender);
             }
 
@@ -584,6 +616,115 @@
         }
 
         async function loadContent() {
+            const startTime = performance.now();
+            console.log('[Home] Loading content...');
+            console.log('[Home] Cache status:', HomeDataCache.getInfo());
+            
+            // Check if we have cached data (WARM LOAD)
+            const hasCachedData = HomeDataCache.hasValidCache();
+            
+            if (hasCachedData) {
+                // WARM LOAD - Instant render with cached data
+                console.log('[Home] WARM LOAD - Using cached data (no loading screen)');
+                
+                // CRITICAL: Remove loading immediately to show content
+                document.body.classList.remove('loading');
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
+                
+                const renderStart = performance.now();
+                await renderFromCache();
+                const renderEnd = performance.now();
+                console.log(`[Home] Warm load render took ${renderEnd - renderStart}ms`);
+            } else {
+                // COLD LOAD - Show loading screen and fetch data
+                console.log('[Home] COLD LOAD - Fetching from API (showing loading screen)');
+                document.body.classList.add('loading');
+                
+                await loadFreshData();
+            }
+            
+            const endTime = performance.now();
+            console.log(`[Home] Total loadContent time: ${endTime - startTime}ms`);
+        }
+
+        async function renderFromCache() {
+            console.log('[renderFromCache] Starting...');
+            const cachedData = HomeDataCache.getAll();
+            console.log('[renderFromCache] Got cached data:', {
+                hasContinueWatching: !!cachedData.continueWatching,
+                hasRecommended: !!cachedData.recommended,
+                hasMostLikedMovies: !!cachedData.mostLikedMovies,
+                hasMostLikedSeries: !!cachedData.mostLikedSeries,
+                hasAlreadyWatched: !!cachedData.alreadyWatched,
+                hasGenres: !!cachedData.genres,
+                hasGenreData: !!cachedData.genreData
+            });
+            
+            // Render ALL cached sections immediately
+            if (cachedData.continueWatching) {
+                const continueGrid = document.getElementById('continueWatchingGrid');
+                if (continueGrid) {
+                    console.log('[renderFromCache] Rendering Continue Watching...');
+                    renderContinueWatchingGrid(continueGrid, cachedData.continueWatching);
+                }
+            }
+            
+            if (cachedData.recommended) {
+                const recommendedGrid = document.getElementById('recommendedShowsGrid');
+                if (recommendedGrid) {
+                    console.log('[renderFromCache] Rendering Recommended...');
+                    renderGrid(recommendedGrid, cachedData.recommended);
+                }
+            }
+            
+            if (cachedData.mostLikedMovies) {
+                const mostLikedMoviesGrid = document.getElementById('mostLikedMoviesGrid');
+                if (mostLikedMoviesGrid) {
+                    console.log('[renderFromCache] Rendering Most Liked Movies...');
+                    renderGrid(mostLikedMoviesGrid, cachedData.mostLikedMovies);
+                }
+            }
+            
+            if (cachedData.mostLikedSeries) {
+                const mostLikedSeriesGrid = document.getElementById('mostLikedSeriesGrid');
+                if (mostLikedSeriesGrid) {
+                    console.log('[renderFromCache] Rendering Most Liked Series...');
+                    renderGrid(mostLikedSeriesGrid, cachedData.mostLikedSeries);
+                }
+            }
+            
+            if (cachedData.alreadyWatched) {
+                const alreadyWatchedGrid = document.getElementById('alreadyWatchedGrid');
+                if (alreadyWatchedGrid) {
+                    console.log('[renderFromCache] Rendering Already Watched...');
+                    renderGrid(alreadyWatchedGrid, cachedData.alreadyWatched);
+                }
+            }
+            
+            // Render genre sections from cache
+            if (cachedData.genres) {
+                console.log('[renderFromCache] Rendering genre sections...');
+                renderGenreSections(cachedData.genres);
+            }
+            
+            // Render cached genre data
+            if (cachedData.genreData && genreSections.length > 0) {
+                console.log('[renderFromCache] Rendering genre data...');
+                genreSections.forEach(genre => {
+                    const grid = document.getElementById(genre.gridId);
+                    if (grid && cachedData.genreData[genre.slug]) {
+                        renderGrid(grid, cachedData.genreData[genre.slug]);
+                    }
+                });
+            }
+            
+            console.log('[renderFromCache] Finished!');
+        }
+
+        async function loadFreshData() {
             let contentLimit = 20;
             try {
                 const configRes = await api.get('/api/config/content-limit');
@@ -608,54 +749,51 @@
                 
                 const profileId = localStorage.getItem('selectedProfileId');
                 
+                // STEP 1: Load and render Continue Watching (HIGH PRIORITY)
                 const continueResp = await api.get(`/api/home/continue${profileId ? '?profileId=' + encodeURIComponent(profileId) : ''}`);
                 const continueData = await continueResp.json();
-                if (continueGrid) renderContinueWatchingGrid(continueGrid, continueData.items || []);
+                const continueWatchingItems = continueData.items || [];
                 
-                if (profileId && recommendedGrid) {
-                    try {
-                        const recommendedResp = await api.get(`/api/home/recommended?profileId=${encodeURIComponent(profileId)}`);
-                        const recommendedData = await recommendedResp.json();
-                        if (recommendedData.items && recommendedData.items.length > 0) {
-                            renderGrid(recommendedGrid, recommendedData.items);
-                        } else {
-                            // Fallback to popular if no recommendations
-                            const popularResp = await api.get(`/api/home/popular`);
-                            const popularData = await popularResp.json();
-                            renderGrid(recommendedGrid, (popularData.items || []).slice(0, 5));
+                // Cache it
+                HomeDataCache.set('continueWatching', continueWatchingItems);
+                
+                if (continueGrid) renderContinueWatchingGrid(continueGrid, continueWatchingItems);
+                
+                // STEP 2: Load other sections in parallel (MEDIUM PRIORITY)
+                const [recommendedData, mostLikedMoviesData, mostLikedSeriesData, alreadyWatchedData] = await Promise.all([
+                    (async () => {
+                        if (profileId && recommendedGrid) {
+                            try {
+                                const recommendedResp = await api.get(`/api/home/recommended?profileId=${encodeURIComponent(profileId)}`);
+                                const data = await recommendedResp.json();
+                                if (data.items && data.items.length > 0) {
+                                    return data.items;
+                                }
+                            } catch (error) {
+                                console.error('Failed to load recommendations:', error);
+                            }
                         }
-                    } catch (error) {
-                        console.error('Failed to load recommendations:', error);
-                        // Fallback to popular on error
                         const popularResp = await api.get(`/api/home/popular`);
                         const popularData = await popularResp.json();
-                        renderGrid(recommendedGrid, (popularData.items || []).slice(0, 5));
-                    }
-                } else if (recommendedGrid) {
-                    // No profile selected - show popular content
-                    const popularResp = await api.get(`/api/home/popular`);
-                    const popularData = await popularResp.json();
-                    renderGrid(recommendedGrid, (popularData.items || []).slice(0, 5));
-                }
-
-                // Load most liked movies and series
-                const [mostLikedMoviesResp, mostLikedSeriesResp] = await Promise.all([
-                    api.get('/api/home/most-liked-movies?limit=10'),
-                    api.get('/api/home/most-liked-series?limit=10')
+                        return (popularData.items || []).slice(0, 5);
+                    })(),
+                    api.get('/api/home/most-liked-movies?limit=10').then(r => r.json()),
+                    api.get('/api/home/most-liked-series?limit=10').then(r => r.json()),
+                    alreadyWatchedGrid ? api.get(`/api/home/already-watched${profileId ? '?profileId=' + encodeURIComponent(profileId) : ''}`).then(r => r.json()) : Promise.resolve({ items: [] })
                 ]);
                 
-                const mostLikedMoviesData = await mostLikedMoviesResp.json();
-                const mostLikedSeriesData = await mostLikedSeriesResp.json();
+                // Cache all the data
+                HomeDataCache.set('recommended', recommendedData);
+                HomeDataCache.set('mostLikedMovies', mostLikedMoviesData.items || []);
+                HomeDataCache.set('mostLikedSeries', mostLikedSeriesData.items || []);
+                HomeDataCache.set('alreadyWatched', alreadyWatchedData.items || []);
                 
+                if (recommendedGrid) renderGrid(recommendedGrid, recommendedData);
                 if (mostLikedMoviesGrid) renderGrid(mostLikedMoviesGrid, mostLikedMoviesData.items || []);
                 if (mostLikedSeriesGrid) renderGrid(mostLikedSeriesGrid, mostLikedSeriesData.items || []);
+                if (alreadyWatchedGrid) renderGrid(alreadyWatchedGrid, alreadyWatchedData.items || []);
 
-                if (alreadyWatchedGrid) {
-                    const alreadyWatchedResp = await api.get(`/api/home/already-watched${profileId ? '?profileId=' + encodeURIComponent(profileId) : ''}`);
-                    const alreadyWatchedData = await alreadyWatchedResp.json();
-                    renderGrid(alreadyWatchedGrid, alreadyWatchedData.items || []);
-                }
-
+                // STEP 3: Load genre sections (LOW PRIORITY - can be lazy loaded)
                 await initGenreSections(contentLimit);
                 
                 // Hide loading screen after all content is loaded
@@ -664,6 +802,12 @@
                 console.error('Failed to load content:', error);
                 hideLoadingScreen(); // Hide even on error
             }
+        }
+
+        async function renderGenreSectionsFromCache(genres) {
+            renderGenreSections(genres);
+            // Render cached genre content if available
+            // This will be populated from the genre-specific cache
         }
 
         function hideLoadingScreen() {
@@ -691,6 +835,8 @@
         async function loadLatestByGenre(contentLimit = 10) {
             if (!genreSections.length) return;
 
+            const genreData = {};
+            
             await Promise.all(genreSections.map(async (genre) => {
                 const grid = document.getElementById(genre.gridId);
                 if (!grid) return;
@@ -698,12 +844,20 @@
                 try {
                     const response = await api.get(`/api/content/latest-by-genre/${encodeURIComponent(genre.slug)}`);
                     const data = await response.json();
-                    renderGrid(grid, data.items || []);
+                    const items = data.items || [];
+                    
+                    // Cache genre data
+                    genreData[genre.slug] = items;
+                    
+                    renderGrid(grid, items);
                 } catch (error) {
                     console.error(`Failed to load latest ${genre.slug}:`, error);
                     grid.innerHTML = '<p style="color: hsl(var(--disney-muted)); padding: 20px;">Unable to load titles.</p>';
                 }
             }));
+            
+            // Store all genre data in cache
+            HomeDataCache.set('genreData', genreData);
         }
 
         // Initialize content loading

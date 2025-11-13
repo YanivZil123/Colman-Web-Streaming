@@ -1,6 +1,7 @@
 import Title from '../models/Title.js';
 import { MovieDoc, SeriesDoc } from '../models/TitleDoc.js';
 import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
+import logger from '../utils/logger.js';
 
 export const getVideoSource = (req, res) => {
   try {
@@ -38,6 +39,7 @@ export const getVideoSource = (req, res) => {
   return res.json({ url });
     })();
   } catch (error) {
+    logger.logError(error, req, 'getVideoSource');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -85,6 +87,7 @@ export const getProgress = async (req, res) => {
     });
   } catch (error) {
     console.error('getProgress error:', error);
+    await logger.logError(error, req, 'getProgress');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -223,6 +226,7 @@ export const updateProgress = async (req, res) => {
     res.json({ ok: true, positionSec: isCompleted ? 0 : watchedDuration });
   } catch (error) {
     console.error('updateProgress error:', error);
+    await logger.logError(error, req, 'updateProgress');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -339,6 +343,7 @@ export const markFinished = async (req, res) => {
     res.json({ ok: true });
   } catch (error) {
     console.error('markFinished error:', error);
+    await logger.logError(error, req, 'markFinished');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -430,6 +435,7 @@ export const endWatchSession = async (req, res) => {
     res.json({ ok: true });
   } catch (error) {
     console.error('endWatchSession error:', error);
+    await logger.logError(error, req, 'endWatchSession');
     res.status(500).json({ error: 'Internal server error' });
   }
 };

@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import Title from '../models/Title.js';
 import { MovieDoc, SeriesDoc } from '../models/TitleDoc.js';
 import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
+import logger from '../utils/logger.js';
 
 export const createTitle = async (req, res) => {
   try {
@@ -37,6 +38,7 @@ export const createTitle = async (req, res) => {
       const filepath = path.join(postersDir, filename);
       await fs.promises.writeFile(filepath, pf.buffer);
       titleData.posterUrl = `/uploads/posters/${filename}`;
+      await logger.logUpload(req, filename, 'poster');
     }
 
     if (files.thumbnail && files.thumbnail[0]) {
@@ -46,6 +48,7 @@ export const createTitle = async (req, res) => {
       const filepath = path.join(thumbnailDir, filename);
       await fs.promises.writeFile(filepath, tf.buffer);
       titleData.thumbnailUrl = `/uploads/thumbnail/${filename}`;
+      await logger.logUpload(req, filename, 'thumbnail');
     }
 
     // Always fetch and save IMDB poster if available
@@ -93,6 +96,7 @@ export const createTitle = async (req, res) => {
       const filename = `${Date.now()}-${nanoid(6)}${ext}`;
       const filepath = path.join(videosDir, filename);
       await fs.promises.writeFile(filepath, vf.buffer);
+      await logger.logUpload(req, filename, 'video');
       if (normalizedType === 'movie') {
         titleData.videoUrl = `/uploads/videos/${filename}`;
       } else {
@@ -170,11 +174,15 @@ export const createTitle = async (req, res) => {
       dbSaved = true;
     } catch (err) {
       console.warn('Failed to save to MongoDB:', err && err.message ? err.message : err);
+      await logger.logError(err, req, 'createTitle - MongoDB save');
     }
+
+    await logger.logCreate(req, normalizedType === 'movie' ? 'movie' : 'series', title.id);
 
     res.json({ id: title.id, dbSaved, posterUrl: title.posterUrl, thumbnailUrl: title.thumbnailUrl, videoUrl: title.videoUrl, genres: title.genres, type: title.type, name: title.name });
   } catch (error) {
     console.error('createTitle error', error);
+    await logger.logError(error, req, 'createTitle');
     res.status(500).json({ error: 'Internal server error' });
   }
 };

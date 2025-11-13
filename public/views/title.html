@@ -226,6 +226,7 @@
     </main>
 
     <script src="/scripts/api.js"></script>
+    <script src="/scripts/cacheInvalidator.js"></script>
     <script src="/scripts/profile-transition.js"></script>
     <script>
         let profiles = [];
@@ -545,6 +546,11 @@
                         }
                         
                         const data = await response.json();
+                        
+                        // Invalidate cache when popularity changes (like/unlike)
+                        if (window.CacheInvalidator) {
+                            CacheInvalidator.onPopularityChanged();
+                        }
                         
                         if (data.liked !== undefined) {
                             if (data.liked) {

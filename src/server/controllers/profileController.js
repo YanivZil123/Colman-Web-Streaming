@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import logger from '../utils/logger.js';
 
 export const getProfiles = async (req, res) => {
   try {
@@ -16,6 +17,7 @@ export const getProfiles = async (req, res) => {
     });
   } catch (error) {
     console.error('Get profiles error:', error);
+    await logger.logError(error, req, 'getProfiles');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -37,9 +39,11 @@ export const createProfile = async (req, res) => {
     
     // Get the last profile from the array (the one we just added) which now has _id
     const savedProfile = user.profiles[user.profiles.length - 1];
+    await logger.logCreate(req, 'profile', savedProfile._id.toString());
     res.json({ id: savedProfile._id.toString() });
   } catch (error) {
     console.error('Create profile error:', error);
+    await logger.logError(error, req, 'createProfile');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -53,9 +57,11 @@ export const deleteProfile = async (req, res) => {
     
     user.deleteProfile(req.params.id);
     await user.save();
+    await logger.logDelete(req, 'profile', req.params.id);
     res.json({ ok: true });
   } catch (error) {
     console.error('Delete profile error:', error);
+    await logger.logError(error, req, 'deleteProfile');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -75,6 +81,8 @@ export const updateProfile = async (req, res) => {
 
     await user.save();
     
+    await logger.logUpdate(req, 'profile', req.params.id);
+    
     res.json({ 
       id: profile._id.toString(),
       name: profile.name,
@@ -82,6 +90,7 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Update profile error:', error);
+    await logger.logError(error, req, 'updateProfile');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
