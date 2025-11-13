@@ -1,53 +1,453 @@
-<!doctype html><html><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Settings · Disney+ Demo</title><link rel="stylesheet" href="/styles/style.css"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head><body>
-<header><div class="nav"><a href="/">← Home</a><strong>Settings</strong></div></header>
-<div class="container">
-  <h2>Profiles</h2>
-  <div id="profiles" class="row"></div>
-  <form id="profileForm">
-    <input id="pname" placeholder="Profile name" required/>
-    <div class="badge">Choose profile picture</div>
-    <div class="avatar-grid">
-      <div><input type="radio" id="av1" name="av" value="/images/avatar1.png" checked><label for="av1"><img src="/images/avatar1.png"/></label></div>
-      <div><input type="radio" id="av2" name="av" value="/images/avatar2.png"><label for="av2"><img src="/images/avatar2.png"/></label></div>
-      <div><input type="radio" id="av3" name="av" value="/images/avatar3.png"><label for="av3"><img src="/images/avatar3.png"/></label></div>
-      <div><input type="radio" id="av4" name="av" value="/images/avatar4.png"><label for="av4"><img src="/images/avatar4.png"/></label></div>
-      <div><input type="radio" id="av5" name="av" value="/images/avatar5.png"><label for="av5"><img src="/images/avatar5.png"/></label></div>
-    </div>
-    <button class="btn primary">Add Profile</button>
-  </form>
-  <h2>Charts</h2>
-  <div class="row" style="gap:24px">
-    <canvas id="views" width="520" height="320"></canvas>
-    <canvas id="genres" width="520" height="320"></canvas>
-  </div>
-</div>
-<script src="/scripts/api.js"></script>
-<script>
-(async()=>{
-  const pr = await (await api.get('/profiles')).json();
-  const wrap = document.getElementById('profiles');
-  pr.items.forEach(p=>{
-    const d=document.createElement('div'); d.className='card'; d.style.padding='12px';
-    d.innerHTML=`<div class='row' style='align-items:center'><img src='${p.avatarUrl||"/images/avatar1.png"}' style='width:56px;height:56px;border-radius:999px;border:1px solid hsl(var(--disney-border))'/><strong style='margin-left:8px'>${p.name}</strong></div>
-                 <div class='row'><button class='btn' data-id='${p.id}' data-act='del'>Delete</button></div>`;
-    wrap.appendChild(d);
-  });
-  wrap.addEventListener('click', async (e)=>{
-    const id=e.target.getAttribute('data-id'); const act=e.target.getAttribute('data-act');
-    if(act==='del'){ await api.delete('/profiles/'+id); location.reload(); }
-  });
-  profileForm.addEventListener('submit', async (e)=>{
-    e.preventDefault(); const av=document.querySelector('input[name="av"]:checked')?.value || '/images/avatar1.png';
-    await api.post('/profiles',{name:pname.value, avatarUrl: av}); location.reload();
-  });
-  const views = await (await api.get('/stats/views-by-day')).json();
-  new Chart(document.getElementById('views').getContext('2d'),{ type:'bar', data:{ labels:views.days, datasets:[{ label:'Views', data:views.counts }] } });
-  const pop = await (await api.get('/stats/popular-by-genre')).json();
-  new Chart(document.getElementById('genres').getContext('2d'),{ type:'pie', data:{ labels:pop.labels, datasets:[{ data:pop.values }] } });
-})();
-</script>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney+ - Settings</title>
+    <link rel="stylesheet" href="/styles/disney-plus.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .settings-container {
+            max-width: 1200px;
+            margin: 80px auto 40px;
+            padding: 0 20px;
+        }
+        .settings-header {
+            margin-bottom: 30px;
+        }
+        .settings-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: #f9f9f9;
+            margin-bottom: 10px;
+        }
+        .settings-tabs {
+            display: flex;
+            gap: 20px;
+            border-bottom: 2px solid #1f2937;
+            margin-bottom: 30px;
+        }
+        .settings-tab {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #9ca3af;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .settings-tab:hover {
+            color: #f9f9f9;
+        }
+        .settings-tab.active {
+            color: #f9f9f9;
+            border-bottom-color: #00D6E8;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .stats-dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        .chart-container {
+            background: #1a1d29;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .chart-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #f9f9f9;
+            margin-bottom: 20px;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        .loading-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+            font-size: 18px;
+        }
+        .error-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #ef4444;
+            font-size: 18px;
+        }
+        @media (min-width: 768px) {
+            .stats-dashboard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 767px) {
+            .settings-tabs {
+                gap: 10px;
+            }
+            .settings-tab {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            .chart-wrapper {
+                height: 300px;
+            }
+        }
+        .manage-profile-section {
+            background: #1a1d29;
+            border-radius: 12px;
+            padding: 30px;
+        }
+        .manage-profile-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #f9f9f9;
+            margin-bottom: 20px;
+        }
+        .manage-profile-link {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #00D6E8;
+            color: #1a1d29;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .manage-profile-link:hover {
+            background: #00b8c9;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="home-body">
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
+                <a href="/views/home.html" class="nav-link">Home</a>
+                <a href="/views/series.html" class="nav-link">Series</a>
+                <a href="/views/movies.html" class="nav-link">Movies</a>
+            </div>
+            
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <div class="profile-menu-container">
+                    <button class="profile-icon-btn" onclick="toggleProfileMenu()">
+                        <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                        <script>
+                            (function(){try{const s=sessionStorage.getItem('cachedProfiles'),p=localStorage.getItem('selectedProfileId');if(s&&p){const ps=JSON.parse(s),cp=ps.find(pr=>pr.id==p||pr.id.toString()===p.toString()||String(pr.id)===String(p));if(cp&&cp.avatarUrl){const img=document.getElementById('currentProfileAvatar');if(img)img.src=cp.avatarUrl;}}}catch(e){}})();
+                        </script>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-dropdown-header">Switch Profile</div>
+                        <div id="profileList" class="profile-list">
+                        </div>
+                        <div class="profile-dropdown-divider"></div>
+                        <a href="/views/settings.html" class="profile-dropdown-item">⚙️ Settings</a>
+                        <a href="/" class="profile-dropdown-item">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="home-main">
+        <div class="settings-container">
+            <div class="settings-header">
+                <h1 class="settings-title">Settings</h1>
+            </div>
+
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="manage-profile">Manage Profile</button>
+                <button class="settings-tab" data-tab="stats">Stats</button>
+            </div>
+
+            <div id="manage-profile-content" class="tab-content active">
+                <div class="manage-profile-section">
+                    <h2 class="manage-profile-title">Profile Management</h2>
+                    <p style="color: #9ca3af; margin-bottom: 20px;">Manage your profiles, add new profiles, or edit existing ones.</p>
+                    <a href="/views/profile-selection.html" class="manage-profile-link">Go to Profile Management</a>
+                </div>
+            </div>
+
+            <div id="stats-content" class="tab-content">
+                <div id="statsLoadingMessage" class="loading-message">Loading stats...</div>
+                <div id="statsErrorMessage" class="error-message" style="display: none;"></div>
+                <div id="statsDashboard" class="stats-dashboard" style="display: none;">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Daily Watches Per Profile</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="dailyWatchesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Genre Popularity (Based on Likes)</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="genrePopularityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let profileDropdownOpen = false;
+
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            profileDropdownOpen = !profileDropdownOpen;
+            if (profileDropdownOpen) {
+                dropdown.classList.add('show');
+                loadProfiles();
+            } else {
+                dropdown.classList.remove('show');
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const profileContainer = document.querySelector('.profile-menu-container');
+            if (profileContainer && !profileContainer.contains(event.target) && profileDropdownOpen) {
+                toggleProfileMenu();
+            }
+        });
+
+        async function loadProfiles() {
+            try {
+                const response = await fetch('/api/profiles', {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const profileList = document.getElementById('profileList');
+                    const selectedProfileId = localStorage.getItem('selectedProfileId');
+                    
+                    const profiles = data.items || data.profiles || [];
+                    
+                    profileList.innerHTML = profiles.map(profile => `
+                        <div class="profile-dropdown-profile ${profile.id === selectedProfileId ? 'selected' : ''}" onclick="selectProfile('${profile.id}')">
+                            <img src="${profile.avatarUrl}" alt="${profile.name}">
+                            <span>${profile.name}</span>
+                        </div>
+                    `).join('');
+                    
+                    sessionStorage.setItem('cachedProfiles', JSON.stringify(profiles));
+                }
+            } catch (error) {
+                console.error('Failed to load profiles:', error);
+            }
+        }
+
+        function selectProfile(profileId) {
+            localStorage.setItem('selectedProfileId', profileId);
+            window.location.href = '/views/home.html';
+        }
+
+        document.querySelectorAll('.settings-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                
+                document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                this.classList.add('active');
+                document.getElementById(targetTab + '-content').classList.add('active');
+                
+                if (targetTab === 'stats') {
+                    loadStatsData();
+                }
+            });
+        });
+
+        let dailyWatchesChart = null;
+        let genrePopularityChart = null;
+
+        async function loadStatsData() {
+            const loadingMsg = document.getElementById('statsLoadingMessage');
+            const errorMsg = document.getElementById('statsErrorMessage');
+            const dashboard = document.getElementById('statsDashboard');
+            
+            loadingMsg.style.display = 'block';
+            errorMsg.style.display = 'none';
+            dashboard.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/stats/me', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load stats data');
+                }
+                
+                const data = await response.json();
+                
+                loadingMsg.style.display = 'none';
+                dashboard.style.display = 'grid';
+                
+                renderDailyWatchesChart(data.dailyWatches);
+                renderGenrePopularityChart(data.genrePopularity);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                loadingMsg.style.display = 'none';
+                errorMsg.textContent = 'Failed to load stats. Please try again later.';
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        function renderDailyWatchesChart(dailyWatches) {
+            if (dailyWatchesChart) {
+                dailyWatchesChart.destroy();
+            }
+            
+            const profiles = [...new Set(dailyWatches.map(d => d.profile))];
+            const dates = [...new Set(dailyWatches.map(d => d.date))].sort();
+            
+            const datasets = profiles.map((profile, index) => {
+                const colors = [
+                    'rgba(0, 214, 232, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(34, 197, 94, 0.8)',
+                    'rgba(251, 191, 36, 0.8)',
+                    'rgba(168, 85, 247, 0.8)'
+                ];
+                
+                return {
+                    label: profile,
+                    data: dates.map(date => {
+                        const entry = dailyWatches.find(d => d.date === date && d.profile === profile);
+                        return entry ? entry.count : 0;
+                    }),
+                    backgroundColor: colors[index % colors.length],
+                    borderColor: colors[index % colors.length].replace('0.8', '1'),
+                    borderWidth: 2
+                };
+            });
+            
+            const ctx = document.getElementById('dailyWatchesChart').getContext('2d');
+            dailyWatchesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#f9f9f9',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#9ca3af'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#9ca3af',
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderGenrePopularityChart(genrePopularity) {
+            if (genrePopularityChart) {
+                genrePopularityChart.destroy();
+            }
+            
+            const colors = [
+                'rgba(0, 214, 232, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(34, 197, 94, 0.8)',
+                'rgba(251, 191, 36, 0.8)',
+                'rgba(168, 85, 247, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(99, 102, 241, 0.8)'
+            ];
+            
+            const ctx = document.getElementById('genrePopularityChart').getContext('2d');
+            genrePopularityChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: genrePopularity.map(g => g.genre),
+                    datasets: [{
+                        data: genrePopularity.map(g => g.count),
+                        backgroundColor: colors,
+                        borderColor: '#1a1d29',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#f9f9f9',
+                                font: {
+                                    size: 14
+                                },
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const query = this.value.trim();
+                    if (query) {
+                        window.location.href = `/views/movies.html?q=${encodeURIComponent(query)}`;
+                    }
+                }
+            });
+        }
+
+        const searchBtn = document.querySelector('.search-btn');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', function() {
+                const query = searchInput.value.trim();
+                if (query) {
+                    window.location.href = `/views/movies.html?q=${encodeURIComponent(query)}`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
