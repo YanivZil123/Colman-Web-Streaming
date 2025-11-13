@@ -29,6 +29,7 @@
       { name: 'Thriller', slug: 'thriller' }
     ];
     const genreSections = {};
+    const excludedGenreSlugs = new Set(['short', 'animation', 'music', 'war']);
     const container = document.getElementById('seriesGenreContainer');
 
     function renderGenreSections(genres) {
@@ -37,7 +38,8 @@
       Object.keys(genreSections).forEach(key => delete genreSections[key]);
 
       (genres || []).forEach(genre => {
-        const slug = genre.slug || slugify(genre.name);
+        const slug = (genre.slug || slugify(genre.name)).toLowerCase();
+        if (excludedGenreSlugs.has(slug)) return;
         const gridId = `series-${slug}-grid`;
         const section = document.createElement('section');
         section.className = 'content-section';
