@@ -26,57 +26,75 @@
         </div>
     </div>
 
-    <main class="signin-container">
+    <header>
         <div class="disney-logo">
             <img src="/images/logo.jpeg" alt="Disney Plus">
         </div>
-        
-        <h1 class="signin-title">Sign In</h1>
-        
-        <form class="signin-form" id="signinForm" onsubmit="return validateSigninForm(event)">
-            <div class="form-group">
-                <label class="form-label" for="username">Username</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
-                    class="form-input" 
-                    placeholder="Enter your username"
-                >
-                <span class="error-message" id="username-error"></span>
-            </div>
+    </header>
+
+    <main class="signin-container">
+        <article>
+            <h1 class="signin-title">Sign In</h1>
             
-            <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <div class="password-input-wrapper">
+            <form class="signin-form" id="signinForm" onsubmit="return validateSigninForm(event)">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username</label>
                     <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
+                        type="text" 
+                        id="username" 
+                        name="username" 
                         class="form-input" 
-                        placeholder="Enter your password"
+                        placeholder="Enter your username"
                     >
-                    <button type="button" class="password-toggle" onclick="togglePassword('password')">
-                        <span class="eye-icon">👁️</span>
+                    <span class="error-message" id="username-error"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="password-input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="form-input" 
+                            placeholder="Enter your password"
+                        >
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                    <span class="error-message" id="password-error"></span>
+                </div>
+                
+                <button type="submit" class="signin-button">
+                    Sign In
+                </button>
+            </form>
+            
+            <div class="auth-links">
+                <div class="signup-section">
+                    <p class="signup-text">New to Disney+?</p>
+                    <button type="button" class="signup-button" onclick="location.href='/signup.html'">
+                        Sign Up
                     </button>
                 </div>
-                <span class="error-message" id="password-error"></span>
             </div>
-            
-            <button type="submit" class="signin-button">
-                Sign In
-            </button>
-        </form>
-        
-        <div class="auth-links">
-            <div class="signup-section">
-                <p class="signup-text">New to Disney+?</p>
-                <button type="button" class="signup-button" onclick="location.href='/signup.html'">
-                    Sign Up
-                </button>
-            </div>
-        </div>
+        </article>
     </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <p>© 2024 Disney+ Streaming Platform</p>
+            </div>
+            <nav class="footer-nav">
+                <a href="/views/home.html">Home</a>
+                <a href="/views/series.html">Series</a>
+                <a href="/views/movies.html">Movies</a>
+                <a href="/views/settings.html">Settings</a>
+            </nav>
+        </div>
+    </footer>
 
     <script>
         function clearError(inputId, errorId) {

@@ -243,25 +243,29 @@
     </div>
 
     <main class="profiles-container">
-        <div class="disney-logo">
-            <img src="/images/logo.jpeg" alt="Disney Plus">
-        </div>
+        <header>
+            <div class="disney-logo">
+                <img src="/images/logo.jpeg" alt="Disney Plus">
+            </div>
+        </header>
         
-        <h1 class="profiles-title">Who's watching?</h1>
-        
-        <div class="profiles-grid" id="profilesGrid">
-            <!-- Profiles will be loaded from MongoDB here -->
-        </div>
-        
-        <div class="profile-actions">
-            <button class="manage-profiles-btn" onclick="toggleManageMode()">
-                Manage Profiles
-            </button>
-        </div>
+        <article>
+            <h1 class="profiles-title">Who's watching?</h1>
+            
+            <div class="profiles-grid" id="profilesGrid">
+                <!-- Profiles will be loaded from MongoDB here -->
+            </div>
+            
+            <div class="profile-actions">
+                <button class="manage-profiles-btn" onclick="toggleManageMode()">
+                    Manage Profiles
+                </button>
+            </div>
+        </article>
     </main>
 
-    <!-- Add Profile Modal -->
-    <div class="modal-overlay" id="addProfileModal">
+    <!-- Aside: Add Profile Modal -->
+    <aside class="modal-overlay" id="addProfileModal">
         <div class="modal-content">
             <h2>Add Profile</h2>
             <form class="add-profile-form" onsubmit="return addProfile(event)">
@@ -329,10 +333,10 @@
                 </div>
             </form>
         </div>
-    </div>
+    </aside>
 
-    <!-- Edit Profile Modal -->
-    <div class="modal-overlay" id="editProfileModal">
+    <!-- Aside: Edit Profile Modal -->
+    <aside class="modal-overlay" id="editProfileModal">
         <div class="modal-content">
             <h2>Edit Profile</h2>
             <form class="edit-profile-form" onsubmit="return updateProfile(event)">
@@ -401,7 +405,22 @@
                 </div>
             </form>
         </div>
-    </div>
+    </aside>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <p>&copy; 2024 Disney+ Streaming Platform</p>
+            </div>
+            <nav class="footer-nav">
+                <a href="/views/home.html">Home</a>
+                <a href="/views/series.html">Series</a>
+                <a href="/views/movies.html">Movies</a>
+                <a href="/views/settings.html">Settings</a>
+            </nav>
+        </div>
+    </footer>
 
     <script src="/scripts/api.js"></script>
     <script>

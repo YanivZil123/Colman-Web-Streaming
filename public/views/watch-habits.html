@@ -148,41 +148,43 @@
     </div>
 
     <!-- Navigation Bar -->
-    <nav class="main-nav">
-        <div class="nav-container">
-            <div class="nav-left">
-                <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
-                <a href="/views/home.html" class="nav-link">Home</a>
-                <a href="/views/series.html" class="nav-link">Series</a>
-                <a href="/views/movies.html" class="nav-link">Movies</a>
-                <a href="/views/watch-habits.html" class="nav-link active">Watch Habits</a>
-            </div>
-            
-            <div class="nav-right">
-                <div class="search-container">
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
-                    <button class="search-btn">🔍</button>
+    <header>
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="nav-left">
+                    <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
+                    <a href="/views/home.html" class="nav-link">Home</a>
+                    <a href="/views/series.html" class="nav-link">Series</a>
+                    <a href="/views/movies.html" class="nav-link">Movies</a>
+                    <a href="/views/watch-habits.html" class="nav-link active">Watch Habits</a>
                 </div>
-                <div class="profile-menu-container">
-                    <button class="profile-icon-btn" onclick="toggleProfileMenu()">
-                        <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
-                        <script>
-                            (function(){try{const s=sessionStorage.getItem('cachedProfiles'),p=localStorage.getItem('selectedProfileId');if(s&&p){const ps=JSON.parse(s),cp=ps.find(pr=>pr.id==p||pr.id.toString()===p.toString()||String(pr.id)===String(p));if(cp&&cp.avatarUrl){const img=document.getElementById('currentProfileAvatar');if(img)img.src=cp.avatarUrl;}}}catch(e){}})();
-                        </script>
-                    </button>
-                    <div class="profile-dropdown" id="profileDropdown">
-                        <div class="profile-dropdown-header">Switch Profile</div>
-                        <div id="profileList" class="profile-list">
-                            <!-- Profiles will be loaded here -->
+                
+                <div class="nav-right">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
+                        <button class="search-btn">🔍</button>
+                    </div>
+                    <div class="profile-menu-container">
+                        <button class="profile-icon-btn" onclick="toggleProfileMenu()">
+                            <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                            <script>
+                                (function(){try{const s=sessionStorage.getItem('cachedProfiles'),p=localStorage.getItem('selectedProfileId');if(s&&p){const ps=JSON.parse(s),cp=ps.find(pr=>pr.id==p||pr.id.toString()===p.toString()||String(pr.id)===String(p));if(cp&&cp.avatarUrl){const img=document.getElementById('currentProfileAvatar');if(img)img.src=cp.avatarUrl;}}}catch(e){}})();
+                            </script>
+                        </button>
+                        <div class="profile-dropdown" id="profileDropdown">
+                            <div class="profile-dropdown-header">Switch Profile</div>
+                            <div id="profileList" class="profile-list">
+                                <!-- Profiles will be loaded here -->
+                            </div>
+                            <div class="profile-dropdown-divider"></div>
+                            <a href="/views/settings.html" class="profile-dropdown-item">⚙️ Settings</a>
+                            <a href="/" class="profile-dropdown-item">Sign Out</a>
                         </div>
-                        <div class="profile-dropdown-divider"></div>
-                        <a href="/views/settings.html" class="profile-dropdown-item">⚙️ Settings</a>
-                        <a href="/" class="profile-dropdown-item">Sign Out</a>
                     </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </header>
 
     <!-- Main Content -->
     <main class="home-main">
@@ -198,7 +200,7 @@
         </div>
 
         <!-- Stats Grid -->
-        <div class="stats-grid" id="statsGrid">
+        <article class="stats-grid" id="statsGrid">
             <div class="stat-card">
                 <div class="stat-value" id="totalWatchedStat">0</div>
                 <div class="stat-label">Total Watched</div>
@@ -215,7 +217,7 @@
                 <div class="stat-value" id="likedStat">0</div>
                 <div class="stat-label">Liked</div>
             </div>
-        </div>
+        </article>
 
         <!-- Tabs -->
         <div class="tabs">
@@ -225,24 +227,38 @@
         </div>
 
         <!-- Tab Contents -->
-        <div class="tab-content active" id="watchedContent">
+        <article class="tab-content active" id="watchedContent">
             <div class="content-grid" id="watchedGrid">
                 <!-- Watched content will be loaded here -->
             </div>
-        </div>
+        </article>
 
-        <div class="tab-content" id="inProgressContent">
+        <article class="tab-content" id="inProgressContent">
             <div class="content-grid" id="inProgressGrid">
                 <!-- In progress content will be loaded here -->
             </div>
-        </div>
+        </article>
 
-        <div class="tab-content" id="likedContent">
+        <article class="tab-content" id="likedContent">
             <div class="content-grid" id="likedGrid">
                 <!-- Liked content will be loaded here -->
             </div>
-        </div>
+        </article>
     </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <p>© 2024 Disney+ Streaming Platform</p>
+            </div>
+            <nav class="footer-nav">
+                <a href="/views/home.html">Home</a>
+                <a href="/views/series.html">Series</a>
+                <a href="/views/movies.html">Movies</a>
+                <a href="/views/settings.html">Settings</a>
+            </nav>
+        </div>
+    </footer>
 
     <script src="/scripts/api.js"></script>
     <script>

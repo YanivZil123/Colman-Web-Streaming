@@ -167,47 +167,49 @@
     </style>
 </head>
 <body class="home-body">
-    <!-- Navigation Bar -->
-    <nav class="main-nav">
-        <div class="nav-container">
-            <div class="nav-left">
-                <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
-                <a href="/views/home.html" class="nav-link">Home</a>
-                <a href="/views/series.html" class="nav-link">Series</a>
-                <a href="/views/movies.html" class="nav-link">Movies</a>
-            </div>
-            
-            <div class="nav-right">
-                <div class="search-container">
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
-                    <button class="search-btn">🔍</button>
+    <!-- Header: Navigation Bar -->
+    <header>
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="nav-left">
+                    <img src="/images/logo.jpeg" alt="Disney Plus" class="nav-logo">
+                    <a href="/views/home.html" class="nav-link">Home</a>
+                    <a href="/views/series.html" class="nav-link">Series</a>
+                    <a href="/views/movies.html" class="nav-link">Movies</a>
                 </div>
-                <div class="profile-menu-container">
-                    <button class="profile-icon-btn" onclick="toggleProfileMenu()">
-                        <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
-                        <script>
-                            (function(){try{const s=sessionStorage.getItem('cachedProfiles'),p=localStorage.getItem('selectedProfileId');if(s&&p){const ps=JSON.parse(s),cp=ps.find(pr=>pr.id==p||pr.id.toString()===p.toString()||String(pr.id)===String(p));if(cp&&cp.avatarUrl){const img=document.getElementById('currentProfileAvatar');if(img)img.src=cp.avatarUrl;}}}catch(e){}})();
-                        </script>
-                    </button>
-                    <div class="profile-dropdown" id="profileDropdown">
-                        <div class="profile-dropdown-header">Switch Profile</div>
-                        <div id="profileList" class="profile-list"></div>
-                        <div class="profile-dropdown-divider"></div>
-                        <a href="/views/settings.html" class="profile-dropdown-item">⚙️ Settings</a>
-                        <a href="/" class="profile-dropdown-item">Sign Out</a>
+                
+                <div class="nav-right">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
+                        <button class="search-btn">🔍</button>
+                    </div>
+                    <div class="profile-menu-container">
+                        <button class="profile-icon-btn" onclick="toggleProfileMenu()">
+                            <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
+                            <script>
+                                (function(){try{const s=sessionStorage.getItem('cachedProfiles'),p=localStorage.getItem('selectedProfileId');if(s&&p){const ps=JSON.parse(s),cp=ps.find(pr=>pr.id==p||pr.id.toString()===p.toString()||String(pr.id)===String(p));if(cp&&cp.avatarUrl){const img=document.getElementById('currentProfileAvatar');if(img)img.src=cp.avatarUrl;}}}catch(e){}})();
+                            </script>
+                        </button>
+                        <div class="profile-dropdown" id="profileDropdown">
+                            <div class="profile-dropdown-header">Switch Profile</div>
+                            <div id="profileList" class="profile-list"></div>
+                            <div class="profile-dropdown-divider"></div>
+                            <a href="/views/settings.html" class="profile-dropdown-item">⚙️ Settings</a>
+                            <a href="/" class="profile-dropdown-item">Sign Out</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </header>
 
     <!-- Main Content -->
     <main class="home-main">
-        <div class="title-hero" id="titleHero">
+        <article class="title-hero" id="titleHero">
             <!-- Hero content will be loaded here -->
-        </div>
+        </article>
 
-        <section class="content-section" id="episodesSection" style="display: none;">
+        <article class="content-section" id="episodesSection" style="display: none;">
             <div class="episode-browser">
                 <div class="episode-browser-header">
                     <h2 class="section-title">Episodes</h2>
@@ -215,15 +217,30 @@
                 </div>
                 <div class="episode-list" id="episodeList"></div>
             </div>
-        </section>
+        </article>
 
-        <section class="content-section">
+        <article class="content-section">
             <h2 class="section-title" id="similarSectionTitle">Similar Titles</h2>
             <div class="content-grid" id="similarGrid">
                 <!-- Similar titles will be loaded here -->
             </div>
-        </section>
+        </article>
     </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <p>&copy; 2024 Disney+ Streaming Platform</p>
+            </div>
+            <nav class="footer-nav">
+                <a href="/views/home.html">Home</a>
+                <a href="/views/series.html">Series</a>
+                <a href="/views/movies.html">Movies</a>
+                <a href="/views/settings.html">Settings</a>
+            </nav>
+        </div>
+    </footer>
 
     <script src="/scripts/api.js"></script>
     <script src="/scripts/cacheInvalidator.js"></script>

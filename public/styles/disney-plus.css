@@ -124,13 +124,15 @@ body.profile-transition-active nav {
 .signin-body {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     background: linear-gradient(135deg, 
         hsl(222 23% 10%) 0%, 
         hsl(220 25% 12%) 50%, 
         hsl(222 23% 10%) 100%);
     padding: 20px;
+    position: relative;
 }
 
 .signin-container {
@@ -141,6 +143,13 @@ body.profile-transition-active nav {
     border-radius: 16px;
     padding: 48px 40px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    flex: 0 1 auto;
+    margin-bottom: 20px;
+}
+
+/* Admin page uses signin-container but needs wider width */
+body.signin-body main.signin-container {
+    max-width: 900px;
 }
 
 .disney-logo {
@@ -387,13 +396,18 @@ body.screen-shake {
 /* Profile Selection Styles */
 .profiles-body {
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     background: hsl(var(--disney-dark));
     padding: 40px 20px;
+    position: relative;
 }
 
 .profiles-container {
     max-width: 1200px;
     margin: 0 auto;
+    flex: 0 1 auto;
+    margin-bottom: 20px;
 }
 
 .profiles-container .disney-logo {
@@ -1744,5 +1758,58 @@ body.screen-shake {
     
     .season-select {
         width: 100%;
+    }
+}
+
+/* Footer Styles */
+footer {
+    background: hsl(var(--disney-card));
+    border-top: 1px solid hsl(var(--disney-border));
+    padding: 40px 20px;
+    margin-top: auto;
+    width: 100%;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-section p {
+    color: hsl(var(--disney-muted));
+    font-size: 14px;
+    margin: 0;
+}
+
+.footer-nav {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.footer-nav a {
+    color: hsl(var(--disney-muted));
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.footer-nav a:hover {
+    color: hsl(var(--disney-text));
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .footer-nav {
+        justify-content: center;
     }
 }

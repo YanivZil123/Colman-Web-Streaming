@@ -147,13 +147,16 @@
 </head>
 <body class="signin-body">
     <main class="signin-container">
-        <div class="disney-logo">
-            <img src="/images/logo.jpeg" alt="Disney Plus">
-        </div>
+        <header>
+            <div class="disney-logo">
+                <img src="/images/logo.jpeg" alt="Disney Plus">
+            </div>
+        </header>
         
-        <h1 class="signin-title">Add movie/series</h1>
-        
-        <form class="signin-form" id="titleForm" enctype="multipart/form-data" onsubmit="return handleSubmit(event)">
+        <article>
+            <h1 class="signin-title">Add movie/series</h1>
+            
+            <form class="signin-form" id="titleForm" enctype="multipart/form-data" onsubmit="return handleSubmit(event)">
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label" for="type">Type</label>
@@ -341,30 +344,46 @@
             <button type="submit" class="signin-button">
                 ✨ Create
             </button>
-        </form>
+            </form>
 
-        <!-- Existing Series Section -->
-        <div style="margin-top: 48px; padding-top: 32px; border-top: 2px solid hsl(var(--disney-border));">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 class="signin-title" style="margin: 0;">Manage Existing Series</h2>
-                <button type="button" class="signup-button" onclick="loadExistingSeries()" style="padding: 8px 16px;">
-                    🔄 Refresh
-                </button>
+            <!-- Existing Series Section -->
+            <div style="margin-top: 48px; padding-top: 32px; border-top: 2px solid hsl(var(--disney-border));">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="signin-title" style="margin: 0;">Manage Existing Series</h2>
+                    <button type="button" class="signup-button" onclick="loadExistingSeries()" style="padding: 8px 16px;">
+                        🔄 Refresh
+                    </button>
+                </div>
+                <div id="existingSeriesList" style="display: grid; gap: 16px;">
+                    <p style="color: hsl(var(--disney-muted)); text-align: center;">Click refresh to load existing series</p>
+                </div>
             </div>
-            <div id="existingSeriesList" style="display: grid; gap: 16px;">
-                <p style="color: hsl(var(--disney-muted)); text-align: center;">Click refresh to load existing series</p>
+            
+            <div class="auth-links">
+                <div class="signin-section">
+                    <p class="signup-text">Back to home?</p>
+                    <button type="button" class="signup-button" onclick="location.href='/views/home.html'">
+                        Home
+                    </button>
+                </div>
             </div>
-        </div>
-        
-        <div class="auth-links">
-            <div class="signin-section">
-                <p class="signup-text">Back to home?</p>
-                <button type="button" class="signup-button" onclick="location.href='/views/home.html'">
-                    Home
-                </button>
-            </div>
-        </div>
+        </article>
     </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <p>&copy; 2024 Disney+ Streaming Platform</p>
+            </div>
+            <nav class="footer-nav">
+                <a href="/views/home.html">Home</a>
+                <a href="/views/series.html">Series</a>
+                <a href="/views/movies.html">Movies</a>
+                <a href="/views/settings.html">Settings</a>
+            </nav>
+        </div>
+    </footer>
 
     <script src="/scripts/api.js"></script>
     <script src="/scripts/cacheInvalidator.js"></script>
