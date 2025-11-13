@@ -69,8 +69,9 @@ export const getProgress = async (req, res) => {
       });
     }
     
-    // For movies or series without episodeId, find most recent progress
-    // This could be a movie or the most recently watched episode
+    // For movies or series without episodeId, find movie-level progress
+    // Explicitly filter for episodeId: null to ensure we get movie-level progress, not episode-level
+    query.episodeId = null;
     const habit = await WatchHabitDoc.findOne(query)
       .sort({ lastWatchedAt: -1 })
       .lean();
