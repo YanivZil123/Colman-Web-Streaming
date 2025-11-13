@@ -129,6 +129,20 @@ function renderEpisodeList(){
       img.alt=ep.name||`Episode ${idx+1}`;
       thumbnail.appendChild(img);
     }
+    const progress=episodeProgressMap[ep.id];
+    if(progress && progress.positionSec>0 && progress.totalDurationSec>0){
+      const pct=(progress.positionSec/progress.totalDurationSec)*100;
+      const thumbnailProgress=document.createElement('div');
+      thumbnailProgress.className='episode-thumbnail-progress';
+      const thumbnailProgressBar=document.createElement('div');
+      thumbnailProgressBar.className='episode-thumbnail-progress-bar';
+      thumbnailProgressBar.style.width=Math.min(100,pct)+'%';
+      thumbnailProgress.appendChild(thumbnailProgressBar);
+      thumbnail.appendChild(thumbnailProgress);
+      if(pct>=95){
+        item.classList.add('completed');
+      }
+    }
     const playIcon=document.createElement('div');
     playIcon.className='play-icon';
     playIcon.textContent='▶';
@@ -147,19 +161,6 @@ function renderEpisodeList(){
     info.appendChild(number);
     info.appendChild(title);
     if(ep.description) info.appendChild(desc);
-    const progress=episodeProgressMap[ep.id];
-    if(progress && progress.positionSec>0 && progress.durationSec>0){
-      const pct=(progress.positionSec/progress.durationSec)*100;
-      if(pct<95){
-        const progressBar=document.createElement('div');
-        progressBar.className='episode-progress';
-        const progressFill=document.createElement('div');
-        progressFill.className='episode-progress-bar';
-        progressFill.style.width=pct+'%';
-        progressBar.appendChild(progressFill);
-        info.appendChild(progressBar);
-      }
-    }
     item.appendChild(thumbnail);
     item.appendChild(info);
     item.onclick=()=>{

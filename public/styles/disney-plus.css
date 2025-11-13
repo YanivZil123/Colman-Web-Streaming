@@ -1527,11 +1527,45 @@ body.screen-shake {
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
 }
 
 .episode-item:hover .episode-thumbnail img {
     transform: scale(1.05);
+}
+
+.episode-item.completed .episode-thumbnail img {
+    opacity: 0.5;
+    filter: grayscale(0.4);
+}
+
+.episode-item.completed {
+    opacity: 0.75;
+}
+
+.episode-item.completed:hover {
+    opacity: 1;
+}
+
+.episode-thumbnail-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.episode-thumbnail-progress-bar {
+    height: 100%;
+    background: #00D6E8;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(0, 214, 232, 0.6);
+}
+
+.episode-item.completed .episode-thumbnail-progress-bar {
+    background: rgba(255, 255, 255, 0.7);
 }
 
 .episode-play-overlay {
@@ -1578,6 +1612,15 @@ body.screen-shake {
     flex-direction: column;
     gap: 8px;
     min-width: 0;
+    transition: opacity 0.3s ease;
+}
+
+.episode-item.completed .episode-info {
+    opacity: 0.7;
+}
+
+.episode-item.completed:hover .episode-info {
+    opacity: 1;
 }
 
 .episode-number {
@@ -1608,19 +1651,7 @@ body.screen-shake {
 }
 
 .episode-progress {
-    width: 100%;
-    height: 4px;
-    background: rgba(249, 249, 249, 0.15);
-    border-radius: 999px;
-    overflow: hidden;
-    margin-top: 8px;
-}
-
-.episode-progress-bar {
-    height: 100%;
-    background: #00D6E8;
-    border-radius: 999px;
-    transition: width 0.3s ease;
+    display: none;
 }
 
 @media (max-width: 968px) {
