@@ -181,27 +181,42 @@ export const markFinished = async (req, res) => {
     const now = new Date();
     
     if (existing) {
+      const lastUpdate = existing.lastWatchedAt || existing.updatedAt;
+      const gapMinutes = (now - lastUpdate) / (1000 * 60);
+      const SESSION_GAP_MINUTES = 30;
+      
+      if (!existing.watchHistory) {
+        existing.watchHistory = [];
+      }
+      
+      if (gapMinutes > SESSION_GAP_MINUTES) {
+        existing.watchHistory.push({
+          watchedAt: now,
+          duration: targetDuration,
+          completed: true,
+          startedAt: watchStartTime
+        });
+        existing.watchCount = existing.watchHistory.length;
+      } else if (existing.watchHistory.length > 0) {
+        const lastSession = existing.watchHistory[existing.watchHistory.length - 1];
+        lastSession.watchedAt = now;
+        lastSession.duration = targetDuration;
+        lastSession.completed = true;
+      } else {
+        existing.watchHistory.push({
+          watchedAt: now,
+          duration: targetDuration,
+          completed: true,
+          startedAt: watchStartTime
+        });
+        existing.watchCount = existing.watchHistory.length;
+      }
+      
       existing.watchedDuration = targetDuration;
       existing.totalDuration = targetDuration || existing.totalDuration;
       existing.completed = true;
       existing.lastWatchedAt = now;
       existing.updatedAt = now;
-      
-      // Ensure watchHistory exists (for backward compatibility)
-      if (!existing.watchHistory) {
-        existing.watchHistory = [];
-      }
-      
-      // Add watch event to history for daily statistics
-      existing.watchHistory.push({
-        watchedAt: now,
-        duration: targetDuration,
-        completed: true,
-        startedAt: watchStartTime
-      });
-      
-      // Update watchCount from history length
-      existing.watchCount = existing.watchHistory.length;
       
       await existing.save();
       return res.json({ ok: true });
@@ -252,22 +267,37 @@ export const endWatchSession = async (req, res) => {
     
     const existing = await WatchHabitDoc.findOne(query);
     
-    if (existing && watchedDuration > 5) { // Only record if watched at least 5 seconds
-      // Ensure watchHistory exists
+    if (existing && watchedDuration > 5) {
+      const lastUpdate = existing.lastWatchedAt || existing.updatedAt;
+      const gapMinutes = (now - lastUpdate) / (1000 * 60);
+      const SESSION_GAP_MINUTES = 30;
+      
       if (!existing.watchHistory) {
         existing.watchHistory = [];
       }
       
-      // Add watch event to history (not completed, just a session)
-      existing.watchHistory.push({
-        watchedAt: now,
-        duration: watchedDuration,
-        completed: false,
-        startedAt: watchStartTime
-      });
+      if (gapMinutes > SESSION_GAP_MINUTES) {
+        existing.watchHistory.push({
+          watchedAt: now,
+          duration: watchedDuration,
+          completed: false,
+          startedAt: watchStartTime
+        });
+        existing.watchCount = existing.watchHistory.length;
+      } else if (existing.watchHistory.length > 0) {
+        const lastSession = existing.watchHistory[existing.watchHistory.length - 1];
+        lastSession.watchedAt = now;
+        lastSession.duration = watchedDuration;
+      } else {
+        existing.watchHistory.push({
+          watchedAt: now,
+          duration: watchedDuration,
+          completed: false,
+          startedAt: watchStartTime
+        });
+        existing.watchCount = existing.watchHistory.length;
+      }
       
-      // Update watchCount from history length
-      existing.watchCount = existing.watchHistory.length;
       existing.lastWatchedAt = now;
       existing.updatedAt = now;
       

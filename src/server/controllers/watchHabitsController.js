@@ -1,6 +1,5 @@
 import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
 import WatchHabits from '../models/WatchHabits.js';
-import Like from '../models/Like.js';
 
 /**
  * Get all watch habits with optional filters
@@ -431,10 +430,9 @@ export const getProfileHabits = (req, res) => {
       completed: false 
     }).filter(h => h.watchedDuration > 0);
     
-    // Get liked content for this profile
-    const liked = Like.getByProfile(userId, profileId);
+    const allHabits = WatchHabits.findAll({ userId, profileId });
+    const liked = allHabits.filter(h => h.liked);
     
-    // Get stats
     const stats = WatchHabits.getUserStats(userId, profileId);
     
     res.json({

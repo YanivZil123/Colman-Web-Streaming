@@ -1,7 +1,6 @@
-import Like from '../models/Like.js';
-import WatchHabits from '../models/WatchHabits.js';
+import { WatchHabitDoc } from '../models/WatchHabitsDoc.js';
 
-export const toggleLike = (req, res) => {
+export const toggleLike = async (req, res) => {
   try {
     const { titleId, profileId } = req.body;
     
@@ -10,17 +9,38 @@ export const toggleLike = (req, res) => {
     }
 
     const userId = req.session.user.id;
-    const result = Like.toggle({ userId, profileId, titleId });
     
-    const watchHabit = WatchHabits.findByUserAndTitle(userId, titleId, null, profileId);
-    if (watchHabit) {
-      WatchHabits.update(watchHabit.id, { liked: result.liked });
+    const query = {
+      userId,
+      profileId: profileId || null,
+      titleId,
+      episodeId: null
+    };
+    
+    let watchHabit = await WatchHabitDoc.findOne(query);
+    
+    if (!watchHabit) {
+      watchHabit = await WatchHabitDoc.create({
+        userId,
+        profileId: profileId || null,
+        titleId,
+        episodeId: null,
+        watchedDuration: 0,
+        totalDuration: 0,
+        completed: false,
+        liked: true,
+        watchCount: 0,
+        watchHistory: []
+      });
+    } else {
+      watchHabit.liked = !watchHabit.liked;
+      watchHabit.updatedAt = new Date();
+      await watchHabit.save();
     }
     
     res.json({ 
       ok: true, 
-      liked: result.liked,
-      like: result.like
+      liked: watchHabit.liked
     });
   } catch (error) {
     console.error('Toggle like error:', error);
@@ -28,7 +48,7 @@ export const toggleLike = (req, res) => {
   }
 };
 
-export const checkLike = (req, res) => {
+export const checkLike = async (req, res) => {
   try {
     const { titleId, profileId } = req.query;
     
@@ -37,7 +57,15 @@ export const checkLike = (req, res) => {
     }
 
     const userId = req.session.user.id;
-    const liked = Like.isLiked(userId, profileId, titleId);
+    
+    const watchHabit = await WatchHabitDoc.findOne({
+      userId,
+      profileId: profileId || null,
+      titleId,
+      episodeId: null
+    });
+    
+    const liked = watchHabit ? watchHabit.liked : false;
     
     res.json({ liked });
   } catch (error) {
@@ -46,7 +74,7 @@ export const checkLike = (req, res) => {
   }
 };
 
-export const getProfileLikes = (req, res) => {
+export const getProfileLikes = async (req, res) => {
   try {
     const { profileId } = req.params;
     
@@ -55,7 +83,12 @@ export const getProfileLikes = (req, res) => {
     }
 
     const userId = req.session.user.id;
-    const likes = Like.getByProfile(userId, profileId);
+    
+    const likes = await WatchHabitDoc.find({
+      userId,
+      profileId: profileId || null,
+      liked: true
+    }).lean();
     
     res.json({ 
       items: likes,
