@@ -126,34 +126,45 @@ export const createTitle = async (req, res) => {
 
     let dbSaved = false;
     try {
+      console.log('Creating document with titleData:', {
+        name: titleData.name,
+        posterUrl: titleData.posterUrl,
+        thumbnailUrl: titleData.thumbnailUrl,
+        videoUrl: titleData.videoUrl
+      });
       if (normalizedType === 'movie') {
-        await MovieDoc.create({
+        const movieData = {
           id: title.id,
           type: title.type,
           name: title.name,
           year: title.year,
           genres: title.genres,
           description: title.description,
-          posterUrl: title.posterUrl,
-          thumbnailUrl: title.thumbnailUrl,
-          videoUrl: title.videoUrl,
-          actors: title.actors || ''
-        });
+          posterUrl: titleData.posterUrl,
+          thumbnailUrl: titleData.thumbnailUrl,
+          videoUrl: titleData.videoUrl
+        };
+        console.log('Creating movie with data:', movieData);
+        await MovieDoc.create(movieData);
+        console.log('Movie document created successfully with posterUrl:', titleData.posterUrl);
       } else {
         const imdbId = req.body.imdbId || '';
-        await SeriesDoc.create({
+        const seriesData = {
           id: title.id,
           type: title.type,
           name: title.name,
           year: title.year,
           genres: title.genres,
           description: title.description,
-          posterUrl: title.posterUrl,
-          thumbnailUrl: title.thumbnailUrl,
+          posterUrl: titleData.posterUrl,
+          thumbnailUrl: titleData.thumbnailUrl,
           imdbId: imdbId,
           actors: title.actors || '',
           episodes: title.episodes
-        });
+        };
+        console.log('Creating series with data:', {name: seriesData.name, posterUrl: seriesData.posterUrl, imdbId: seriesData.imdbId});
+        await SeriesDoc.create(seriesData);
+        console.log('Series document created successfully with posterUrl:', titleData.posterUrl);
       }
       dbSaved = true;
     } catch (err) {

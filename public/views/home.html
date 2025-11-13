@@ -477,6 +477,28 @@
             }
         }
 
+        const fallbackPosters = [
+            '/images/movie-title-1.png','/images/movie-title-2.png','/images/movie-title-3.jpg','/images/movie-title-4.jpg',
+            '/images/series-title-1.jpg','/images/series-title-2.jpeg','/images/series-title-3.jpg','/images/series-title-4.jpg'
+        ];
+        let fallbackIndex = 0;
+        function nextFallbackPoster(){
+            const poster = fallbackPosters[fallbackIndex % fallbackPosters.length];
+            fallbackIndex++;
+            return poster;
+        }
+
+        function resolveImageUrl(url) {
+            if (!url) return nextFallbackPoster();
+            if (/^https?:/i.test(url)) return url;
+            let cleaned = String(url).replace(/^\/+/, '');
+            if (cleaned.startsWith('public/')) cleaned = cleaned.replace(/^public\//, '');
+            const idx = cleaned.indexOf('uploads/');
+            if (idx !== -1) cleaned = cleaned.slice(idx);
+            if (!cleaned.startsWith('uploads/')) cleaned = 'uploads/' + cleaned;
+            return '/' + cleaned;
+        }
+
         function renderGrid(grid, items) {
             grid.innerHTML = '';
             
@@ -491,7 +513,7 @@
                 card.onclick = () => window.location.href = `/title.html?id=${t.id}`;
                 card.innerHTML = `
                     <div class="content-thumbnail">
-                        <img src="${t.posterUrl || '/images/poster-placeholder.jpg'}" alt="${t.name || 'Title'}" onerror="this.src='/images/poster-placeholder.jpg'">
+                        <img src="${resolveImageUrl(t.thumbnailUrl || t.posterUrl)}" alt="${t.name || 'Title'}" onerror="this.src='/images/poster-placeholder.jpg'">
                         <div class="play-overlay">
                             <span class="play-icon">▶</span>
                         </div>

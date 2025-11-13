@@ -27,7 +27,7 @@ app.use(session({
 
 app.use((req, res, next) => {
   // Public paths that don't require authentication
-  const publicPaths = ['/signin.html', '/signup.html', '/images/', '/styles/', '/scripts/', '/assets/'];
+  const publicPaths = ['/signin.html', '/signup.html', '/images/', '/styles/', '/scripts/', '/assets/', '/uploads/'];
   const publicAPIPaths = ['/api/auth/login', '/api/auth/signup'];
   
   const isPublicPath = publicPaths.some(path => req.path.startsWith(path));
@@ -103,9 +103,12 @@ app.get('*', (req, res, next) => {
     return res.sendFile(path.join(__dirname, '../../public/views', p));
   }
   
-  // Handle title.html (used by links throughout the app)
+  // Handle title/player detail pages (used by links throughout the app)
   if (p === '/title.html') {
     return res.sendFile(path.join(__dirname, '../../public/views/title.html'));
+  }
+  if (p === '/player.html') {
+    return res.sendFile(path.join(__dirname, '../../public/views/player.html'));
   }
   
   // Check if requesting a specific view file

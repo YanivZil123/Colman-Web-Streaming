@@ -24,7 +24,6 @@
                     <input type="text" id="searchInput" class="search-input" placeholder="Search titles...">
                     <button class="search-btn">🔍</button>
                 </div>
-                <a href="/views/admin.html" class="nav-link">Admin</a>
                 <div class="profile-menu-container">
                     <button class="profile-icon-btn" onclick="toggleProfileMenu()">
                         <img src="/images/avatar1.png" alt="Profile" class="profile-icon-img" id="currentProfileAvatar">
@@ -326,6 +325,36 @@
                         console.error('Failed to reset watch status:', error);
                     }
                 };
+            }
+
+            setupResumeButtons(t);
+        }
+
+        async function setupResumeButtons(t) {
+            try {
+                const actions = document.querySelector('.title-hero-actions');
+                if (!actions) return;
+                const playLink = actions.querySelector('.btn-play');
+                if (!playLink) return;
+                const profileId = localStorage.getItem('selectedProfileId');
+                const resp = await api.get('/api/watch/progress?titleId=' + encodeURIComponent(t.id) + (profileId ? ('&profileId=' + encodeURIComponent(profileId)) : ''));
+                if (!resp.ok) return;
+                const progress = await resp.json().catch(() => null);
+                if (!progress || progress.positionSec === undefined) return;
+                const position = Number(progress.positionSec || 0);
+                const total = Number(progress.totalDurationSec || 0);
+                if (position <= 1) return;
+                if (total && position >= total - 2) return;
+                const base = '/player.html?titleId=' + encodeURIComponent(t.id) + (progress.episodeId ? ('&episodeId=' + encodeURIComponent(progress.episodeId)) : '');
+                playLink.textContent = '▶ Play from beginning';
+                playLink.href = base + '&resume=start&resumePosition=0';
+                const resumeBtn = document.createElement('a');
+                resumeBtn.className = 'btn-play';
+                resumeBtn.textContent = '⟲ Continue';
+                resumeBtn.href = base + '&resume=resume&resumePosition=' + Math.floor(position);
+                actions.insertBefore(resumeBtn, playLink);
+            } catch (error) {
+                console.error('Resume buttons error', error);
             }
         }
 

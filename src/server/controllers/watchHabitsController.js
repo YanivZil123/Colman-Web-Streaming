@@ -5,13 +5,14 @@ import WatchHabits from '../models/WatchHabits.js';
  */
 export const getWatchHabits = (req, res) => {
   try {
-    const { userId, titleId, completed, search, page = '1', limit = '20' } = req.query;
+    const { userId, titleId, completed, search, page = '1', limit = '20', profileId } = req.query;
     
     const filters = {};
     if (userId) filters.userId = userId;
     if (titleId) filters.titleId = titleId;
     if (completed !== undefined) filters.completed = completed === 'true';
     if (search) filters.search = search;
+    if (profileId !== undefined) filters.profileId = profileId || null;
 
     let habits = WatchHabits.findAll(filters);
     
@@ -56,7 +57,7 @@ export const getWatchHabitById = (req, res) => {
  */
 export const createWatchHabit = (req, res) => {
   try {
-    const { titleId, episodeId, watchedDuration, totalDuration, completed } = req.body;
+    const { titleId, episodeId, watchedDuration, totalDuration, completed, profileId } = req.body;
     
     if (!titleId) {
       return res.status(400).json({ error: 'Title ID is required' });
@@ -66,6 +67,7 @@ export const createWatchHabit = (req, res) => {
       userId: req.session.user.id,
       titleId,
       episodeId: episodeId || null,
+      profileId: profileId || null,
       watchedDuration: watchedDuration || 0,
       totalDuration: totalDuration || 0,
       completed: completed || false
@@ -94,13 +96,14 @@ export const updateWatchHabit = (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
     
-    const { watchedDuration, totalDuration, completed, episodeId, watchCount } = req.body;
+    const { watchedDuration, totalDuration, completed, episodeId, watchCount, profileId } = req.body;
     const updateData = {};
     
     if (watchedDuration !== undefined) updateData.watchedDuration = watchedDuration;
     if (totalDuration !== undefined) updateData.totalDuration = totalDuration;
     if (completed !== undefined) updateData.completed = completed;
     if (episodeId !== undefined) updateData.episodeId = episodeId;
+    if (profileId !== undefined) updateData.profileId = profileId || null;
     if (watchCount !== undefined) updateData.watchCount = watchCount;
     
     updateData.lastWatchedAt = new Date().toISOString();
@@ -145,7 +148,7 @@ export const deleteWatchHabit = (req, res) => {
  */
 export const upsertWatchProgress = (req, res) => {
   try {
-    const { titleId, episodeId, watchedDuration, totalDuration, completed } = req.body;
+    const { titleId, episodeId, watchedDuration, totalDuration, completed, profileId } = req.body;
     
     if (!titleId) {
       return res.status(400).json({ error: 'Title ID is required' });
@@ -157,7 +160,8 @@ export const upsertWatchProgress = (req, res) => {
       episodeId: episodeId || null,
       watchedDuration: watchedDuration || 0,
       totalDuration: totalDuration || 0,
-      completed: completed || false
+      completed: completed || false,
+      profileId: profileId || null
     };
     
     const habit = WatchHabits.upsertProgress(data);
@@ -172,8 +176,8 @@ export const upsertWatchProgress = (req, res) => {
  */
 export const getContinueWatching = (req, res) => {
   try {
-    const { limit = '10' } = req.query;
-    const habits = WatchHabits.getContinueWatching(req.session.user.id, parseInt(limit));
+    const { limit = '10', profileId } = req.query;
+    const habits = WatchHabits.getContinueWatching(req.session.user.id, parseInt(limit), profileId !== undefined ? (profileId || null) : undefined);
     res.json({ items: habits });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
