@@ -396,13 +396,18 @@ body.screen-shake {
 /* Profile Selection Styles */
 .profiles-body {
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     background: hsl(var(--disney-dark));
     padding: 40px 20px;
+    position: relative;
 }
 
 .profiles-container {
     max-width: 1200px;
     margin: 0 auto;
+    flex: 0 1 auto;
+    margin-bottom: 20px;
 }
 
 .profiles-container .disney-logo {
