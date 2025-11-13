@@ -158,11 +158,11 @@
 
     <!-- Main Content -->
     <main class="home-main stats-container">
-        <a href="/views/admin.html" class="back-button">← Back to Admin Panel</a>
+        <a href="#" class="back-button" id="backButton">← Back</a>
 
         <div class="stats-header">
-            <h1>Daily Views Per Profile - Bar Chart</h1>
-            <p>Watch statistics by profile and date</p>
+            <h1>My Viewing Statistics</h1>
+            <p id="statsDescription">Daily watch duration for each of your profiles</p>
         </div>
 
         <div class="error-message" id="errorMessage"></div>
@@ -173,7 +173,7 @@
             </div>
             <canvas id="dailyWatchChart" style="display: none;"></canvas>
             <div class="no-data-message" id="noDataMessage" style="display: none;">
-                No watch data available yet. Users need to watch content first.
+                No watch data available yet. Start watching content to see statistics!
             </div>
         </div>
     </main>
@@ -181,6 +181,29 @@
     <script src="/scripts/api.js"></script>
     <script src="/js/stats.js"></script>
     <script>
+        // Set back button based on user role
+        async function setupBackButton() {
+            try {
+                const response = await fetch('/api/auth/me');
+                const userData = await response.json();
+                const backButton = document.getElementById('backButton');
+                const statsDescription = document.getElementById('statsDescription');
+                
+                if (userData.role === 'admin') {
+                    backButton.href = '/views/admin.html';
+                    backButton.textContent = '← Back to Admin Panel';
+                    statsDescription.textContent = 'Daily watch duration for all users and profiles';
+                } else {
+                    backButton.href = '/views/home.html';
+                    backButton.textContent = '← Back to Home';
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        }
+        
+        setupBackButton();
+        
         // Profile menu setup (copied from other pages)
         let profiles = [];
 

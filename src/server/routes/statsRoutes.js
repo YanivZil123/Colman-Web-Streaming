@@ -33,15 +33,15 @@ router.get('/debug/watch-habits', requireAdmin, async (req, res) => {
   }
 });
 
-// New admin-protected routes
+// New stats routes
 // GET /stats/dashboard - Renders the statistics dashboard page (for HTML pages)
-router.get('/dashboard', isAdmin, (req, res) => {
-  // The routing in app.js will handle serving the HTML file
-  // This route just protects access with the isAdmin middleware
+router.get('/dashboard', requireAuth, (req, res) => {
+  // Any authenticated user can access their own stats
   res.redirect('/views/stats-dashboard.html');
 });
 
 // GET /api/stats/daily-watch - API endpoint returning aggregated JSON data
-router.get('/daily-watch', requireAdmin, statsController.getDailyWatchData);
+// Regular users see only their own profile data, admins see all users
+router.get('/daily-watch', requireAuth, statsController.getDailyWatchData);
 
 export default router;

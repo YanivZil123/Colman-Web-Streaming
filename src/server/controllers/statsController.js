@@ -29,16 +29,30 @@ export const getPopularByGenre = (req, res) => {
 /**
  * Get aggregated daily watch data per profile
  * Groups by profileId and day, calculates total watched duration
- * Includes profile name via $lookup with User model
+ * Regular users see only their own profiles, admins see all users
  */
 export const getDailyWatchData = async (req, res, next) => {
   try {
     console.log('=== Fetching daily watch data ===');
     
-    // First, get all watch habits with profileId
-    const allHabits = await WatchHabitDoc.find({ 
-      profileId: { $ne: null, $exists: true } 
-    }).lean();
+    const currentUserId = req.session.user.id;
+    const isAdmin = req.session.user.role === 'admin';
+    
+    console.log(`User ID: ${currentUserId}, Is Admin: ${isAdmin}`);
+    
+    // Build query filter
+    const watchHabitsQuery = { profileId: { $ne: null, $exists: true } };
+    
+    // If not admin, filter by current user's ID
+    if (!isAdmin) {
+      watchHabitsQuery.userId = currentUserId;
+      console.log('Filtering watch habits for current user only');
+    } else {
+      console.log('Admin user - fetching all watch habits');
+    }
+    
+    // Fetch watch habits based on query
+    const allHabits = await WatchHabitDoc.find(watchHabitsQuery).lean();
     
     console.log(`Found ${allHabits.length} watch habits with profileId`);
     
@@ -47,13 +61,14 @@ export const getDailyWatchData = async (req, res, next) => {
         success: true,
         data: [],
         count: 0,
-        message: 'No watch data available. Users need to watch content first.'
+        message: 'No watch data available. Start watching content to see statistics!'
       });
     }
 
-    // Get all users with their profiles
+    // Get user(s) with their profiles
     const User = (await import('../models/User.js')).default;
-    const users = await User.find({}).lean();
+    const userQuery = isAdmin ? {} : { _id: currentUserId };
+    const users = await User.find(userQuery).lean();
     
     // Create a map of profileId -> profile info
     const profileMap = {};

@@ -91,16 +91,19 @@ function transformDataForChart(rawData) {
     // Extract unique dates and profile names, and sort them
     const datesSet = new Set();
     const profilesSet = new Set();
+    const usernamesSet = new Set();
     
     rawData.forEach(item => {
         datesSet.add(item.date);
-        // Create unique profile identifier using username and profile name
+        usernamesSet.add(item.username);
+        // Create unique profile identifier
         const profileLabel = `${item.username} - ${item.profileName}`;
         profilesSet.add(profileLabel);
     });
 
     const dates = Array.from(datesSet).sort();
     const profiles = Array.from(profilesSet).sort();
+    const isMultiUser = usernamesSet.size > 1; // Check if data from multiple users
 
     // Create a map for quick data lookup
     const dataMap = {};
@@ -112,14 +115,17 @@ function transformDataForChart(rawData) {
 
     // Generate datasets for each profile
     const colors = generateUserColors(profiles.length);
-    const datasets = profiles.map((profileLabel, index) => {
+    const datasets = profiles.map((fullProfileLabel, index) => {
         const data = dates.map(date => {
-            const key = `${profileLabel}-${date}`;
+            const key = `${fullProfileLabel}-${date}`;
             return dataMap[key] || 0;
         });
 
+        // For single user, show only profile name; for admin/multi-user, show username - profile
+        const displayLabel = isMultiUser ? fullProfileLabel : fullProfileLabel.split(' - ')[1];
+
         return {
-            label: profileLabel,
+            label: displayLabel,
             data: data,
             backgroundColor: colors[index].bg,
             borderColor: colors[index].border,

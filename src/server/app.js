@@ -48,16 +48,15 @@ app.use((req, res, next) => {
       return res.redirect('/signin.html');
     }
     
-    // Admin users can access admin.html and stats-dashboard.html
+    // Admin users can only access admin.html (not regular user pages)
     if (req.session.user.role === 'admin') {
       if (req.path !== '/views/admin.html' && req.path !== '/admin.html' &&
           req.path !== '/views/stats-dashboard.html' && req.path !== '/stats-dashboard.html') {
         return res.status(403).send('Access denied. Admin users can only access the admin panel.');
       }
     } else {
-      // Regular users CANNOT access admin.html or stats-dashboard.html
-      if ((req.path === '/views/admin.html' || req.path === '/admin.html' ||
-           req.path === '/views/stats-dashboard.html' || req.path === '/stats-dashboard.html')) {
+      // Regular users CANNOT access admin.html only
+      if (req.path === '/views/admin.html' || req.path === '/admin.html') {
         return res.status(403).send('Access denied. Admin privileges required.');
       }
     }
@@ -103,8 +102,9 @@ app.get('*', (req, res, next) => {
   }
 
   if (p === '/views/stats-dashboard.html' || p === '/stats-dashboard.html') {
-    if (req.session.user.role !== 'admin') {
-      return res.status(403).send('Access denied. Admin privileges required.');
+    // Any authenticated user can access stats dashboard (they see only their own data)
+    if (!req.session.user) {
+      return res.redirect('/signin.html');
     }
     return res.sendFile(path.join(__dirname, '../../public/views/stats-dashboard.html'));
   }
