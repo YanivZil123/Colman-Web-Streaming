@@ -48,20 +48,10 @@ function sendProgress(payload, preferBeacon){
     try {
       const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
       navigator.sendBeacon('/api/watch/progress', blob);
-      
-      // Invalidate cache when watch progress changes
-      if (window.CacheInvalidator) {
-        CacheInvalidator.onWatchProgressChanged();
-      }
       return;
     } catch(err) {}
   }
-  api.post('/api/watch/progress', payload).then(() => {
-    // Invalidate cache when watch progress changes
-    if (window.CacheInvalidator) {
-      CacheInvalidator.onWatchProgressChanged();
-    }
-  });
+  api.post('/api/watch/progress', payload);
 }
 
 function saveProgress(force=false, preferBeacon=false){

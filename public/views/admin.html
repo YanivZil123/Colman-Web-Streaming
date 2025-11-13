@@ -386,7 +386,6 @@
     </footer>
 
     <script src="/scripts/api.js"></script>
-    <script src="/scripts/cacheInvalidator.js"></script>
     <script>
         // Toggle series fields based on type selection
         document.getElementById('type').addEventListener('change', function() {
@@ -571,11 +570,6 @@
                     alert('✓ Episode added successfully!');
                     modal.remove();
                     loadExistingSeries();
-                    
-                    // Invalidate all caches when content is uploaded
-                    if (window.CacheInvalidator) {
-                        CacheInvalidator.onContentUploaded();
-                    }
                 } else {
                     const json = await res.json().catch(() => ({}));
                     alert('✗ Failed: ' + (json.error || res.statusText));
@@ -977,12 +971,6 @@
                     } else {
                         alert('✓ Created successfully!');
                     }
-                    
-                    // Invalidate all caches when content is uploaded
-                    if (window.CacheInvalidator) {
-                        CacheInvalidator.onContentUploaded();
-                    }
-                    
                     document.getElementById('titleForm').reset();
                     document.getElementById('posterName').textContent = 'Choose image...';
                     document.getElementById('thumbnailName').textContent = 'Choose thumbnail...';
