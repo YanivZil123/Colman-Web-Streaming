@@ -23,6 +23,7 @@ export const getTitles = (req, res) => {
         let sortObj = { createdAt: -1 };
         if (sort === 'name') sortObj = { name: 1 };
         if (sort === 'year') sortObj = { year: -1 };
+        if (sort === 'popularity') sortObj = { imdbRating: -1, year: -1 };
 
         let docs = [];
         if (type === 'movie') {
@@ -43,6 +44,7 @@ export const getTitles = (req, res) => {
           docs = [...movies, ...series].sort((a, b) => {
             if (sortObj.createdAt === -1) return b.createdAt - a.createdAt;
             if (sortObj.year === -1) return b.year - a.year;
+            if (sortObj.imdbRating === -1) return (b.imdbRating || 0) - (a.imdbRating || 0) || b.year - a.year;
             if (sortObj.name) return a.name.localeCompare(b.name);
             return 0;
           }).slice((p - 1) * limit, p * limit);
