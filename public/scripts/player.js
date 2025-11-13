@@ -370,6 +370,15 @@ function applyResumeIfReady(){
     
     hideUpNextCard();
     
+    if(v && v.duration > 0){
+      sendProgress({
+        titleId,
+        episodeId,
+        positionSec: Math.floor(v.duration),
+        durationSec: Math.floor(v.duration)
+      }, true);
+    }
+    
     const newUrl = `/views/player.html?titleId=${encodeURIComponent(titleId)}&episodeId=${encodeURIComponent(nextEpisode.id)}${profileId ? '&profileId=' + encodeURIComponent(profileId) : ''}`;
     window.location.href = newUrl;
   }
