@@ -51,7 +51,10 @@
                             <!-- Profiles will be loaded here -->
                         </div>
                         <div class="profile-dropdown-divider"></div>
-                        <a href="/views/profile-selection.html" class="profile-dropdown-item">Manage Profiles</a>
+                        <a href="#" class="profile-dropdown-item" onclick="toggleSettingsMenu(event)">Settings</a>
+                        <div id="settingsSubmenu" style="display:none;margin:8px 0 0 16px;">
+                            <a href="/views/profile-selection.html" class="profile-dropdown-item">Manage Profile</a>
+                        </div>
                         <a href="/" class="profile-dropdown-item">Sign Out</a>
                     </div>
                 </div>
@@ -491,6 +494,14 @@
         function toggleProfileMenu() {
             const dropdown = document.getElementById('profileDropdown');
             dropdown.classList.toggle('show');
+        }
+
+        function toggleSettingsMenu(event) {
+            if (event) event.preventDefault();
+            const submenu = document.getElementById('settingsSubmenu');
+            if (submenu) {
+                submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+            }
         }
 
         function switchProfile(profileId) {
