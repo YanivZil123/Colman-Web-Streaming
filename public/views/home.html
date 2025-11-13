@@ -31,6 +31,7 @@
                 <a href="/views/home.html" class="nav-link active">Home</a>
                 <a href="/views/series.html" class="nav-link">Series</a>
                 <a href="/views/movies.html" class="nav-link">Movies</a>
+                <a href="#statistics" class="nav-link">Statistics</a>
             </div>
             
             <div class="nav-right">
@@ -50,6 +51,8 @@
                         <div id="profileList" class="profile-list">
                             <!-- Profiles will be loaded here -->
                         </div>
+                        <div class="profile-dropdown-divider"></div>
+                        <a href="#statistics" class="profile-dropdown-item">Statistics</a>
                         <div class="profile-dropdown-divider"></div>
                         <a href="/views/profile-selection.html" class="profile-dropdown-item">Manage Profiles</a>
                         <a href="/" class="profile-dropdown-item">Sign Out</a>
@@ -217,7 +220,7 @@
         </section>
 
         <!-- Latest Action -->
-        <section class="content-section" style="margin-bottom: 80px;">
+        <section id="statistics" class="content-section" style="margin-bottom: 80px;">
             <h2 class="section-title">Latest Action</h2>
             <div class="content-grid" id="latestActionGrid">
             </div>
