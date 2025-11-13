@@ -1746,3 +1746,55 @@ body.screen-shake {
         width: 100%;
     }
 }
+
+/* Footer Styles */
+footer {
+    background: hsl(var(--disney-card));
+    border-top: 1px solid hsl(var(--disney-border));
+    padding: 40px 20px;
+    margin-top: 60px;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-section p {
+    color: hsl(var(--disney-muted));
+    font-size: 14px;
+    margin: 0;
+}
+
+.footer-nav {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.footer-nav a {
+    color: hsl(var(--disney-muted));
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.footer-nav a:hover {
+    color: hsl(var(--disney-text));
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .footer-nav {
+        justify-content: center;
+    }
+}
