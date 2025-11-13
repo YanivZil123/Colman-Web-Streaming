@@ -805,9 +805,63 @@
                     
                     grid.appendChild(card);
                 });
+                
+                initSimilarScroll(grid);
             } catch (error) {
                 console.error('Failed to load similar titles:', error);
             }
+        }
+
+        function initSimilarScroll(grid) {
+            const section = grid.closest('.content-section');
+            if (!section) return;
+            
+            const existingArrows = section.querySelectorAll('.scroll-arrow');
+            existingArrows.forEach(arrow => arrow.remove());
+            
+            const leftArrow = document.createElement('button');
+            leftArrow.className = 'scroll-arrow scroll-arrow-left';
+            leftArrow.innerHTML = '◀';
+            leftArrow.onclick = () => {
+                const scrollAmount = grid.clientWidth * 0.8;
+                grid.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            };
+            
+            const rightArrow = document.createElement('button');
+            rightArrow.className = 'scroll-arrow scroll-arrow-right';
+            rightArrow.innerHTML = '▶';
+            rightArrow.onclick = () => {
+                const scrollAmount = grid.clientWidth * 0.8;
+                grid.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            };
+            
+            section.appendChild(leftArrow);
+            section.appendChild(rightArrow);
+            
+            function updateArrowVisibility() {
+                const scrollLeft = grid.scrollLeft;
+                const scrollWidth = grid.scrollWidth;
+                const clientWidth = grid.clientWidth;
+                
+                if (scrollLeft <= 10) {
+                    leftArrow.style.opacity = '0.3';
+                    leftArrow.style.pointerEvents = 'none';
+                } else {
+                    leftArrow.style.opacity = '1';
+                    leftArrow.style.pointerEvents = 'auto';
+                }
+                
+                if (scrollLeft + clientWidth >= scrollWidth - 10) {
+                    rightArrow.style.opacity = '0.3';
+                    rightArrow.style.pointerEvents = 'none';
+                } else {
+                    rightArrow.style.opacity = '1';
+                    rightArrow.style.pointerEvents = 'auto';
+                }
+            }
+            
+            grid.addEventListener('scroll', updateArrowVisibility);
+            updateArrowVisibility();
         }
     </script>
 </body>
